@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Primer Design Tool</title>
+  <script src="https://unpkg.com/htmx.org@1.8.0"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+
+  <script type="application/json" id="testing-mode-data">
+    {{ testing_mode | tojson }}
+  </script>
+
+  <script type="application/json" id="test-seq-data">
+    {{ test_seq | tojson }}
+  </script>
+
+  <script type="application/json" id="test_template_seq">
+    {{ test_template_seq | tojson }} 
+  </script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      var testSeqElement = document.getElementById("test-seq-data");
+      if (testSeqElement) {
+        var defaultTestSeq = JSON.parse(testSeqElement.textContent);
+        console.log("Injected test_seq:", defaultTestSeq);
+      } else {
+        console.error("Error: #test-seq-data element not found.");
+      }
+    });
+  </script>
+
+  <script>
+    var defaultTestSeq = JSON.parse(document.getElementById("test-seq-data").textContent);
+    var defaultTestTemplateSeq = JSON.parse(document.getElementById("test_template_seq").textContent);
+    console.log("Injected test_seq:", defaultTestSeq);
+    console.log("Injected test_template_seq:", defaultTestTemplateSeq);
+  </script>
+
+</head>
+
+<body>
+  <button id="darkModeToggle" class="dark-mode-btn">🌙 Dark Mode</button>
+
+  <form id="primer-form" hx-post="/validate_inputs" hx-trigger="submit" hx-target="#validation-results"
+    hx-swap="innerHTML" hx-encoding="json">
+    <div class="header-container">
+      <h2>Mammalian Toolkit Domestication Primer Design</h2>
+    </div>
+
+    <!-- Template Sequence Section -->
+    <div class="template-container">
+      <h3>Template Sequence (optional)</h3>
+      <p class="instruction-text">You may optionally choose to provide the sequence of the whole plasmid or other
+        DNA that will be the template for the sequence to domesticate. This allows the primer generator to
+        evaluate possible mispriming when desigining primers.</p>
+      <p class="instruction-text">Paste in the template sequence or upload a .dna, .gb, or .ape file.</p>
+      <div class="tab-buttons">
+        <button class="tab-button active" onclick="openTab('paste'); return false;">Paste Sequence</button>
+        <button class="tab-button" onclick="openTab('upload'); return false;">Upload File</button>
+      </div>
+      <div class="tab-content">
+        <div class="tab-pane active" id="paste">
+          <label for="templateSequence">Paste Template Sequence:</label>
+          <textarea id="templateSequence" class="form-control sequence-input" placeholder="Enter DNA sequence here..."
+            hx-post="/validate_template" hx-trigger="keyup changed delay:500ms" hx-target="#template-validation"
+            hx-swap="innerHTML">{{ test_template_seq }}</textarea>
+          <div id="templateSeqCharCount" class="char-count-label" style="display:none;"></div>
+          <div id="template-validation"></div>
+        </div>
+        <div class="tab-pane" id="upload">
+          <label for="fileUpload">Upload DNA File:</label>
+          <input type="file" id="fileUpload" class="form-control" />
+        </div>
+      </div>
+    </div>
+    <!-- Domesticated Sequence Section -->
+    <div class="domestication-container">
+
+      <h3>Sequences to Domesticate</h3>
+
+      <!-- Dynamic Sequences Section -->
+      <div class="dynamic-form">
+        <div class="num-sequences-container">
+          <label for="numSequences" class="form-label">Number of Sequences:</label>
+          <input type="number" id="numSequences" class="form-control" min="1" max="10" value="1"
+            oninput="updateSequenceInputs(this.value, defaultTestSeq = '')" />
+        </div>
+        <!-- Dropdowns -->
+        <div class="dropdown-container">
+          <div class="dropdown-item">
+            <label for="species" class="form-label">Species:</label>
+            <select id="species" class="form-select" hx-get="/get_species" hx-trigger="load" hx-target="#species"
+              hx-swap="innerHTML">
+              <option>Loading...</option>
+            </select>
+          </div>
+          <div class="dropdown-item">
+            <label for="kozak" class="form-label">Kozak:</label>
+            <select id="kozak" class="form-select">
+              <option value="MTK">MTK</option>
+              <option value="Canonical">Canonical</option>
+            </select>
+          </div>
+        </div>
+        <div id="sequence-container" class="breakout-holder"></div>
+      </div>
+    </div>
+
+    <div class="button-container">
+      <div class="left-buttons">
+        <button type="submit" class="btn btn-primary">Run Primer Design</button>
+        <div class="flex-container">
+          <input type="checkbox" id="verbose_mode" class="form-check-input" />
+          <label for="verbose_mode" class="form-label">Verbose Mode</label>
+        </div>
+      </div>
+      <button type="button" id="clearForm" class="btn btn-warning" onclick="clearForm()">Clear Form</button>
+    </div>
+  </form>
+
+  <div id="validation-results"></div>
+  <br /><br />
+  <div id="results"></div>
+
+  <script>
+    // Toggle dark mode functionality
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+      let isDarkMode = document.body.classList.contains("dark-mode");
+      localStorage.setItem("dark-mode", isDarkMode ? "enabled" : "disabled");
+    }
+
+    // Update character count label for a given input element.
+    // It assumes that the label element is the immediate next sibling.
+    function updateCharCount(el) {
+      let label = el.nextElementSibling;
+      if (!label || !label.classList.contains("char-count-label")) return;
+      let len = el.value.length;
+      if (len > 0) {
+        label.style.display = "block";
+        label.textContent = `Length: ${len} bp`;
+      } else {
+        label.style.display = "none";
+      }
+    }
+
+    function updateSequenceInputs(num, defaultTestSeq = "") {
+      let container = document.getElementById("sequence-container");
+      num = Math.max(1, Math.min(10, num)); // Ensure number stays within range
+      container.innerHTML = "";
+
+      // Create tabs for the sequences
+      let tabs = document.createElement("div");
+      tabs.classList.add("sequence-tabs");
+      for (let i = 0; i < num; i++) {
+        let tab = document.createElement("button");
+        tab.classList.add("sequence-tab");
+        tab.textContent = `Sequence ${i + 1}`;
+        tab.addEventListener("click", function () {
+          openSequenceTab(i);
+        });
+        if (i === 0) {
+          tab.classList.add("active");
+        }
+        tabs.appendChild(tab);
+      }
+      container.appendChild(tabs);
+
+      // MTK Part Number options
+      const mtk_part_nums = [
+        '', '1', '2', '3', '3a', '3b', '3c', '3d', '3e', '3f',
+        '3g', '4', '4a', '4b', '4aII', '3bI', '3bII', '5', '6', '7', '8', '8a', '8b'
+      ];
+
+      // Create content panes for each sequence
+      let content = document.createElement("div");
+      content.classList.add("sequence-content");
+      for (let i = 0; i < num; i++) {
+        let pane = document.createElement("div");
+        pane.classList.add("sequence-pane");
+        if (i === 0) {
+          pane.classList.add("active");
+        }
+
+        // Prepopulate test values only if `TESTING_MODE` is true
+        var TESTING_MODE = JSON.parse(document.getElementById("testing-mode-data").textContent);
+
+        let testPrimerName = TESTING_MODE && i === 0 ? "Test Primer 1" : "";
+        let testSequence = TESTING_MODE && i === 0 ? defaultTestSeq : "";
+        let testPartNumber = TESTING_MODE && i === 0 ? "6" : "";
+
+        pane.innerHTML = `
+            <div class="form-row-top">
+                <div class="input-group">
+                    <label for="primerName${i}">Primer Name:</label>
+                    <input type="text" id="primerName${i}" class="form-control"
+                        placeholder="Enter primer name (optional)"
+                        value="${testPrimerName}" />
+                </div>
+
+                <div class="input-group">
+                    <label for="mtkPart${i}">MTK Part Number:</label>
+                    <select id="mtkPart${i}" class="form-select">
+                        ${mtk_part_nums.map(val =>
+          `<option value="${val}" ${val === testPartNumber ? "selected" : ""}>${val}</option>`
+        ).join('')}
+                    </select>
+                </div>
+            </div>
+
+            <label>Sequence ${i + 1}:</label>
+            <textarea class="form-control dynamic-sequence-input sequence-input"
+                placeholder="Enter DNA sequence...">${testSequence}</textarea>
+            <div class="char-count-label" style="display:none;"></div>
+        `;
+
+
+
+        content.appendChild(pane);
+      }
+      container.appendChild(content);
+    }
+
+    // Function to switch between sequence panes
+    function openSequenceTab(index) {
+      document.querySelectorAll('.sequence-tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.sequence-pane').forEach(pane => pane.classList.remove('active'));
+      document.querySelectorAll('.sequence-tab')[index].classList.add('active');
+      document.querySelectorAll('.sequence-pane')[index].classList.add('active');
+    }
+
+    // Clear the form content
+    function clearForm() {
+      document.getElementById("fileUpload").value = "";
+      document.getElementById("numSequences").value = 1;
+      document.getElementById("sequence-container").innerHTML = "";
+      document.getElementById("results").innerHTML = "";
+    }
+
+    // Tab switching functionality for Template Sequence
+    function openTab(tabName) {
+      const tabPanes = document.querySelectorAll('.tab-pane');
+      tabPanes.forEach(pane => pane.classList.remove('active'));
+      const tabButtons = document.querySelectorAll('.tab-button');
+      tabButtons.forEach(button => button.classList.remove('active'));
+      document.getElementById(tabName).classList.add('active');
+      event.currentTarget.classList.add('active');
+    }
+
+    // On DOM load, initialize the dynamic sections and attach event listeners.
+    document.addEventListener("DOMContentLoaded", function () {
+      // Initialize dynamic sequences.
+      updateSequenceInputs(document.getElementById("numSequences").value, defaultTestSeq);
+
+      // Template sequence event listener for character count.
+      let templateSeqEl = document.getElementById('templateSequence');
+      templateSeqEl.addEventListener('input', function () {
+        updateCharCount(templateSeqEl);
+      });
+      // Update label on page load (for preloaded content)
+      updateCharCount(templateSeqEl);
+
+      // Dark mode
+      const darkModeButton = document.getElementById("darkModeToggle");
+      if (darkModeButton) {
+        darkModeButton.addEventListener("click", toggleDarkMode);
+      }
+      if (localStorage.getItem("dark-mode") === "enabled") {
+        document.body.classList.add("dark-mode");
+      }
+      var testingModeElement = document.getElementById("testing-mode-data");
+
+      // Safely retrieve TESTING_MODE value
+      var TESTING_MODE = testingModeElement ? JSON.parse(testingModeElement.textContent) : false;
+      console.log("Testing Mode:", TESTING_MODE);
+
+      // If TESTING_MODE is true, check the verbose mode checkbox
+      if (TESTING_MODE) {
+          document.getElementById("verbose_mode").checked = true;
+      }
+    });
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
