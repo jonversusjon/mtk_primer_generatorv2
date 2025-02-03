@@ -1,13 +1,14 @@
 from Bio.Seq import Seq
 from typing import List, Dict, Optional
-from sequence_prep import (
+from .sequence_prep import (
     adjust_sequence_for_frame_and_codons,
     find_bsmbi_bsai_sites,
     summarize_bsmbi_bsai_sites
 )
-from primer_design import generate_GG_edge_primers
-from .mutation import find_compatible_mutation_subsets, get_mutations_for_site, find_best_mutation_set, gather_mutation_options
-from .utils import plot_primers_for_mutation_site, rank_and_print_mutation_sets
+from .primer_design import generate_GG_edge_primers, get_all_possible_internal_primers
+from .primer_select import select_best_internal_primers, format_primers_for_output
+from .mutation import *
+# from utils.utils import plot_primers_for_mutation_site, rank_and_print_mutation_sets
 
 
 def create_gg_protocol(

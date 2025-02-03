@@ -3,6 +3,19 @@ import numpy as np
 from typing import List, Dict, Optional
 
 
+def format_primers_for_output(primer_sets: List[List[Seq]]) -> List[List[str]]:
+    """
+    Formats a list of primer sets for output in the final protocol.
+    """
+    primer_data = []
+    for i, primers in enumerate(primer_sets):
+        for j, primer in enumerate(primers):
+            primer_data.append([f"Primer_{i+1}_{j+1}", str(primer), f"Amplicon_{i+1}"])
+    return primer_data
+
+def select_best_internal_primers():
+    return "Placeholder"
+
 def is_overhang_compatible(overhangs):
     """
     Checks if a set of overhang sequences are compatible by:

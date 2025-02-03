@@ -8,8 +8,8 @@ import primer3
 from Bio.Seq import Seq
 from Bio.SeqUtils import MeltingTemp as mt
 
-from .mutation import find_codon_replacements_in_range
-from primer_select import is_overhang_compatible
+from .mutation import find_codon_replacements_in_range, get_mutations_for_site
+from .primer_select import is_overhang_compatible
 
 
 def find_off_targets_for_primer(binding_seq: str,
@@ -363,6 +363,117 @@ def generate_GG_edge_primers(seq, part_end_dict, part_num, primer_orientation, k
         print(f"Error generating primer for part {part_num} ({primer_orientation}): {e}")
         return None, None
 
+
+def get_all_possible_internal_primers(
+    seq: Seq,
+    seq_index: int,
+    proposed_mutations: Dict[int, Dict[int, List[Dict]]],
+    part_num_left: str,
+    part_num_right: str,
+    spacer: str = "GAA",
+    bsmbi_site: str = "CGTCTC",
+    min_tm: float = 57,
+    primer_name: Optional[str] = None,
+    verbose: bool = True,
+) -> Dict[int, Dict]:
+
+    primers = {}
+
+    # Combine part numbers for naming
+    part_num = part_num_left if part_num_left == part_num_right else part_num_left + part_num_right
+
+    for site_index, codon_mutations in proposed_mutations.items():
+        if not isinstance(codon_mutations, dict):
+            raise TypeError(
+                f"Expected `codon_mutations` to be a dictionary, got {type(codon_mutations)} at site_index {site_index}"
+            )
+
+        primers[site_index] = {}
+
+        for codon_start, mutations in codon_mutations.items():
+            if not isinstance(mutations, list):
+                raise TypeError(
+                    f"Expected `mutations` to be a list, got {type(mutations)} at codon_start {codon_start}"
+                )
+
+            primers[site_index][codon_start] = []
+
+            for mutation in mutations:
+                if not isinstance(mutation, dict):
+                    raise TypeError(
+                        f"Expected `mutation` to be a dictionary, got {type(mutation)}: {mutation}"
+                    )
+
+                # ----------------------------
+                # 1) Copy the mutation data up front
+                # ----------------------------
+                mutation_data = dict(mutation)
+
+                # If there's already a 'primers' key, fine; if not, create one.
+                if "primers" not in mutation_data:
+                    mutation_data["primers"] = {"forward": [], "reverse": []}
+
+                # If you want to run off-target for existing primers
+                # (in case 'mutation' already had some?)
+                for fwd_primer in mutation_data["primers"]["forward"]:
+                    find_off_targets_for_primer(fwd_primer, template=str(seq))
+
+                for rev_primer in mutation_data["primers"]["reverse"]:
+                    find_off_targets_for_primer(rev_primer, template=str(seq))
+
+                # Make sure 'nucleotide_changes' list exists
+                if "nucleotide_changes" not in mutation_data:
+                    mutation_data["nucleotide_changes"] = []
+
+                # This will hold newly generated primers
+                primer_data = {"forward": [], "reverse": []}
+
+                # ----------------------------
+                # 2) For each requested change, design new primers
+                # ----------------------------
+                for change in mutation.get("mutation", {}).get("index_nucleotide_changes", []):
+                    nucleotide_index = change["index"]
+                    new_nucleotide = change["new_nucleotide"]
+
+                    if verbose:
+                        print(f"Designing primers for mutation at position {nucleotide_index}:")
+                        print(f"    Original Nucleotide: {seq[nucleotide_index]}, New Nucleotide: {new_nucleotide}")
+
+                    designed_primers = design_primers_for_mutation(
+                        seq=seq,
+                        nucleotide_index=nucleotide_index,
+                        new_nucleotide=new_nucleotide,
+                        spacer=spacer,
+                        bsmbi_site=bsmbi_site,
+                        min_tm=min_tm,
+                        verbose=verbose
+                    )
+
+                    # ----------------------------
+                    # 3) Off-target each newly designed primer
+                    # ----------------------------
+                    for p in designed_primers["forward"]:
+                        find_off_targets_for_primer(p, template=str(seq))
+                    for p in designed_primers["reverse"]:
+                        find_off_targets_for_primer(p, template=str(seq))
+
+                    primer_data["forward"].extend(designed_primers["forward"])
+                    primer_data["reverse"].extend(designed_primers["reverse"])
+
+                    # Keep track of these new primers in the 'nucleotide_changes' structure
+                    change_data = dict(change)
+                    change_data["primers"] = designed_primers
+                    mutation_data["nucleotide_changes"].append(change_data)
+
+                # ----------------------------
+                # 4) Store the new primers in mutation_data
+                # ----------------------------
+                mutation_data["primers"] = primer_data
+
+                # Finally, append the updated mutation_data
+                primers[site_index][codon_start].append(mutation_data)
+
+    return primers
 
 # def count_restriction_sites(seq, recog_seq_f, recog_seq_r):
 #     """
