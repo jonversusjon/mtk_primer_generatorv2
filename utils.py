@@ -237,3 +237,13 @@ def rank_and_print_mutation_sets(mutation_options, verbose):
             print("---")
 
     return ranked_mutation_sets  # Return sorted mutation sets
+
+def package_form_data(request):
+    data = request.get_json()  # Get JSON data sent by HTMX
+
+    # Validate the received JSON data (similar to before but without request.form)
+    # ... (Your validation logic) ...
+    packaged_data = {}  # Placeholder for processed data
+    error_message = None  # Placeholder for error message
+    
+    return packaged_data, error_message

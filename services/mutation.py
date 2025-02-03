@@ -1,7 +1,7 @@
 from Bio.Seq import Seq
 from typing import Dict, List, Optional, Tuple
 import logging
-from utils.utils import gc_content
+from utils import gc_content
 from .primer_select import is_overhang_compatible
 
 def find_alternative_codons(codon, codon_usage_dict, max_mutations=1, verbose=False):

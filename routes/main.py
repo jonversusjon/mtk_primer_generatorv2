@@ -1,15 +1,16 @@
+# routes/main.py
 from flask import Blueprint, render_template, request, jsonify
 from tests.test_data import TEST_SEQ, TEST_TEMPLATE_SEQ
-from utils.utils import get_available_species
+from utils import get_available_species, package_form_data
 from services.protocol import create_gg_protocol
 
-main_blueprint = Blueprint("main", __name__)
+# Renamed blueprint variable for consistency:
+main = Blueprint("main", __name__)
 
 TESTING_MODE = True
 
-@main_blueprint.route("/")
+@main.route("/")
 def home():
-
     return render_template(
         "index.html",
         title="Home Page",
@@ -18,91 +19,40 @@ def home():
         testing_mode=TESTING_MODE
     )
 
-@main_blueprint.route("/get_species")
+@main.route("/get_species")
 def get_species():
     species = get_available_species()
-    options_html = "".join(f'<option value="{s}">{s}</option>' for s in species)
-    return options_html  # Return only the options, not the <select>
+    options_html = "".join(
+        f'<option value="{s}">{s}</option>' for s in species)
+    return options_html
 
-
-@main_blueprint.route("/get_sequence_inputs", methods=["GET"])
+@main.route("/get_sequence_inputs", methods=["GET"])
 def get_sequence_inputs():
-    num_sequences = int(request.args.get("numSequences", 1))  # Get the user-inputted number of sequences
-    inputs_html = ""
+    num_sequences = int(request.args.get("numSequences", 1))
+    # Optionally, if in testing mode, prepare test values:
+    test_primer_name = ["Test Primer 1"] if num_sequences > 0 else []
+    test_part_number = ["6"] if num_sequences > 0 else []
+    test_sequence = TEST_SEQ  # Replace with your test sequence if desired
+    
+    return render_template("sequence_input_tabs.html",
+                           num_sequences=num_sequences,
+                           test_primer_name=test_primer_name,
+                           test_part_number=test_part_number,
+                           test_sequence=test_sequence)
 
-    for i in range(num_sequences):
-        inputs_html += f"""
-        <div class="sequence-input-group">
-            <label for="sequence-{i}" class="form-label">Sequence {i+1}:</label>
-            <textarea id="sequence-{i}" name="sequences[]" class="form-control sequence-input"
-                      placeholder="Enter DNA sequence here..."></textarea>
-            <div id="charCount-sequence-{i}" class="char-count-label" style="display:none;"></div>
-        </div>
-        """
-
-    return inputs_html  # Return the dynamically generated input fields
-
-@main_blueprint.route('/validate_inputs', methods=['POST'])
+@main.route('/validate_inputs', methods=['POST'])
 def validate_inputs():
-    # Your request handling logic here...
-    # Get data from request.get_json()
-    # Process the data...
-    # Return a response (e.g., jsonify({'message': 'Success'}))
-    return "Placeholder"
+    data = request.get_json() or {}
+    # Implement your validation logic here.
+    # For example, if an error is found:
+    #    return jsonify({'error': 'Validation error message'}), 400
+    return jsonify({'message': 'Validation successful'})
 
-@main_blueprint.route('/generate_protocol', methods=['POST'])
+@main.route('/generate_protocol', methods=['POST'])
 def generate_protocol():
-    """
-    Generates the protocol for primer design based on the number of sequences provided in the request.
+    packaged_data, error_message = package_form_data(request)
+    if error_message:
+        return jsonify({'error': error_message}), 400
 
-    The function parses the input form data, which includes the number of sequences, species, Kozak sequence type,
-    and verbose mode status. It then iterates over each sequence, processes it, and generates the corresponding
-    primer design protocol.
-
-    Returns:
-        str: A string containing the generated protocol for primer design or an error message.
-    """
-
-    if request.method == 'POST':
-        try:
-            data = request.form.to_dict(flat=False)  # Parse form data to dictionary
-            print(f'data: {data}')
-            # Extract the number of sequences and initialize the response
-            num_sequences = int(data.get('numSequences', [0])[0])
-            if num_sequences == 0:
-                return "No sequences provided.", 400
-
-            kozak = data.get('kozak', [''])[0]
-            species = data.get('species', [''])[0]
-            verbose = 'verbose_mode' in data
-
-            print(f'kozak: {kozak}, species: {species}, verbose: {verbose}')
-
-            response = ""
-            for i in range(num_sequences):
-                seq_data = data.get(f'sequences[{i}][]', [])
-                if len(seq_data) < 3:
-                    return f"Incomplete data for sequence {i+1}.", 400
-                
-                primer_name = seq_data[0]
-                mtk_part = seq_data[1]
-                sequence = seq_data[2]
-
-            #     # Process each sequence
-            #     protocol = process_sequence(
-            #         primer_name,
-            #         mtk_part,
-            #         sequence,
-            #         species,
-            #         kozak,
-            #         verbose=verbose
-            #     )
-                print(f"Processing sequence {i+1}...\n")
-                # response += f"Protocol for sequence {i+1}:\n{protocol}\n\n"
-
-            return response, 200
-        except Exception as e:
-            print(f"Error processing request: {e}")
-            return "An error occurred while processing the request.", 500
-
-    return "Invalid request method.", 405
+    protocol = create_gg_protocol(packaged_data)
+    return jsonify({'protocol': protocol})

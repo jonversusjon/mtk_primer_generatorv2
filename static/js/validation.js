@@ -1,5 +1,34 @@
 // validation.js
 
+// In validation.js
+function validateForm() {
+    // ... (your validation logic) ...
+    if (isValid) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+// In formSubmission.js
+form.addEventListener("submit", function (event) {
+    event.preventDefault();
+
+    // Check if form is valid before submitting
+    if (validateForm()) {
+        const packagedData = collectFormData();
+        console.log('Packaged Data:', packagedData);
+
+        // Trigger HTMX post
+        htmx.trigger("#primer-form", "htmx:configRequest", {
+            request: {
+                body: packagedData,
+                method: "POST",
+            }
+        });
+    }
+});
+
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('primer-form');
 
@@ -92,3 +121,75 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("primer-form");
+    const runDesignPrimerBtn = document.getElementById("runDesignPrimerBtn");
+    const numSequencesInput = document.getElementById("numSequences");
+  
+    function validateForm() {
+      // Perform your validation checks here
+      let isValid = true;
+  
+      // Example validation: Check if numSequences is within a valid range
+      const numSequences = parseInt(numSequencesInput.value);
+      if (isNaN(numSequences) || numSequences < 1 || numSequences > 10) {
+        isValid = false;
+      }
+  
+      // Example validation: Check if required fields in each sequence are filled
+      for (let i = 0; i < numSequences; i++) {
+        const primerName = document.getElementById(`primerName${i}`).value;
+        const mtkPart = document.getElementById(`mtkPart${i}`).value;
+        const sequence = document.querySelectorAll('.sequence-pane')[i].querySelector('.dynamic-sequence-input').value
+        if (!primerName || !mtkPart || !sequence) {
+          isValid = false;
+        }
+      }
+  
+      // Enable/disable button based on validation result
+      runDesignPrimerBtn.disabled = !isValid;
+    }
+  
+    function collectFormData() {
+      const formData = new FormData(form);
+      const packagedData = {
+        numSequences: parseInt(formData.get('numSequences')),
+        kozak: formData.get('kozak'),
+        species: formData.get('species'),
+        verbose: formData.has('verbose_mode'), // Checkbox
+        sequences: [],
+      };
+  
+      for (let i = 0; i < packagedData.numSequences; i++) {
+        packagedData.sequences.push({
+          primerName: formData.get(`sequences[${i}][primerName]`),
+          mtkPart: formData.get(`sequences[${i}][mtkPart]`),
+          sequence: formData.get(`sequences[${i}][sequence]`),
+        });
+      }
+  
+      return packagedData;
+    }
+  
+    // Attach event listeners to form inputs for real-time validation
+    form.addEventListener("input", validateForm);
+  
+    // Prevent default form submission and use HTMX to send JSON
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+  
+      const packagedData = collectFormData();
+      console.log('Packaged Data:', packagedData);
+  
+      // Trigger HTMX post with JSON data
+      htmx.trigger("#primer-form", "htmx:configRequest", {
+        request: {
+          body: packagedData,
+          method: "POST",
+        }
+      });
+    });
+  
+    validateForm(); // Initial validation on page load
+  });

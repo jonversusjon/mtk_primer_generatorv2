@@ -8,7 +8,6 @@ from .sequence_prep import (
 from .primer_design import generate_GG_edge_primers, get_all_possible_internal_primers
 from .primer_select import select_best_internal_primers, format_primers_for_output
 from .mutation import *
-# from utils.utils import plot_primers_for_mutation_site, rank_and_print_mutation_sets
 
 
 def create_gg_protocol(
