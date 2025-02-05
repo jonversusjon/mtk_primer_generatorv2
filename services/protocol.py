@@ -8,14 +8,14 @@ from .sequence_prep import (
 from .primer_design import generate_GG_edge_primers, get_all_possible_internal_primers
 from .primer_select import select_best_internal_primers, format_primers_for_output
 from .mutation import *
+from .utils import get_mtk_partend_sequences, get_codon_usage_dict
 
 
 def create_gg_protocol(
     seq: List[str],
-    part_end_dict: Dict[str, str],
-    species_codon_usage: Dict[str, Dict[str, float]],
     part_num_left: List[str],
     part_num_right: List[str],
+    codon_usage_dict: Dict[str, Dict[str, float]],
     max_mutations: int,
     primer_name: Optional[List[str]] = None,
     template_seq: Optional[str] = None,
@@ -27,19 +27,20 @@ def create_gg_protocol(
 
     print("Starting Golden Gate protocol creation...")
     primer_data = []
-
+    
     for i, single_seq in enumerate(seq):
         single_seq = preprocess_sequence(single_seq)
         sites_to_mutate = find_and_summarize_sites(single_seq, i, verbose)
-        
-        num_sites_to_mutate = sum(len(sites) for sites in sites_to_mutate.values())
+
+        num_sites_to_mutate = sum(len(sites)
+                                  for sites in sites_to_mutate.values())
         print(f"Number of sites to mutate: {num_sites_to_mutate}")
-        
+
         # Step 1: Gather mutation options sorted by codon usage frequency
         mutation_options = gather_mutation_options(
             seq=single_seq,
             sites_to_mutate=sites_to_mutate,
-            codon_usage_dict=species_codon_usage,
+            codon_usage_dict=codon_usage_dict,
             spacer="GAA",
             bsmbi_site="CGTCTC",
             min_tm=57,
@@ -48,11 +49,13 @@ def create_gg_protocol(
         )
         # rank_and_print_mutation_sets(mutation_options, verbose)
         print(f'mutation_options: {mutation_options}')
+
         # Step 2: Iterate while mutation options exist
         selected_mutations = []
         while mutation_options and not selected_mutations:
-            selected_mutations = find_best_mutation_set(mutation_options, verbose)
-        
+            selected_mutations = find_best_mutation_set(
+                mutation_options, verbose)
+
         # Step 3: Proceed with primer design
         if selected_mutations:
             primer_sets = get_all_possible_internal_primers(
@@ -64,26 +67,32 @@ def create_gg_protocol(
                 primer_name=primer_name[i],
                 verbose=verbose
             )
-            internal_primers = select_best_internal_primers(primer_sets, template_seq)
-            primer_data += format_primers_for_output(internal_primers, primer_name[i])
+            internal_primers = select_best_internal_primers(
+                primer_sets, template_seq)
+            primer_data += format_primers_for_output(
+                internal_primers, primer_name[i])
 
         else:
-            print(f"❌ No valid mutation subset found for sequence {i + 1}. Skipping primer design.")
+            print(
+                f"❌ No valid mutation subset found for sequence {i + 1}. Skipping primer design.")
 
        # Step 4: Design edge primers
+        mtk_partend_sequences = get_mtk_partend_sequences()
         primer_data += get_edge_primers(
-            single_seq, i, part_end_dict, part_num_left, part_num_right, kozak, primer_name
+            single_seq, i, mtk_partend_sequences, part_num_left, part_num_right, kozak, primer_name
         )
 
         # Save and return results
         save_primers_to_tsv(primer_data, output_tsv_path)
-        
+
         return primer_data
+
 
 def preprocess_sequence(sequence: str) -> Seq:
     """Converts sequence to uppercase and adjusts for frame and codons."""
     sequence = Seq(sequence.upper())
     return adjust_sequence_for_frame_and_codons(sequence)
+
 
 def find_and_summarize_sites(sequence: Seq, index: int, verbose: bool) -> Dict:
     """Finds and summarizes restriction sites needing mutation."""
@@ -112,7 +121,7 @@ def get_edge_primers(
     )
     primer_data.append([left_name, left_primer, f"Amplicon_{index + 1}"])
     primer_data.append([right_name, right_primer, f"Amplicon_{index + 1}"])
-    
+
     return primer_data
 
 
@@ -129,5 +138,3 @@ def save_primers_to_tsv(primer_data: List[List[str]], output_tsv_path: str):
                 tsv_file.write("\t".join(map(str, row)) + "\n")
     except IOError as e:
         print(f"Error writing to file {output_tsv_path}: {e}")
-
-

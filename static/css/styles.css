@@ -1,4 +1,4 @@
-/* General Body Styles */
+/* --- General Styles --- */
 body {
   width: 95%;
   max-width: 800px;
@@ -7,122 +7,24 @@ body {
   padding: 20px;
   background-color: #f8f9fa;
   color: #000;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.dark-mode-toggle {
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  z-index: 100;
-}
-
-.dark-mode-btn {
-  display: flex; /* Use flexbox for alignment */
-  align-items: center; /* Vertically center content */
-  gap: 5px; /* Add some space between icon and text */
-}
-
-/* Media Query for smaller screens */
-@media (max-width: 1100px) {
-  .dark-mode-btn .button-text {
-    display: none; /* Hide the text */
-  }
-}
-
-/* Dark Mode */
-.dark-mode {
-  background-color: #121212;
-  color: #fff;
-}
-
-.dark-mode select,
-.dark-mode input,
-.dark-mode textarea,
-.dark-mode button {
-  background-color: #222;
-  color: white;
-  border: 1px solid #555;
-}
-
-.dark-mode button:hover {
-  background-color: #444;
-}
-
-.dark-mode .sequence-content {
-  background: #1e1e1e;
-  color: #f1f1f1;
-  box-shadow: 2px 2px 10px rgba(255, 255, 255, 0.1);
-}
-
-.dark-mode .dynamic-sequence-input {
-  background: #2c2c2c;
-  color: #ffffff;
-  border: 1px solid #555;
-}
-
-/* Main Form Container */
-#primer-form {
-  margin: 20px;
-  border-radius: 12px;
-  background-color: #f3ffe6;
-  box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.3);
-}
-
-.dark-mode #primer-form {
-  background-color: #181818;
-}
-
-/* Dynamic Form Row */
-.dynamic-form {
-  margin: 12px 12px 0px 12px;
-}
-
-/* Instruction Text */
-.instruction-text-container {
-  padding: 15px 15px 15px 0px;
-}
-
-.instruction-text {
-  font-size: 0.8em;
-  color: #666;
-  margin: 1em;
-  line-height: 1.25em;
-}
-
-.dark-mode .instruction-text {
-  color: #b0b3b8;
-}
-
-/* Headings */
 h1 {
   text-align: center;
   color: #333;
 }
 
-h2,
-h3 {
-  margin-block-start: 0;
-  margin-block-end: 0;
+h2, h3, h4, h5, h6 {
+  margin-block: 0; /* Simplified margin */
 }
 
-.dark-mode h1,
-.dark-mode h2,
-.dark-mode h3,
-.dark-mode h4,
-.dark-mode h5,
-.dark-mode h6 {
-  color: #fff;
-}
-
-/* Form Labels */
 label {
   font-weight: bold;
   display: block;
   margin-top: 6px;
 }
 
-/* Form Inputs (Textareas, Inputs, Selects) */
 textarea,
 input,
 select {
@@ -134,12 +36,11 @@ select {
   font-size: 16px;
 }
 
-/* Override textarea height */
 textarea {
   height: 100px;
+  resize: vertical; /* Allow vertical resizing */
 }
 
-/* Buttons */
 button {
   width: 100%;
   padding: 10px;
@@ -150,7 +51,7 @@ button {
   cursor: pointer;
 }
 
-/* Button Types */
+/* --- Buttons --- */
 .btn-primary {
   background-color: #007bff;
   color: white;
@@ -169,6 +70,38 @@ button {
   background-color: #e68900;
 }
 
+/* --- Dark Mode --- */
+.dark-mode {
+  background-color: #121212;
+  color: #fff;
+}
+
+.dark-mode h1,
+.dark-mode h2,
+.dark-mode h3,
+.dark-mode h4,
+.dark-mode h5,
+.dark-mode h6 {
+  color: #fff;
+}
+
+.dark-mode label {
+  color: #fff;
+}
+
+.dark-mode select,
+.dark-mode input,
+.dark-mode textarea,
+.dark-mode button {
+  background-color: #222;
+  color: white;
+  border: 1px solid #555;
+}
+
+.dark-mode button:hover {
+  background-color: #444;
+}
+
 .dark-mode .btn-primary {
   background-color: #48A9FF;
 }
@@ -177,74 +110,83 @@ button {
   background-color: #FFB84D;
 }
 
-/* Results Section */
-#results {
-  background-color: white;
-  padding: 15px;
-  border-radius: 5px;
-  border: 1px solid #ddd;
-  margin-top: 20px;
+/* --- Dark Mode Toggle --- */
+.dark-mode-toggle {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 100;
 }
 
-/* Responsive Design */
-@media screen and (max-width: 600px) {
-  body {
-    max-width: 100%;
-    padding: 10px;
-  }
-
-  button,
-  textarea,
-  input,
-  select {
-    font-size: 14px;
-  }
-}
-
-/* Dark Mode Toggle Button */
 .dark-mode-btn {
-  top: 0;
-  left: 0;
-  /* background: none;  Removed to simplify */
+  display: flex;
+  align-items: center;
+  gap: 5px;
   border: none;
-  font-size: 12px;
+  font-size: 14px;
   cursor: pointer;
-  padding: 5px;
-  opacity: 0.6;
+  padding: 8px 12px;
+  opacity: 0.8;
   transition: opacity 0.3s ease;
-  width: 80px;
+  white-space: nowrap;
+  background: none;
+  color: inherit;
 }
 
 .dark-mode-btn:hover {
   opacity: 1;
 }
 
-/* Checkbox with Label Container */
-.flex-container {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  width: 250px;
-  gap: 4px;
+/* Responsive Toggle Button (Smaller Screens) */
+@media (max-width: 1000px) {
+  .dark-mode-btn {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .dark-mode-btn .button-text {
+    display: none;
+  }
+
+  .dark-mode-btn .moon-icon {
+    font-size: 14px;
+  }
 }
 
-.flex-container input[type="checkbox"] {
-  margin-top: 8px;
-  /* Adjust as needed */
+/* --- Form Styling --- */
+#primer-form {
+  margin: 20px;
+  border-radius: 12px;
+  background-color: #f3ffe6;
+  box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.3);
 }
 
-/* Verbose Mode Checkbox */
-#verbose_mode_container {
-  margin-left: 0;
-  transform: scale(0.6);
+.dark-mode #primer-form {
+  background-color: #181818;
+  box-shadow: 5px 5px 10px rgba(255, 255, 255, 0.1);
 }
 
-#verbose_mode {
-  width: 30px;
-  margin-left: 12px;
+.dynamic-form {
+  margin: 12px 12px 0px 12px;
 }
 
-/* Form Row and Group */
+.instruction-text-container {
+  padding: 15px 15px 15px 0px;
+}
+
+.instruction-text {
+  font-size: 0.8em;
+  color: #666;
+  margin: 1em;
+  line-height: 1.25em;
+}
+
+.dark-mode .instruction-text {
+  color: #b0b3b8;
+}
+
 .form-row {
   display: flex;
   width: 100%;
@@ -252,7 +194,7 @@ button {
 }
 
 .form-group {
-  margin-bottom: 0 !important;
+  margin-bottom: 0 !important; /* Override potential Bootstrap styles */
 }
 
 .sub-box {
@@ -261,7 +203,7 @@ button {
   border-radius: 0.25rem;
 }
 
-/* Left-aligned Button Container */
+/* --- Form Element Alignment --- */
 .left-buttons {
   display: flex;
   flex-direction: column;
@@ -270,19 +212,17 @@ button {
   margin: 0px 12px;
 }
 
-/* Clear Form Button Alignment */
 #clearForm {
   align-self: flex-start;
   width: 250px;
 }
 
-/* Header Container (Static Inputs) */
+/* --- Header (Static Inputs) --- */
 .header-container {
   padding: 15px;
   border-bottom: 1px solid #ddd;
 }
 
-/* Side-by-Side Dropdowns */
 .dropdown-container {
   display: flex;
   justify-content: space-between;
@@ -294,6 +234,7 @@ button {
   flex: 1;
   display: flex;
   gap: 12px;
+  align-items: center; /* Vertically align label and select */
 }
 
 .dropdown-item select {
@@ -302,12 +243,9 @@ button {
 }
 
 .dropdown-item label {
-  margin-top: 0;
-  margin-bottom: 0;
-  align-self: center;
+  margin: 0; /* Remove default label margins */
 }
 
-/* Button Container */
 .button-container {
   display: flex;
   justify-content: space-between;
@@ -316,7 +254,6 @@ button {
   margin-top: 20px;
 }
 
-/* Number of Sequences Container */
 .num-sequences-container {
   display: flex;
   align-items: center;
@@ -328,34 +265,26 @@ button {
   padding: 6px;
 }
 
-/* Form Labels and Inputs (Smaller Font Size) */
+/* --- Smaller Font Size for Some Inputs --- */
 .form-label {
-  margin-top: 0;
-  margin-bottom: 0;
+  margin: 0;
   align-self: center;
   font-size: 0.9em;
 }
 
 .form-select,
 .form-control {
-  width: 100%;
-  padding: 10px;
-  margin-top: 5px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 0.9em;
+  font-size: 0.9em; /* Smaller font size */
 }
 
-/* Sequence Input Textarea */
+.form-control-small {
+  max-width: 80px;
+}
+
+/* --- Sequence Input --- */
 .sequence-input {
-  width: 100%;
-  max-width: 100%;
   min-width: 100%;
   overflow-wrap: break-word;
-  padding: 10px;
-  margin-top: 5px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
   font-size: 0.8em;
   color: #666;
 }
@@ -364,23 +293,43 @@ button {
   color: #b0b3b8;
 }
 
-/* Template and Domestication Containers */
+/* --- Template and Domestication --- */
 .template-container,
 .domestication-container {
   padding: 32px;
   border-bottom: 1px solid #ddd;
 }
 
-/* Bootstrap Tabs (Removed - Replaced with Custom Styling) */
-
-/* Template Sequence Textarea */
 #templateSequence {
   width: 98%;
   height: 100px;
   resize: vertical;
 }
 
-/* Modern Tab Styling */
+/* --- Checkbox Styling --- */
+.flex-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 250px;
+  gap: 4px;
+}
+
+.flex-container input[type="checkbox"] {
+  margin-top: 8px;
+}
+
+#verbose_mode_container {
+  margin-left: 0;
+  transform: scale(0.6);
+}
+
+#verbose_mode {
+  width: 30px;
+  margin-left: 12px;
+}
+
+/* --- Custom Tab Styling --- */
 .breakout-holder {
   width: 100%;
   margin-top: 10px;
@@ -434,6 +383,7 @@ button {
   color: white;
 }
 
+/* Side Shadow Effect for Tabs */
 .tab-button::before,
 .tab-button::after,
 .sequence-tab::before,
@@ -476,6 +426,7 @@ button {
   display: none;
 }
 
+/* Tab Content */
 .tab-content,
 .sequence-content {
   border: 1px solid #ccc;
@@ -496,7 +447,7 @@ button {
   display: block;
 }
 
-/* Sequence Tab Styling */
+/* --- Sequence Tab Specific --- */
 .sequence-tabs {
   display: flex;
   margin-bottom: -1px;
@@ -505,9 +456,7 @@ button {
   align-items: flex-end;
 }
 
-/* Sequence Form Elements */
 .sequence-pane .form-row {
-  display: flex;
   align-items: center;
   margin-bottom: 10px;
 }
@@ -530,12 +479,10 @@ button {
   flex: 0.75;
 }
 
-/* Upload Button */
 #upload {
   width: 75%;
 }
 
-/* Character Count Label */
 .char-count-label {
   font-size: 0.8em;
   color: #333;
@@ -551,21 +498,21 @@ button {
 }
 
 .sequence-content {
-  width: 100%;
   max-width: 800px;
-  /* Optional: Adjust as needed */
   margin: 10px auto;
-  padding: 15px;
-  border-radius: 8px;
   background: #f9f9f9;
   box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+}
+
+.dark-mode .sequence-content {
+  background: #1e1e1e;
+  color: #f1f1f1;
+  box-shadow: 2px 2px 10px rgba(255, 255, 255, 0.1);
 }
 
 .form-row-top {
   display: flex;
   flex-wrap: wrap;
-  /* Allows wrapping on smaller screens */
   justify-content: space-between;
   gap: 10px;
   width: 100%;
@@ -574,9 +521,7 @@ button {
 .input-group {
   display: flex;
   flex-direction: column;
-  /* Ensures labels stay with their inputs */
   flex: 1;
-  /* Allows dynamic resizing */
   min-width: 150px;
 }
 
@@ -589,13 +534,139 @@ button {
   .input-group label {
     margin-right: 8px;
     white-space: nowrap;
-    /* Prevents wrapping of labels */
   }
 }
 
 .dynamic-sequence-input {
-  width: 100%;
-  max-width: 100%;
   min-height: 80px;
-  overflow-wrap: break-word;
+}
+
+.dark-mode .dynamic-sequence-input {
+  background: #2c2c2c;
+  color: #ffffff;
+  border: 1px solid #555;
+}
+
+/* --- Input Validation --- */
+.validation-fail {
+  border: 2px solid red !important;
+  background-color: rgba(255, 0, 0, 0.1);
+  animation: shake 0.3s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-5px); }
+}
+
+.dark-mode .validation-fail {
+  border: 2px solid #ff4d4d !important;
+  background-color: rgba(255, 77, 77, 0.2);
+}
+
+/* --- Info Tooltip --- */
+.info-icon-container {
+  display: inline-block;
+  position: relative;
+}
+
+.info-tooltip {
+  position: absolute;
+  bottom: 125%; /* Position above by default */
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.95);
+  color: #222;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 250px;
+  text-align: center;
+  display: none;
+  z-index: 10;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  white-space: normal; /* Allow text wrapping */
+  pointer-events: none; /* Makes tooltip not interactable */
+}
+
+/* Arrow for the tooltip */
+.info-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%; /* At the bottom of the tooltip */
+  left: 50%;
+  margin-left: -5px; /* Center the arrow */
+  border-width: 5px;
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.95) transparent transparent transparent; /* Match background */
+}
+
+/* Dark Mode Tooltip Arrow */
+.dark-mode .info-tooltip::after {
+  border-color: rgba(50, 50, 50, 0.95) transparent transparent transparent; /* Match dark background */
+}
+
+/* Dark Mode Tooltip */
+.dark-mode .info-tooltip {
+  background: rgba(50, 50, 50, 0.95);
+  color: #f8f8f8;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Show tooltip on hover or focus */
+.info-icon-container:hover .info-tooltip,
+.info-icon-container:focus-within .info-tooltip {
+  display: block;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* JavaScript to flip the tooltip if it goes off-screen */
+.info-icon-container {
+  overflow: visible; /* Allow tooltip to go beyond its container */
+}
+
+/* Responsive: Adjust for small screens */
+@media (max-width: 600px) {
+  .info-tooltip {
+    width: 200px;
+    font-size: 12px;
+    padding: 8px;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* --- Results Section --- */
+#results {
+  background-color: white;
+  padding: 15px;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+  margin-top: 20px;
+}
+
+/* --- Responsive Design --- */
+@media screen and (max-width: 600px) {
+  body {
+    max-width: 100%;
+    padding: 10px;
+  }
+
+  button,
+  textarea,
+  input,
+  select {
+    font-size: 14px;
+  }
 }

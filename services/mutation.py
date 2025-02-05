@@ -1,90 +1,85 @@
 from Bio.Seq import Seq
 from typing import Dict, List, Optional, Tuple
-import logging
-from utils import gc_content
+from .utils import gc_content
 from .primer_select import is_overhang_compatible
+from .utils import translate_codon
 
 def find_alternative_codons(codon, codon_usage_dict, max_mutations=1, verbose=False):
     """
-    Finds alternative codons for the amino acid encoded by the given codon,
-    allowing up to a user-defined maximum number of mutations.
-
-    Args:
-        codon (str): The DNA codon to exclude (e.g., 'GAG').
-        codon_usage_dict (dict): Codon usage dictionary (amino acids as keys).
-        max_mutations (int): Maximum number of base changes allowed per codon (default: 1 for point mutations).
-        verbose (bool): Whether to print debug information.
-
-    Returns:
-        List[Dict[str, float]]: Sorted list of dictionaries with alternative 
-        codons and their usage frequencies, filtered by mutation count.
+    Finds alternative codons for the amino acid encoded by the given codon.
+    Ensures DNA-to-RNA conversion before lookup.
     """
-    # Ensure the codon is in DNA format
-    codon_dna = codon.replace('U', 'T')  # Handle RNA input
-    codon_rna = codon_dna.replace('T', 'U')  # Convert to RNA
+    print(f"find_alternative_codons: {codon}, {codon_usage_dict}, {max_mutations}, {verbose}")  # Debugging
+    # Convert codon to RNA format before lookup
+    codon_rna = codon.replace('T', 'U')  
 
-    # Determine the amino acid encoded by the codon
-    amino_acid = str(Seq(codon_rna).translate())
+    # Translate codon using standard genetic code
+    amino_acid = str(Seq(codon_rna).translate(table=1))
+
     if verbose:
-        print(f"Original Codon: {codon_dna}, Amino Acid: {amino_acid}")
+        print(f"🔍 Checking codon: {codon} (RNA: {codon_rna}), Amino Acid: {amino_acid}")
 
-    # Validate the amino acid in the codon usage dictionary
     if amino_acid not in codon_usage_dict:
-        if verbose:
-            print(f"Amino acid {amino_acid} not found in codon usage dictionary.")
+        print(f"⚠️ Amino acid {amino_acid} not found in codon usage dictionary.")
         return []
 
-    # Find and filter alternative codons by the allowed number of mutations
-    def mutation_count(codon1, codon2):
-        """Counts the number of base differences between two codons."""
-        return sum(1 for a, b in zip(codon1, codon2) if a != b)
-
+    # Find alternative codons
     alternative_codons = [
-        {"codon": alt_codon.replace('U', 'T'), "frequency": usage}
+        {"codon": alt_codon.replace('U', 'T'), "frequency": usage}  # Convert back to DNA
         for alt_codon, usage in codon_usage_dict[amino_acid].items()
-        if alt_codon.replace('U', 'T') != codon_dna and mutation_count(codon_dna, alt_codon.replace('U', 'T')) <= max_mutations
+        if alt_codon != codon_rna  # Ensure original codon is excluded
     ]
 
-    # Sort alternative codons by usage frequency
     sorted_codons = sorted(alternative_codons, key=lambda x: x["frequency"], reverse=True)
 
     if verbose:
-        print(f"Allowed Codons for {amino_acid} with ≤{max_mutations} mutations: {sorted_codons}")
+        print(f"✅ Alternative codons for {amino_acid}: {sorted_codons}")
 
     return sorted_codons
 
 
-def find_codon_replacements_in_range(seq, start_idx, end_idx, codon_usage_dict, max_mutations, verbose=False):
-    """
-    Finds alternative codons for codons in a specified sequence range.
+def find_codon_replacements_in_range(seq, site_start, site_end, codon_usage_dict, max_mutations, verbose=False):
+    print(f"\n🔎 Searching for codon replacements in range {site_start}-{site_end}")  
 
-    Args:
-        seq (str): The DNA sequence to analyze.
-        start_idx (int): Start index of the range.
-        end_idx (int): End index of the range.
-        codon_usage_dict (dict): Codon usage dictionary.
-        verbose (bool): Whether to print debug information.
+    replacements = []
+    seq_str = str(seq)  
 
-    Returns:
-        List[Dict]: List of proposed codon replacements.
-    """
-    proposed_replacements = []
+    for i in range(site_start, site_end, 3):  
+        codon = seq_str[i:i + 3]
+        if len(codon) != 3:
+            print(f"⚠️ Skipping incomplete codon {codon} at {i}")
+            continue  
 
-    for i in range(start_idx, min(end_idx, len(seq) - 2), 3):
-        codon = seq[i:i + 3]
-        alternative_codons = find_alternative_codons(codon, codon_usage_dict, max_mutations=max_mutations, verbose=verbose)
+        # Convert codon to RNA format before lookup
+        codon_rna = codon.replace('T', 'U')  
 
-        if alternative_codons:
-            proposed_replacements.append({
-                "original_codon": codon,
-                "position": i,
-                "alternative_codons": alternative_codons,
-            })
+        # Translate codon to amino acid (force uppercase for dictionary lookup)
+        aa = str(Seq(codon_rna).translate(table=1)).upper()
+        print(f"🔍 Looking for codon: {codon} (RNA: {codon_rna}) -> Amino Acid: {aa}")  
+        print(f"🛠 Codon usage dict: {codon_usage_dict}")  # Debugging
+        if aa not in codon_usage_dict:
+            print(f"⚠️ No codon usage data for amino acid {aa} (codon {codon})")
+            print(f"🛠 Available amino acids in dict: {list(codon_usage_dict.keys())}")  # Debugging
+            continue
 
-    if verbose:
-        print(f"Proposed codon replacements: {proposed_replacements}")
+        # Get alternative codons
+        alt_codons = find_alternative_codons(codon, codon_usage_dict, max_mutations, verbose)
 
-    return proposed_replacements
+        if not alt_codons:
+            print(f"⚠️ No alternative codons found for {codon} ({aa}) at {i}")
+            continue
+
+        replacement_entry = {
+            "position": i,
+            "original_codon": codon,
+            "alternative_codons": alt_codons
+        }
+
+        replacements.append(replacement_entry)
+        print(f"✅ Replacements for {codon} at {i}: {replacement_entry}")  
+
+    return replacements
+
 
 
 def gather_mutation_options(
@@ -101,6 +96,11 @@ def gather_mutation_options(
     Designs primers with codon optimization, constraint-based design, and backtracking.
     """
 
+    print("Gathering mutation options...")  # Debugging Step
+    print(f"codon_usage_dict: {codon_usage_dict}")  # Debugging Step
+    print(f"sites_to_mutate: {sites_to_mutate}")  # Debugging Step
+    
+    
     sites_to_mutate_list = []
     for enzyme, sites in sites_to_mutate.items():
         for site in sites:
@@ -112,23 +112,47 @@ def gather_mutation_options(
             site_end = site_start + len(site_sequence)
             sites_to_mutate_list.append((site_start, site_end, site_sequence))
 
+    print(f"Sites to mutate list: {sites_to_mutate_list}")  # Debugging Step
+
+    if not sites_to_mutate_list:
+        print("⚠️ No sites to mutate found!")  # Debugging Step
+        return []
+
     sites_to_mutate_list.sort(key=lambda x: x[0])
 
     # Step 1: Gather all mutation options
     mutation_sets = []
     for site_start, site_end, site_sequence in sites_to_mutate_list:
+        print(f"Processing site: {site_start}-{site_end} {site_sequence}")  # Debugging Step
+
         mutations = get_mutations_for_site(
             seq, site_start, site_end, site_sequence, codon_usage_dict, verbose=verbose
         )
-    
+
+        print(f"Mutations found: {mutations}")  # Debugging Step
+
+        # If mutations are empty, this site has no viable changes
+        if not mutations:
+            print(f"⚠️ No viable mutations for site {site_start}-{site_end}")  # Debugging Step
+            continue
+
         # Ensure codon usage frequency is a number before sorting
         for mutation in mutations:
+            if "codon_usage_frequency" not in mutation:
+                print(f"⚠️ Mutation missing 'codon_usage_frequency': {mutation}")  # Debugging Step
+                continue
             mutation["codon_usage_frequency"] = float(mutation["codon_usage_frequency"])
-    
+
         mutations.sort(key=lambda x: x["codon_usage_frequency"], reverse=True)
         mutation_sets.append(mutations)
 
+    print(f"Final mutation sets: {mutation_sets}")  # Debugging Step
+
+    if not mutation_sets:
+        print("⚠️ All mutation sets are empty!")  # Debugging Step
+
     return mutation_sets
+
 
 
 def find_best_mutation_set(mutation_options, verbose=False):
@@ -181,16 +205,23 @@ def get_sticky_end_options(seq, mutation_index, sticky_end_length=4):
 
 def get_mutations_for_site(seq, site_start, site_end, site_sequence, codon_usage_dict, max_mutations=1, verbose=False):
     """
-    Finds and prioritizes mutations within a restriction site based on codon usage.
-    Also generates potential sticky end cut sites based on valid mutations.
+    Identifies mutations that disrupt restriction sites while optimizing codon usage.
     """
+    print(f"\n🔍 Checking site {site_start}-{site_end} for sequence: {site_sequence}")  
+    print(f"get_mutations_for_site codon_usage_dict: {codon_usage_dict}")  # Debugging
     mutations = []
-    
+
     # Use find_codon_replacements_in_range to get codon-level replacements
     codon_replacements = find_codon_replacements_in_range(
-        seq, site_start, site_end, codon_usage_dict, max_mutations
+        seq, site_start, site_end, codon_usage_dict, max_mutations, verbose
     )
-    
+
+    print(f"🧬 Codon replacements found: {codon_replacements}")  
+
+    if not codon_replacements:
+        print("⚠️ No codon replacements available for this site.")  
+        return []
+
     for codon_data in codon_replacements:
         codon_start = codon_data["position"]
         original_codon = codon_data["original_codon"]
@@ -198,53 +229,49 @@ def get_mutations_for_site(seq, site_start, site_end, site_sequence, codon_usage
         for alt_codon_data in codon_data["alternative_codons"]:
             new_codon = alt_codon_data["codon"]
 
-            # Calculate individual nucleotide changes
             for i in range(3):
                 if original_codon[i] != new_codon[i]:
                     nucleotide_index = codon_start + i
                     original_nucleotide = original_codon[i]
                     new_nucleotide = new_codon[i]
 
-                    # Check if this mutation disrupts the restriction site
+                    # Apply mutation
                     mutated_seq = seq[:nucleotide_index] + new_nucleotide + seq[nucleotide_index + 1:]
                     mutated_site_region = mutated_seq[site_start:site_end]
+
                     if site_sequence in mutated_site_region:
-                        print(f"⚠️ Rejected mutation {new_codon} at {codon_start} because {site_sequence} is still present at {site_start}.")
+                        print(f"⚠️ Rejected mutation {new_codon} at {codon_start} because {site_sequence} is still present.")
                         continue
 
-                    # Get potential sticky end overhangs based on this mutation
+                    # Get sticky ends
                     sticky_end_candidates = get_sticky_end_options(seq, nucleotide_index)
 
-                    # Ensure sticky_end_candidates is a **flat list**
-                    sticky_end_candidates = [se for se in sticky_end_candidates if isinstance(se, dict)]
-                    
-                    # Filter sticky ends based on GC content and uniqueness
+                    print(f"🔬 Sticky end candidates for {new_nucleotide} at {nucleotide_index}: {sticky_end_candidates}")  
+
+                    # Validate sticky ends
                     valid_sticky_ends = [
                         se for se in sticky_end_candidates
-                        if 0.25 <= (sum(1 for nt in se["sticky_end"] if nt in "GC") / len(se["sticky_end"])) <= 0.75
+                        if 0.25 <= gc_content(se["sticky_end"]) <= 0.75
                     ]
 
                     if not valid_sticky_ends:
-                        continue  # Skip if no valid sticky ends
+                        print(f"⚠️ No valid sticky ends for mutation {new_codon} at {nucleotide_index}.")  
+                        continue
 
-                    # Append mutation as a **flat dictionary**
-                    mutations.append({
+                    # Store mutation
+                    mutation_entry = {
                         "index": nucleotide_index,
                         "original_nucleotide": original_nucleotide,
                         "new_nucleotide": new_nucleotide,
                         "original_codon": original_codon,
                         "new_codon": new_codon,
                         "codon_usage_frequency": alt_codon_data["frequency"],
-                        "sticky_end_options": valid_sticky_ends,  # Store potential sticky ends
-                    })
+                        "sticky_end_options": valid_sticky_ends  
+                    }
+                    mutations.append(mutation_entry)
+                    print(f"✅ Accepted mutation: {mutation_entry}")  
 
-    # 🛠 Flatten any nested lists (prevention)
-    mutations = [m for m in mutations if isinstance(m, dict)]
-
-    # Sort mutations by codon usage frequency (descending)
-    mutations.sort(key=lambda x: x["codon_usage_frequency"], reverse=True)
-
-    return mutations
+    return sorted(mutations, key=lambda x: x["codon_usage_frequency"], reverse=True)
 
 
 def find_compatible_mutation_subsets(mutation_sets, verbose=False):
