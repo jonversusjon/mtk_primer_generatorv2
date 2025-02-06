@@ -2,14 +2,15 @@
 from Bio.Seq import Seq
 from typing import Dict, List, Optional, Tuple
 from .base import GoldenGateDesigner
-from .utils import gc_content
-from .primer_select import is_overhang_compatible
-from .utils import translate_codon
+from .utils import GoldenGateUtils
+from .primer_select import PrimerSelector
 
 
-class MutationHandler(GoldenGateDesigner):
+class MutationAnalyzer(GoldenGateDesigner):
     def __init__(self, verbose: bool = False):
         super().__init__(verbose=verbose)
+        self.utils = GoldenGateUtils()
+        self.primer_selector = PrimerSelector()
         self.state = {
             'current_codon': '',
             'current_position': 0,
@@ -102,7 +103,7 @@ class MutationHandler(GoldenGateDesigner):
 
                 sticky_end = seq[cut_site : cut_site + sticky_end_length]
 
-                if 0.25 <= gc_content(sticky_end) <= 0.75:
+                if 0.25 <= self.utils.gc_content(sticky_end) <= 0.75:
                     sticky_end_options.append({
                         "sticky_end": sticky_end,
                         "cut_site": cut_site
@@ -205,7 +206,7 @@ class MutationHandler(GoldenGateDesigner):
         sticky_end_candidates = self.get_sticky_end_options(seq, nucleotide_index)
         valid_sticky_ends = [
             se for se in sticky_end_candidates
-            if 0.25 <= gc_content(se["sticky_end"]) <= 0.75
+            if 0.25 <= self.utils.gc_content(se["sticky_end"]) <= 0.75
         ]
 
         if not valid_sticky_ends:
@@ -222,6 +223,245 @@ class MutationHandler(GoldenGateDesigner):
             "sticky_end_options": valid_sticky_ends
         }
         
+        # In mutation.py in the MutationHandler class
+
+    def gather_mutation_options(
+        self,
+        seq: Seq,
+        sites_to_mutate: dict,
+        codon_usage_dict: dict,
+        spacer: str,
+        bsmbi_site: str,
+        min_tm: float = 57,
+        template_seq: Optional[str] = None,
+        verbose: bool = False,
+    ) -> List[Tuple[Dict, Dict]]:
+        """
+        Designs primers with codon optimization, constraint-based design, and backtracking.
+        """
+        with self.debug_context("gather_mutation_options"):
+            self.logger.info("Gathering mutation options...")
+            
+            # Process sites to mutate
+            sites_to_mutate_list = self._process_sites_to_mutate(sites_to_mutate)
+            
+            if not sites_to_mutate_list:
+                self.logger.warning("No sites to mutate found!")
+                return []
+
+            # Sort sites by position
+            sites_to_mutate_list.sort(key=lambda x: x[0])
+
+            # Gather mutation options for each site
+            mutation_sets = []
+            for site_start, site_end, site_sequence in sites_to_mutate_list:
+                self.logger.debug(f"Processing site: {site_start}-{site_end} {site_sequence}")
+
+                mutations = self.get_mutations_for_site(
+                    seq, site_start, site_end, site_sequence, codon_usage_dict
+                )
+
+                if not mutations:
+                    self.logger.warning(f"No viable mutations for site {site_start}-{site_end}")
+                    continue
+
+                # Process mutation frequencies
+                mutations = self._process_mutation_frequencies(mutations)
+                
+                mutation_sets.append(mutations)
+
+            return mutation_sets
+
+    def _process_sites_to_mutate(self, sites_to_mutate: dict) -> List[Tuple[int, int, str]]:
+        """Process and validate sites to mutate."""
+        sites_list = []
+        for enzyme, sites in sites_to_mutate.items():
+            for site in sites:
+                if "sequence" not in site or "position" not in site:
+                    raise ValueError(f"Site is missing required keys: {site}")
+
+                sites_list.append((
+                    int(site["position"]),
+                    int(site["position"]) + len(site["sequence"]),
+                    str(site["sequence"])
+                ))
+        return sites_list
+
+    def _process_mutation_frequencies(self, mutations: List[Dict]) -> List[Dict]:
+        """Process and validate mutation frequencies."""
+        processed_mutations = []
+        for mutation in mutations:
+            if "codon_usage_frequency" not in mutation:
+                self.logger.warning(f"Mutation missing 'codon_usage_frequency': {mutation}")
+                continue
+                
+            try:
+                mutation["codon_usage_frequency"] = float(mutation["codon_usage_frequency"])
+                processed_mutations.append(mutation)
+            except (ValueError, TypeError):
+                self.logger.error(f"Invalid codon usage frequency in mutation: {mutation}")
+                continue
+                
+        return sorted(processed_mutations, key=lambda x: x["codon_usage_frequency"], reverse=True)
+        
+
+    def find_best_mutation_set(
+        self,
+        mutation_options: List[List[Dict]],
+        verbose: bool = False,
+    ) -> List[Dict]:
+        """
+        Iteratively tries mutation sets, finding the best valid combination.
+        
+        Args:
+            mutation_options: Ordered list of mutation sets (mutates in place).
+        
+        Returns:
+            List[Dict]: The best valid mutation set found, or an empty list if none work.
+        """
+        with self.debug_context("find_best_mutation_set"):
+            while mutation_options:
+                # Get and remove the highest-priority mutation set
+                mutation_set = mutation_options.pop(0)
+                
+                self.logger.debug(
+                    f"Attempting mutation set (Remaining sets: {len(mutation_options)})"
+                )
+
+                valid_mutation_subset = self.find_compatible_mutation_subsets(mutation_set)
+
+                if valid_mutation_subset:
+                    self.logger.info("Found a valid mutation set")
+                    self.state['current_mutation_set'] = valid_mutation_subset
+                    return valid_mutation_subset
+
+            self.logger.warning("No valid mutation set found")
+            return []
+
+    def find_compatible_mutation_subsets(
+        self,
+        mutation_sets: List[Dict]
+    ) -> Optional[List[Dict]]:
+        """
+        Finds a subset of mutations where at least one mutation per restriction 
+        site has a compatible set of sticky ends.
+        """
+        with self.debug_context("find_compatible_mutation_subsets"):
+            self.logger.debug("Searching for valid subset of point mutations...")
+
+            try:
+                # Process all mutation options
+                all_mutation_options = self._process_mutation_sets(mutation_sets)
+                
+                # Find a valid subset
+                selected_mutations = self._find_compatible_subset(all_mutation_options)
+                
+                if selected_mutations:
+                    self.logger.info(
+                        f"Found valid subset with {len(selected_mutations)} compatible mutations"
+                    )
+                    return selected_mutations if len(selected_mutations) == len(mutation_sets) else None
+                    
+                return None
+
+            except Exception as e:
+                self.logger.error(f"Error finding compatible subsets: {str(e)}")
+                raise
+
+    def _process_mutation_sets(self, mutation_sets: List[Dict]) -> List[List[Dict]]:
+        """Process mutation sets into workable options."""
+        all_mutation_options = []
+        
+        for mutation_set in mutation_sets:
+            # Ensure mutation_set is a list
+            if isinstance(mutation_set, dict):
+                mutation_set = [mutation_set]
+
+            mutation_options = []
+            for mutation in mutation_set:
+                if not self._validate_mutation(mutation):
+                    continue
+                    
+                mutation_options.extend(
+                    self._create_mutation_options(mutation)
+                )
+
+            all_mutation_options.append(mutation_options)
+            
+        return all_mutation_options
+
+    def _validate_mutation(self, mutation: Dict) -> bool:
+        """Validate mutation data structure."""
+        if not isinstance(mutation, dict):
+            self.logger.warning(f"Unexpected data format: {mutation}")
+            return False
+            
+        if "sticky_end_options" not in mutation:
+            self.logger.warning("Missing sticky_end_options in mutation")
+            return False
+            
+        if not isinstance(mutation["sticky_end_options"], list):
+            self.logger.warning(
+                f"sticky_end_options should be list, got: {type(mutation['sticky_end_options'])}"
+            )
+            return False
+            
+        return True
+
+    def _create_mutation_options(self, mutation: Dict) -> List[Dict]:
+        """Create mutation options from a single mutation."""
+        options = []
+        
+        for sticky_end in mutation["sticky_end_options"]:
+            if not isinstance(sticky_end, dict):
+                self.logger.warning(f"Expected dict but got {type(sticky_end)}: {sticky_end}")
+                continue
+                
+            options.append({
+                "mutation": mutation,
+                "sticky_end": str(sticky_end.get("sticky_end", "UNKNOWN")),
+                "cut_site": sticky_end.get("cut_site", "UNKNOWN")
+            })
+            
+        return options
+
+    def _find_compatible_subset(
+        self,
+        all_mutation_options: List[List[Dict]]
+    ) -> List[Dict]:
+        """Find a compatible subset of mutations."""
+        selected_mutations = []
+        
+        for mutation_group in all_mutation_options:
+            compatible_found = False
+            
+            for candidate in mutation_group:
+                if self._is_compatible_with_selected(candidate, selected_mutations):
+                    selected_mutations.append(candidate)
+                    compatible_found = True
+                    break
+                    
+            if not compatible_found:
+                return []  # No compatible mutation found for this group
+                
+        return selected_mutations
+
+    def _is_compatible_with_selected(
+        self,
+        candidate: Dict,
+        selected_mutations: List[Dict]
+    ) -> bool:
+        """Check if a candidate mutation is compatible with already selected mutations."""
+        if not selected_mutations:
+            return True
+            
+        return all(
+            self.primer_selector.is_overhang_compatible([
+                prev["sticky_end"],
+                candidate["sticky_end"]
+            ])
+            for prev in selected_mutations
+        )
 # from Bio.Seq import Seq
 # from typing import Dict, List, Optional, Tuple
 # from .utils import gc_content

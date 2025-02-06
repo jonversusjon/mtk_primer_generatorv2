@@ -55,7 +55,8 @@ class SequencePreparator(GoldenGateDesigner):
     def find_bsmbi_bsai_sites(
         self,
         sequence_index: int,
-        seq: Union[str, Seq]
+        seq: Union[str, Seq],
+        verbose: bool = False,
     ) -> Dict:
         """Identifies restriction sites within a DNA sequence."""
         with self.debug_context("find_bsmbi_bsai_sites"):

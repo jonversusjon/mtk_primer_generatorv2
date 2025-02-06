@@ -1,13 +1,15 @@
 # routes/main.py
 from flask import Blueprint, render_template, request, jsonify
 from tests.test_data import TEST_SEQ, TEST_TEMPLATE_SEQ
-from services.utils import get_available_species, package_form_data, get_codon_usage_dict
-from services.protocol import create_gg_protocol
+from services.utils import GoldenGateUtils
+from services.protocol import GoldenGateProtocol
 
 # Renamed blueprint variable for consistency:
 main = Blueprint("main", __name__)
 
 TESTING_MODE = True
+utils = GoldenGateUtils()
+protocol_maker = GoldenGateProtocol()
 
 @main.route("/")
 def home():
@@ -21,7 +23,7 @@ def home():
 
 @main.route("/get_species")
 def get_species():
-    species = get_available_species()
+    species = utils.get_available_species()
     options_html = "".join(
         f'<option value="{s}">{s}</option>' for s in species)
     return options_html
@@ -58,7 +60,7 @@ def generate_protocol():
     print('generate_protocol')
 
     # Ensure we handle both JSON and form-encoded data
-    packaged_data, error_message = package_form_data(request)
+    packaged_data, error_message = utils.package_form_data(request)
 
     print('Packaged Data Keys:', packaged_data.keys())
     
@@ -79,9 +81,9 @@ def generate_protocol():
     
     part_num_right = [entry.get("partNumRight", "") for entry in packaged_data.get("sequences", [])]
 
-    species_codon_usage = get_codon_usage_dict(species)
+    species_codon_usage = utils.get_codon_usage_dict(species)
 
-    protocol = create_gg_protocol(
+    protocol = protocol_maker.create_gg_protocol(
         seq=seq,
         codon_usage_dict=species_codon_usage,
         part_num_left=part_num_left,

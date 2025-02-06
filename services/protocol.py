@@ -2,20 +2,21 @@
 from Bio.Seq import Seq
 from typing import List, Dict, Optional
 from .base import GoldenGateDesigner
-from .sequence_prep import (
-    adjust_sequence_for_frame_and_codons,
-    find_bsmbi_bsai_sites,
-    summarize_bsmbi_bsai_sites
-)
-from .primer_design import generate_GG_edge_primers, get_all_possible_internal_primers
-from .primer_select import select_best_internal_primers, format_primers_for_output
-from .mutation import gather_mutation_options, find_best_mutation_set
-from .utils import get_mtk_partend_sequences, get_codon_usage_dict
+from .sequence_prep import SequencePreparator
+from .primer_design import PrimerDesigner
+from .primer_select import PrimerSelector
+from .mutation import MutationAnalyzer
+from .utils import GoldenGateUtils
 
 
 class GoldenGateProtocol(GoldenGateDesigner):
     def __init__(self, verbose: bool = False):
         super().__init__(verbose=verbose)
+        self.utils = GoldenGateUtils()
+        self.primer_designer = PrimerDesigner()
+        self.primer_selector = PrimerSelector()
+        self.mutation_analyzer = MutationAnalyzer()
+        self.sequence_preparator = SequencePreparator()
         self.state = {
             'current_sequence_index': 0,
             'current_step': '',
@@ -34,6 +35,7 @@ class GoldenGateProtocol(GoldenGateDesigner):
         template_seq: Optional[str] = None,
         kozak: str = "MTK",
         output_tsv_path: str = "designed_primers.tsv",
+        verbose: bool = False,
     ) -> List[List[str]]:
         """Main function to orchestrate the Golden Gate protocol creation."""
         
@@ -106,14 +108,14 @@ class GoldenGateProtocol(GoldenGateDesigner):
         """Converts sequence to uppercase and adjusts for frame and codons."""
         with self.debug_context("preprocess_sequence"):
             sequence = Seq(sequence.upper())
-            return adjust_sequence_for_frame_and_codons(sequence)
+            return self.sequence_preparator.adjust_sequence_for_frame_and_codons(sequence)
 
     def _find_and_summarize_sites(self, sequence: Seq, index: int) -> Dict:
         """Finds and summarizes restriction sites needing mutation."""
         with self.debug_context("find_and_summarize_sites"):
-            sites_to_mutate = find_bsmbi_bsai_sites(index, sequence, verbose=self.verbose)
+            sites_to_mutate = self.sequence_preparator.find_bsmbi_bsai_sites(index, sequence, verbose=self.verbose)
             if sites_to_mutate:
-                summarize_bsmbi_bsai_sites(sites_to_mutate)
+                self.sequence_preparator.summarize_bsmbi_bsai_sites(sites_to_mutate)
             return sites_to_mutate
 
     def _analyze_mutations(
@@ -125,7 +127,7 @@ class GoldenGateProtocol(GoldenGateDesigner):
     ) -> List:
         """Analyze and select mutations for the sequence."""
         with self.debug_context("analyze_mutations"):
-            mutation_options = gather_mutation_options(
+            mutation_options = self.mutation_analyzer.gather_mutation_options(
                 seq=sequence,
                 sites_to_mutate=sites_to_mutate,
                 codon_usage_dict=codon_usage_dict,
@@ -138,7 +140,7 @@ class GoldenGateProtocol(GoldenGateDesigner):
             
             selected_mutations = []
             while mutation_options and not selected_mutations:
-                selected_mutations = find_best_mutation_set(mutation_options, self.verbose)
+                selected_mutations = self.mutation_analyzer.find_best_mutation_set(mutation_options, self.verbose)
                 
             return selected_mutations
 
@@ -158,7 +160,7 @@ class GoldenGateProtocol(GoldenGateDesigner):
             primer_data = []
             
             if mutation_options:
-                primer_sets = get_all_possible_internal_primers(
+                primer_sets = self.primer_designer.get_all_possible_internal_primers(
                     seq=sequence,
                     seq_index=seq_index,
                     proposed_mutations=mutation_options,
@@ -167,14 +169,14 @@ class GoldenGateProtocol(GoldenGateDesigner):
                     primer_name=primer_name[seq_index] if primer_name else None,
                     verbose=self.verbose
                 )
-                internal_primers = select_best_internal_primers(primer_sets, template_seq)
-                primer_data.extend(format_primers_for_output(
+                internal_primers = self.primer_selector.select_best_internal_primers(primer_sets, template_seq)
+                primer_data.extend(self.primer_selector.format_primers_for_output(
                     internal_primers,
                     primer_name[seq_index] if primer_name else None
                 ))
 
             # Add edge primers
-            mtk_partend_sequences = get_mtk_partend_sequences()
+            mtk_partend_sequences = self.utils.get_mtk_partend_sequences()
             primer_data.extend(self._get_edge_primers(
                 sequence, seq_index, mtk_partend_sequences,
                 part_num_left, part_num_right, kozak, primer_name
@@ -195,10 +197,10 @@ class GoldenGateProtocol(GoldenGateDesigner):
         """Generate edge primers for a sequence."""
         with self.debug_context("get_edge_primers"):
             primer_data = []
-            left_name, left_primer = generate_GG_edge_primers(
+            left_name, left_primer = self.primer_designer.generate_GG_edge_primers(
                 sequence, part_end_dict, part_num_left[index], "forward", kozak, primer_name
             )
-            right_name, right_primer = generate_GG_edge_primers(
+            right_name, right_primer = self.primer_designer.generate_GG_edge_primers(
                 sequence, part_end_dict, part_num_right[index], "reverse", kozak, primer_name
             )
             primer_data.append([left_name, left_primer, f"Amplicon_{index + 1}"])

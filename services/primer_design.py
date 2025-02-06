@@ -200,7 +200,6 @@ class PrimerDesigner(GoldenGateDesigner):
                 self.logger.error(f"Error generating edge primer: {str(e)}")
                 return None, None
 
-    # Additional helper methods...
     def _log_off_target_results(self, binding_seq: str, off_targets: List[Dict]):
         """Log off-target analysis results."""
         self.logger.info("\n🔍 Off-Target Primer Found")
@@ -221,8 +220,195 @@ class PrimerDesigner(GoldenGateDesigner):
         if not isinstance(new_nucleotide, str) or len(new_nucleotide) != 1:
             raise TypeError(f"new_nucleotide should be single character")
 
-    # ... Additional helper methods would continue here
+    def _get_part_info(self, part_num: str, primer_orientation: str, kozak: str) -> Dict[str, str]:
+        """
+        Determines part-specific key and primer name suffix based on part number and orientation.
+        
+        Args:
+            part_num: The part number ('2', '3', '3a', etc.)
+            primer_orientation: Direction of the primer ('forward' or 'reverse')
+            kozak: Type of kozak sequence ('canonical' or 'mtk')
+        
+        Returns:
+            Dict containing:
+                - 'key': The key to look up in part_end_dict
+                - 'suffix': The suffix to use in the primer name
+        """
+        # Special case for part 2 reverse with canonical kozak
+        if part_num == '2' and primer_orientation == 'reverse' and kozak == 'canonical':
+            return {
+                'key': '2starreverse',
+                'suffix': '2*'
+            }
+        
+        # Special case for parts 3 and 3a forward with canonical kozak
+        elif part_num in ['3', '3a'] and primer_orientation == 'forward' and kozak == 'canonical':
+            return {
+                'key': f'{part_num}starforward',
+                'suffix': f'{part_num}*'
+            }
+        
+        # Default case
+        else:
+            return {
+                'key': f'{part_num}{primer_orientation}',
+                'suffix': part_num
+            }
 
+    def _validate_primer_positions(self, left: int, right: int, seq_length: int) -> bool:
+        """Validate primer positions are within sequence bounds."""
+        return 0 <= left < seq_length and 0 <= right <= seq_length
+
+    def _get_modified_sequence(
+        self,
+        seq: Seq,
+        nucleotide_index: int,
+        new_nucleotide: str,
+        left: int,
+        right: int
+    ) -> str:
+        """Get the modified sequence with the new nucleotide."""
+        modified_seq = seq[:nucleotide_index] + new_nucleotide + seq[nucleotide_index + 1:]
+        return str(modified_seq[left:right])
+
+    def _find_binding_sequences(
+        self,
+        seq: Seq,
+        right: int,
+        left: int,
+        min_tm: float
+    ) -> Tuple[str, str]:
+        """Find binding sequences for forward and reverse primers."""
+        forward_binding = self._find_binding_sequence(seq, right, min_tm)
+        reverse_binding = self._find_binding_sequence(
+            seq.reverse_complement(),
+            left - 1,
+            min_tm
+        )
+        return forward_binding, reverse_binding
+
+    def _find_binding_sequence(self, seq: Seq, start: int, min_tm: float) -> str:
+        """Find the shortest binding sequence with Tm >= min_tm."""
+        from Bio.SeqUtils import MeltingTemp as mt
+        
+        for i in range(15, 36):  # Typical primer length range
+            binding_seq = seq[start:start + i]
+            if mt.Tm_NN(binding_seq) >= min_tm:
+                return str(binding_seq)
+        return ""
+
+    def _construct_primer_pair(
+        self,
+        seq: Seq,
+        spacer: str,
+        bsmbi_site: str,
+        six_nuc_seq: str,
+        forward_binding: str,
+        reverse_binding: str
+    ) -> Dict[str, Dict]:
+        """Construct forward and reverse primers."""
+        primers = {
+            "forward": self._construct_primer(
+                spacer, bsmbi_site, six_nuc_seq, forward_binding, False
+            ),
+            "reverse": self._construct_primer(
+                spacer, bsmbi_site, six_nuc_seq, reverse_binding, True
+            )
+        }
+        return primers
+
+    def _construct_primer(
+        self,
+        spacer: str,
+        bsmbi_site: str,
+        six_nuc_seq: str,
+        binding_seq: str,
+        reverse: bool = False
+    ) -> Dict[str, str]:
+        """Construct a single primer."""
+        if reverse:
+            from Bio.Seq import Seq
+            overhang_sequence = bsmbi_site + str(Seq(six_nuc_seq).reverse_complement())
+        else:
+            overhang_sequence = bsmbi_site + six_nuc_seq
+
+        primer_sequence = spacer + overhang_sequence + binding_seq
+        
+        return {
+            "binding_sequence": str(binding_seq),
+            "overhang_sequence": str(overhang_sequence),
+            "primer_sequence": str(primer_sequence)
+        }
+
+    def _validate_primer_pair(self, primers: Dict[str, Dict], bsmbi_site: str) -> bool:
+        """
+        Validate both primers in a pair.
+        
+        Args:
+            primers: Dictionary containing forward and reverse primer information
+            bsmbi_site: The BsmBI recognition sequence to check for
+            
+        Returns:
+            bool: True if both primers have exactly one BsmBI site
+        """
+        forward_site_count = primers["forward"]["overhang_sequence"].count(bsmbi_site)
+        reverse_site_count = primers["reverse"]["overhang_sequence"].count(bsmbi_site)
+        return forward_site_count == 1 and reverse_site_count == 1
+
+    def _format_primer_pair(self, primers: Dict[str, Dict]) -> Tuple[Dict, Dict]:
+        """Format primer pair with additional information."""
+        from Bio.SeqUtils import MeltingTemp as mt
+        
+        formatted_primers = []
+        for primer_dict in [primers["forward"], primers["reverse"]]:
+            formatted = {
+                "primer_sequence": primer_dict["primer_sequence"],
+                "binding_sequence": primer_dict["binding_sequence"],
+                "overhang_sequence": primer_dict["overhang_sequence"],
+                "tm": round(mt.Tm_NN(primer_dict["primer_sequence"]), 1)
+            }
+            formatted_primers.append(formatted)
+        
+        return tuple(formatted_primers)
+
+    def _perform_off_target_analysis(
+        self,
+        primers: Dict[str, List[Dict]],
+        template_seq: str
+    ) -> None:
+        """Perform off-target analysis for all primers."""
+        for primer_list in ["forward", "reverse"]:
+            for primer_dict in primers[primer_list]:
+                try:
+                    primer_dict["off_target_analysis"] = self.find_off_targets_for_primer(
+                        primer_dict["binding_sequence"],
+                        template_seq=template_seq
+                    )
+                except Exception as e:
+                    self.logger.error(f"Error in off-target analysis: {str(e)}")
+                    primer_dict["off_target_analysis"] = []
+
+    def _construct_edge_primer(
+        self,
+        seq: Seq,
+        part_specific_seq: str,
+        primer_orientation: str,
+        suffix: str,
+        primer_name: Optional[str] = None
+    ) -> Tuple[str, str]:
+        """Construct an edge primer with proper naming."""
+        n_length = 20  # Default primer binding length
+        
+        if primer_orientation == 'forward':
+            edge_primer = part_specific_seq + str(seq[:n_length])
+            formatted_name = f"MTK{suffix}_{primer_name}_FW" if primer_name else f"MTK{suffix}_FW"
+        elif primer_orientation == 'reverse':
+            edge_primer = part_specific_seq + str(seq[-n_length:].reverse_complement())
+            formatted_name = f"MTK{suffix}_{primer_name}_RV" if primer_name else f"MTK{suffix}_RV"
+        else:
+            raise ValueError("primer_orientation must be 'forward' or 'reverse'")
+            
+        return formatted_name, edge_primer
 # import os
 # import time
 # from typing import Dict, List, Optional, Any, Tuple
@@ -712,48 +898,3 @@ class PrimerDesigner(GoldenGateDesigner):
 #                 primers[site_index][codon_start].append(mutation_data)
 
 #     return primers
-
-# # def count_restriction_sites(seq, recog_seq_f, recog_seq_r):
-# #     """
-# #     Counts the occurrences of a forward and reverse restriction site sequence.
-
-# #     Args:
-# #         seq (str): DNA sequence.
-# #         recog_seq_f (str): Forward recognition sequence.
-# #         recog_seq_r (str): Reverse recognition sequence.
-
-# #     Returns:
-# #         Tuple[int, int]: Counts of forward and reverse recognition sequences.
-# #     """
-# #     seq = seq.upper()
-# #     potential_recognition_sites = np.array([seq[i: i + len(recog_seq_f)] for i in range(len(seq) - len(recog_seq_f) + 1)])
-# #     forward_count = np.sum(potential_recognition_sites == recog_seq_f)
-# #     reverse_count = np.sum(potential_recognition_sites == recog_seq_r)
-# #     return forward_count, reverse_count
-
-    
-# # def add_cut_sites(dna_seq, enzyme):
-# #     """
-# #     Adds restriction cut sites to a DNA sequence if missing.
-
-# #     Args:
-# #         dna_seq (str): The DNA sequence to modify.
-# #         enzyme (str): The enzyme for which cut sites are required (e.g., 'bsmbi', 'bsai').
-
-# #     Returns:
-# #         str: Modified DNA sequence with cut sites included.
-# #     """
-# #     recognition_sequences = {
-# #         'bsmbi': ('CGTCTC', 7, -5),
-# #         'bsai': ('GGTCTC', 7, -5)
-# #     }
-
-# #     if enzyme not in recognition_sequences:
-# #         raise ValueError(f"Unsupported enzyme: {enzyme}")
-
-# #     site, forward_cut, reverse_cut = recognition_sequences[enzyme]
-    
-# #     # Ensure the recognition site is present in the sequence
-# #     if site not in dna_seq:
-# #         dna_seq = site + dna_seq  # Prepend recognition site if missing
-# #     return dna_seq
