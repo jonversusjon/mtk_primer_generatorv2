@@ -18,7 +18,6 @@ class SequencePreparator(GoldenGateDesigner):
     def adjust_sequence_for_frame_and_codons(
         self, 
         seq: Union[str, Seq],
-        output_widget: Optional[object] = None
     ) -> Seq:
         """Adjusts sequence to be in frame and removes start/stop codons."""
         with self.debug_context("adjust_sequence_for_frame_and_codons"):

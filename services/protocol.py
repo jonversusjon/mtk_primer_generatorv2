@@ -1,22 +1,25 @@
 # services/protocol.py
 from Bio.Seq import Seq
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union
 from .base import GoldenGateDesigner
 from .sequence_prep import SequencePreparator
 from .primer_design import PrimerDesigner
 from .primer_select import PrimerSelector
-from .mutation import MutationAnalyzer
+from .mutation_analyzer import MutationAnalyzer
+from .mutation_optimizer import MutationOptimizer
 from .utils import GoldenGateUtils
-
+from itertools import product
 
 class GoldenGateProtocol(GoldenGateDesigner):
     def __init__(self, verbose: bool = False):
         super().__init__(verbose=verbose)
         self.utils = GoldenGateUtils()
+        self.sequence_preparator = SequencePreparator()
         self.primer_designer = PrimerDesigner()
         self.primer_selector = PrimerSelector()
         self.mutation_analyzer = MutationAnalyzer()
-        self.sequence_preparator = SequencePreparator()
+        self.mutation_optimizer = MutationOptimizer(verbose=verbose)
+        
         self.state = {
             'current_sequence_index': 0,
             'current_step': '',
@@ -37,7 +40,25 @@ class GoldenGateProtocol(GoldenGateDesigner):
         output_tsv_path: str = "designed_primers.tsv",
         verbose: bool = False,
     ) -> List[List[str]]:
-        """Main function to orchestrate the Golden Gate protocol creation."""
+        """
+        Main function to orchestrate the Golden Gate protocol creation.
+        
+        Args:
+            seq: List of DNA sequences to process
+            part_num_left: List of left part numbers
+            part_num_right: List of right part numbers
+            codon_usage_dict: Dictionary mapping codons to their usage frequencies
+            max_mutations: Maximum number of mutations allowed
+            primer_name: Optional list of primer names
+            template_seq: Optional template sequence for comparison
+            kozak: Kozak sequence (default: "MTK")
+            output_tsv_path: Path to save output TSV file
+            verbose: Whether to print detailed progress
+            
+        Returns:
+            List of lists containing primer data [name, sequence, amplicon]
+        """
+        self._validate_inputs(seq, part_num_left, part_num_right, primer_name)
         
         with self.debug_context("create_gg_protocol"):
             self.logger.info("Starting Golden Gate protocol creation...")
@@ -68,6 +89,16 @@ class GoldenGateProtocol(GoldenGateDesigner):
             self._save_primers_to_tsv(primer_data, output_tsv_path)
             return primer_data
 
+    def _validate_inputs(self, seq: List[str], part_num_left: List[str], 
+                        part_num_right: List[str], primer_name: Optional[List[str]]) -> None:
+        """Validate input parameters for consistency."""
+        if len(part_num_left) != len(seq):
+            raise ValueError("Length of part_num_left must match number of sequences")
+        if len(part_num_right) != len(seq):
+            raise ValueError("Length of part_num_right must match number of sequences")
+        if primer_name and len(primer_name) != len(seq):
+            raise ValueError("Length of primer_name must match number of sequences")
+
     def _process_single_sequence(
         self,
         single_seq: str,
@@ -86,15 +117,25 @@ class GoldenGateProtocol(GoldenGateDesigner):
         sites_to_mutate = self._find_and_summarize_sites(sequence, seq_index)
 
         self.state['current_step'] = 'mutation_analysis'
-        mutation_options = self._analyze_mutations(
-            sequence, sites_to_mutate, codon_usage_dict, template_seq
+        mutation_result = self._analyze_mutations(
+            sequence=sequence,
+            sites_to_mutate=sites_to_mutate,
+            codon_usage_dict=codon_usage_dict,
         )
-
+        print(f"mutation_result final: {mutation_result}")
+        
+        
+        if mutation_result['status'] == 'error':
+            self.logger.warning(f"Mutation analysis failed: {mutation_result['message']}")
+            return []
+            
+        selected_mutations = mutation_result['selected_mutations']
+        
         self.state['current_step'] = 'primer_design'
         primer_data = self._design_primers(
             sequence=sequence,
             seq_index=seq_index,
-            mutation_options=mutation_options,
+            mutation_options=selected_mutations,
             part_num_left=part_num_left,
             part_num_right=part_num_right,
             primer_name=primer_name,
@@ -110,7 +151,7 @@ class GoldenGateProtocol(GoldenGateDesigner):
             sequence = Seq(sequence.upper())
             return self.sequence_preparator.adjust_sequence_for_frame_and_codons(sequence)
 
-    def _find_and_summarize_sites(self, sequence: Seq, index: int) -> Dict:
+    def _find_and_summarize_sites(self, sequence: Seq, index: int) -> List[Dict]:
         """Finds and summarizes restriction sites needing mutation."""
         with self.debug_context("find_and_summarize_sites"):
             sites_to_mutate = self.sequence_preparator.find_bsmbi_bsai_sites(index, sequence, verbose=self.verbose)
@@ -120,30 +161,116 @@ class GoldenGateProtocol(GoldenGateDesigner):
 
     def _analyze_mutations(
         self,
-        sequence: Seq,
-        sites_to_mutate: Dict,
-        codon_usage_dict: Dict,
-        template_seq: Optional[str]
-    ) -> List:
-        """Analyze and select mutations for the sequence."""
+        sequence: Union[Seq, str],
+        sites_to_mutate: List[Dict],
+        codon_usage_dict: Dict[str, Dict[str, float]],
+        max_mutations: int = 1,
+    ) -> Dict:
+        """
+        Analyze mutations for the sequence and evaluate their compatibility.
+        
+        Args:
+            sequence: Input DNA sequence
+            sites_to_mutate: List of restriction sites to mutate
+            codon_usage_dict: Dictionary of codon usage frequencies
+            compatibility_table_path: Path to binary compatibility lookup table
+        
+        Returns:
+            Dictionary containing:
+            - status: 'success' or 'error'
+            - message: Description of result
+            - mutation_options: All possible mutations
+            - selected_mutations: Optimal compatible mutations
+            - compatibility_score: Score indicating overall compatibility
+            - cut_positions: List of selected cut positions
+        """
         with self.debug_context("analyze_mutations"):
-            mutation_options = self.mutation_analyzer.gather_mutation_options(
-                seq=sequence,
-                sites_to_mutate=sites_to_mutate,
-                codon_usage_dict=codon_usage_dict,
-                spacer="GAA",
-                bsmbi_site="CGTCTC",
-                min_tm=57,
-                template_seq=template_seq,
-                verbose=self.verbose
-            )
-            
-            selected_mutations = []
-            while mutation_options and not selected_mutations:
-                selected_mutations = self.mutation_analyzer.find_best_mutation_set(mutation_options, self.verbose)
+            try:
+                # Convert Seq to str if necessary
+                sequence_str = str(sequence) if isinstance(sequence, Seq) else sequence
                 
-            return selected_mutations
+                # Get all possible mutation options
+                mutation_result = self.mutation_analyzer.gather_mutation_options(
+                    seq=sequence_str,
+                    sites_to_mutate=sites_to_mutate,
+                    codon_usage_dict=codon_usage_dict,
+                    max_mutations=max_mutations,
+                    verbose=self.verbose
+                )
+                
+                if not mutation_result or 'restriction_sites' not in mutation_result:
+                    return {
+                        'status': 'error',
+                        'message': 'No mutation options generated',
+                        'mutation_options': [],
+                        'selected_mutations': None,
+                    }
 
+                restriction_sites = mutation_result['restriction_sites']
+                
+                # Process mutation options for each site to get valid ranges
+                site_mutations = []
+                for site in restriction_sites:
+                    site_muts = []
+                    for codon in site['codons']:
+                        if 'mutations' in codon:
+                            for mutation in codon['mutations']:
+                                mut_copy = mutation.copy()
+                                mut_copy.update({
+                                    'site_start': site['start_index'],
+                                    'enzyme': site['enzyme'],
+                                    'strand': site['strand']
+                                })
+                                site_muts.append(mut_copy)
+                    if site_muts:
+                        site_mutations.append(site_muts)
+                
+                if not site_mutations:
+                    return {
+                        'status': 'error',
+                        'message': 'No valid mutations found',
+                        'mutation_options': mutation_result,
+                    }
+                
+                # Calculate cut ranges and create compatibility tensor
+                compatibility_tensor, cut_ranges = self.mutation_optimizer.create_compatibility_tensor(
+                    sequence=sequence_str,
+                    mutation_options=site_mutations
+                )
+                
+                print(f'compatibility_tensor: {compatibility_tensor}')
+                print(f'cut_ranges: {cut_ranges}')
+                # if not selected_indices:
+                #     return {
+                #         'status': 'error',
+                #         'message': 'No compatible mutation combination found',
+                #         'mutation_options': mutation_result,
+                #         'selected_mutations': None,
+                #         'compatibility_score': 0
+                #     }
+                
+                # return {
+                #     'status': 'success',
+                #     'message': 'Compatible mutations found',
+                #     'mutation_options': mutation_result,
+                #     'selected_mutations': selected_mutations,
+                #     'compatibility_score': 1,
+                #     'cut_positions': list(selected_indices)
+                # }
+                   
+                return {}
+             
+            except Exception as e:
+                if self.verbose:
+                    print(f"Error in mutation analysis: {str(e)}")
+                return {
+                    'status': 'error',
+                    'message': f'Error during mutation analysis: {str(e)}',
+                    'mutation_options': mutation_result if 'mutation_result' in locals() else {},
+                    'selected_mutations': None,
+                    'compatibility_score': 0
+                }
+            
     def _design_primers(
         self,
         sequence: Seq,
@@ -207,7 +334,7 @@ class GoldenGateProtocol(GoldenGateDesigner):
             primer_data.append([right_name, right_primer, f"Amplicon_{index + 1}"])
             return primer_data
 
-    def _save_primers_to_tsv(self, primer_data: List[List[str]], output_tsv_path: str):
+    def _save_primers_to_tsv(self, primer_data: List[List[str]], output_tsv_path: str) -> None:
         """Saves primer data to a TSV file."""
         with self.debug_context("save_primers_to_tsv"):
             if not primer_data:
@@ -222,148 +349,3 @@ class GoldenGateProtocol(GoldenGateDesigner):
             except IOError as e:
                 self.logger.error(f"Error writing to file {output_tsv_path}: {e}")
                 raise
-
-# from Bio.Seq import Seq
-# from typing import List, Dict, Optional
-# from .sequence_prep import (
-#     adjust_sequence_for_frame_and_codons,
-#     find_bsmbi_bsai_sites,
-#     summarize_bsmbi_bsai_sites
-# )
-# from .primer_design import generate_GG_edge_primers, get_all_possible_internal_primers
-# from .primer_select import select_best_internal_primers, format_primers_for_output
-# from .mutation import *
-# from .utils import get_mtk_partend_sequences, get_codon_usage_dict
-
-
-# def create_gg_protocol(
-#     seq: List[str],
-#     part_num_left: List[str],
-#     part_num_right: List[str],
-#     codon_usage_dict: Dict[str, Dict[str, float]],
-#     max_mutations: int,
-#     primer_name: Optional[List[str]] = None,
-#     template_seq: Optional[str] = None,
-#     kozak: str = "MTK",
-#     verbose: bool = False,
-#     output_tsv_path: str = "designed_primers.tsv",
-# ) -> List[List[str]]:
-#     """Main function to orchestrate the Golden Gate protocol creation."""
-
-#     print("Starting Golden Gate protocol creation...")
-#     primer_data = []
-    
-#     for i, single_seq in enumerate(seq):
-#         single_seq = preprocess_sequence(single_seq)
-#         sites_to_mutate = find_and_summarize_sites(single_seq, i, verbose)
-
-#         num_sites_to_mutate = sum(len(sites)
-#                                   for sites in sites_to_mutate.values())
-#         print(f"Number of sites to mutate: {num_sites_to_mutate}")
-
-#         # Step 1: Gather mutation options sorted by codon usage frequency
-#         mutation_options = gather_mutation_options(
-#             seq=single_seq,
-#             sites_to_mutate=sites_to_mutate,
-#             codon_usage_dict=codon_usage_dict,
-#             spacer="GAA",
-#             bsmbi_site="CGTCTC",
-#             min_tm=57,
-#             template_seq=template_seq,
-#             verbose=verbose
-#         )
-#         # rank_and_print_mutation_sets(mutation_options, verbose)
-#         print(f"\n🔍 mutation_options (before selection): {mutation_options}")
-        
-#         # Step 2: Iterate while mutation options exist
-#         selected_mutations = []
-#         while mutation_options and not selected_mutations:
-#             selected_mutations = find_best_mutation_set(
-#                 mutation_options, verbose)
-#             print(f"✅ selected_mutations: {selected_mutations}")  # Debugging output
-
-#         if not selected_mutations:
-#             print("❌ No valid mutation subset found! Skipping primer design.")
-            
-#         # Step 3: Proceed with primer design
-#         if selected_mutations:
-#             primer_sets = get_all_possible_internal_primers(
-#                 seq=single_seq,
-#                 seq_index=i,
-#                 proposed_mutations=selected_mutations,
-#                 part_num_left=part_num_left[i],
-#                 part_num_right=part_num_right[i],
-#                 primer_name=primer_name[i],
-#                 verbose=verbose
-#             )
-#             internal_primers = select_best_internal_primers(
-#                 primer_sets, template_seq)
-#             primer_data += format_primers_for_output(
-#                 internal_primers, primer_name[i])
-
-#         else:
-#             print(
-#                 f"❌ No valid mutation subset found for sequence {i + 1}. Skipping primer design.")
-
-#        # Step 4: Design edge primers
-#         mtk_partend_sequences = get_mtk_partend_sequences()
-#         primer_data += get_edge_primers(
-#             single_seq, i, mtk_partend_sequences, part_num_left, part_num_right, kozak, primer_name
-#         )
-
-#         # Save and return results
-#         save_primers_to_tsv(primer_data, output_tsv_path)
-
-#         return primer_data
-
-
-# def preprocess_sequence(sequence: str) -> Seq:
-#     """Converts sequence to uppercase and adjusts for frame and codons."""
-#     sequence = Seq(sequence.upper())
-#     return adjust_sequence_for_frame_and_codons(sequence)
-
-
-# def find_and_summarize_sites(sequence: Seq, index: int, verbose: bool) -> Dict:
-#     """Finds and summarizes restriction sites needing mutation."""
-#     sites_to_mutate = find_bsmbi_bsai_sites(index, sequence, verbose=verbose)
-#     if sites_to_mutate:
-#         summarize_bsmbi_bsai_sites(sites_to_mutate)
-#     return sites_to_mutate
-
-
-# def get_edge_primers(
-#     sequence: Seq,
-#     index: int,
-#     part_end_dict: Dict[str, str],
-#     part_num_left: List[str],
-#     part_num_right: List[str],
-#     kozak: str,
-#     primer_name: Optional[List[str]]
-# ) -> List[List[str]]:
-#     """Fetches edge primers for a given sequence and returns primer data."""
-#     primer_data = []
-#     left_name, left_primer = generate_GG_edge_primers(
-#         sequence, part_end_dict, part_num_left[index], "forward", kozak, primer_name
-#     )
-#     right_name, right_primer = generate_GG_edge_primers(
-#         sequence, part_end_dict, part_num_right[index], "reverse", kozak, primer_name
-#     )
-#     primer_data.append([left_name, left_primer, f"Amplicon_{index + 1}"])
-#     primer_data.append([right_name, right_primer, f"Amplicon_{index + 1}"])
-
-#     return primer_data
-
-
-# def save_primers_to_tsv(primer_data: List[List[str]], output_tsv_path: str):
-#     """Saves primer data to a TSV file."""
-#     if not primer_data:
-#         print("Warning: No primer data to save.")
-#         return  # Exit early if no data
-
-#     try:
-#         with open(output_tsv_path, "w") as tsv_file:
-#             tsv_file.write("Primer Name\tSequence\tAmplicon\n")
-#             for row in primer_data:
-#                 tsv_file.write("\t".join(map(str, row)) + "\n")
-#     except IOError as e:
-#         print(f"Error writing to file {output_tsv_path}: {e}")
