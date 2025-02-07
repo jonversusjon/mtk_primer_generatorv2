@@ -95,7 +95,7 @@ class SequencePreparator(GoldenGateDesigner):
         forward_matches = re.finditer(f"(?={recognition_seq})", str(seq))
         for match in forward_matches:
             site_details.append({
-                'position': match.start() + 1,
+                'position': match.start(),
                 'sequence': recognition_seq,
                 'strand': '+'
             })
@@ -105,7 +105,7 @@ class SequencePreparator(GoldenGateDesigner):
         reverse_matches = re.finditer(f"(?={rev_comp})", str(seq))
         for match in reverse_matches:
             site_details.append({
-                'position': match.start() + 1,
+                'position': match.start(),
                 'sequence': rev_comp,
                 'strand': '-'
             })

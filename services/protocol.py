@@ -238,7 +238,6 @@ class GoldenGateProtocol(GoldenGateDesigner):
                     mutation_options=site_mutations
                 )
                 
-                print(f'compatibility_tensor: {compatibility_tensor}')
                 print(f'cut_ranges: {cut_ranges}')
                 # if not selected_indices:
                 #     return {
