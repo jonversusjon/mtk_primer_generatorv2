@@ -1,11 +1,11 @@
 # services/base.py
 import logging
-from typing import Optional
+from typing import Optional, List
 from contextlib import contextmanager
 import time
 
 class GoldenGateDesigner:
-    def __init__(self, verbose: bool = False, log_level: str = "INFO"):
+    def __init__(self, verbose: bool = False, log_level: str = "DEBUG"):
         # Set up logging and state management
         self.logger = self._setup_logger(log_level)
         self.verbose = verbose
@@ -14,10 +14,10 @@ class GoldenGateDesigner:
     def _setup_logger(self, log_level: str) -> logging.Logger:
         """Creates a configured logger for the class."""
         logger = logging.getLogger(self.__class__.__name__)
-        if not logger.handlers:  # Avoid duplicate handlers
+        if not logger.handlers:
             handler = logging.StreamHandler()
             formatter = logging.Formatter(
-                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+                '%(levelname)s - %(name)s - %(message)s'
             )
             handler.setFormatter(formatter)
             logger.addHandler(handler)

@@ -214,6 +214,38 @@ class GoldenGateUtils(GoldenGateDesigner):
 
             return error_messages
 
+    def _seq_to_index(self, seq: str) -> int:
+        """
+        Converts a 4-nucleotide sequence to its corresponding matrix index.
+        Sequences are indexed in alphabetical order (A=0, C=1, G=2, T=3).
+        
+        Args:
+            seq: String containing exactly 4 nucleotides (ACTG only)
+            
+        Returns:
+            Integer index from 0 to 255 corresponding to sequence position in matrix
+            
+        Raises:
+            ValueError: If sequence is not exactly 4 nucleotides or contains invalid characters
+        """
+        if len(seq) != 4:
+            raise ValueError(f"Sequence must be exactly 4 nucleotides, got {len(seq)}: {seq}")
+        
+        seq = seq.upper()
+        if not all(nt in 'ACTG' for nt in seq):
+            raise ValueError(f"Sequence must contain only A, C, G, T, got: {seq}")
+        
+        NT_VALUES = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
+        index = 0
+        for pos, nt in enumerate(seq):
+            power = 3 - pos
+            index += NT_VALUES[nt] * (4 ** power)
+        
+        if self.verbose:
+            print(f"Converted sequence {seq} to index {index}")
+        
+        return index
+
 # import json
 # import os
 # import csv

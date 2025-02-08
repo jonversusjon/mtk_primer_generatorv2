@@ -4,16 +4,26 @@ import primer3
 from Bio.Seq import Seq
 from Bio.SeqUtils import MeltingTemp as mt
 from .base import GoldenGateDesigner
-
+from .utils import GoldenGateUtils
 
 class PrimerDesigner(GoldenGateDesigner):
-    def __init__(self, verbose: bool = False):
+    def __init__(
+        self, 
+        part_num_left: List[str],
+        part_num_right: List[str],
+        kozak: str = "MTK",
+        verbose: bool = False):
         super().__init__(verbose=verbose)
         self.state = {
             'current_operation': '',
             'primers_designed': 0,
             'current_mutation': None
         }
+        
+        self.part_num_left = part_num_left
+        self.part_num_right = part_num_right
+        self.kozak = kozak
+        
         # Default parameters
         self.default_params = {
             'tm_threshold': 45.0,
@@ -409,3 +419,229 @@ class PrimerDesigner(GoldenGateDesigner):
             raise ValueError("primer_orientation must be 'forward' or 'reverse'")
             
         return formatted_name, edge_primer
+    
+    def _design_internal_mutation_primers(
+        self,
+        sequence: Seq,
+        seq_index: int,
+        mutation_options: List,
+        part_num_left: List[str],
+        part_num_right: List[str],
+        primer_name: Optional[List[str]],
+        template_seq: Optional[str],
+        kozak: str
+    ) -> List[List[str]]:
+        """Design primers based on prioritized mutations, with assembly site placement."""
+        with self.debug_context("design_internal_mutation_primers"):
+            primer_data = []
+
+            # Iterate over the mutation options (prioritized mutation list)
+            for mutation in mutation_options:
+                # Use the mutation dictionary directly (it already contains the necessary info)
+                mutation_data = mutation  
+                print(f"mutation_data: {mutation_data}")
+                
+                # Extract site index and other mutation details
+                site_index = mutation_data.get("site_index")
+                mutated_base = mutation_data.get("new_nt")
+                mutation_seq = mutation_data.get("mutated_seq")
+                # Provide a default if 'mutable_positions' is missing (adjust if needed)
+                mutable_positions = mutation_data.get("mutable_positions", [])
+                
+                # Design primers directly based on mutation data
+                primer_sets = self._design_primers_for_mutation(
+                    seq=sequence,
+                    mutation=mutation,
+                    part_num_left=part_num_left[seq_index],
+                    part_num_right=part_num_right[seq_index],
+                    primer_name=primer_name[seq_index] if primer_name else None,
+                    kozak=kozak,
+                    verbose=self.verbose
+                )
+                
+                # Format and append the primer sets
+                primer_data.extend(
+                    self.primer_selector.format_primers_for_output(primer_sets)
+                )
+
+            # Add edge primers for assembly site placement
+            mtk_partend_sequences = self.utils.get_mtk_partend_sequences()
+            primer_data.extend(self._get_edge_primers(
+                sequence, seq_index, mtk_partend_sequences,
+                part_num_left, part_num_right, kozak, primer_name
+            ))
+
+            return primer_data
+
+
+
+    def _design_primers_for_mutation(
+        self,
+        seq: Seq,
+        mutation: Dict,
+        part_num_left: str,
+        part_num_right: str,
+        primer_name: Optional[str],
+        kozak: str,
+        verbose: bool
+    ) -> List[Dict]:
+        """Design primers based on a single mutation."""
+        # This function will handle the design of primers based on the mutation.
+
+        print(f"mutation: {mutation}")
+        mutation_data = mutation['mutation']
+        mutated_seq = mutation_data['mutated_seq']
+        mutated_base = mutation_data['new_nt']
+        rs_index = mutation_data['rs_index']
+        
+        # Design primers for the mutation
+        primer_data = []
+
+        # Example primer design steps (this should be replaced with your actual logic)
+        # We generate the forward and reverse primers based on mutation data:
+        forward_primer = self._generate_forward_primer(seq, mutation, part_num_left, part_num_right, kozak)
+        reverse_primer = self._generate_reverse_primer(seq, mutation, part_num_left, part_num_right, kozak)
+
+        # Store primers with associated metadata (e.g., primer name)
+        primer_data.append({
+            "forward": forward_primer,
+            "reverse": reverse_primer,
+            "site_index": mutation['site_index'],
+            "mutation_seq": mutated_seq,
+            "primer_name": primer_name
+        })
+
+        return primer_data
+
+    def _reverse_complement(self, seq: str) -> str:
+        """Return the reverse complement of a DNA sequence."""
+        complement = {"A": "T", "T": "A", "C": "G", "G": "C", "N": "N"}
+        return "".join(complement.get(nt.upper(), nt) for nt in reversed(seq))
+
+
+    def _generate_forward_primer(
+        self,
+        seq: Seq,
+        mutation: Dict,
+        part_num_left: str,
+        part_num_right: str,
+        kozak: str,
+        primer_type: str
+    ) -> str:
+        """
+        Generate the forward primer based on mutation details and primer type.
+
+        For internal primers:
+        - Extract the binding sequence from the region defined by the mutation's
+            fragment reassembly range (set by the compatibility matrix).
+        - Append " GAA" and the BsmBI recognition site.
+        
+        For external primers:
+        - Extract the binding sequence (as above).
+        - Prepend the overhang looked up using the mtk left part number.
+        
+        The optional kozak sequence is prepended in either case.
+        """
+        # Determine the binding region.
+        if "fragment_reassembly_range" in mutation and mutation["fragment_reassembly_range"]:
+            # Expecting an object (or dict) with 'start' and 'end'
+            frag_range = mutation["fragment_reassembly_range"]
+            binding_seq = str(seq)[frag_range.start : frag_range.end + 1]
+        else:
+            # Fallback: use site_index and a default length (this should rarely happen)
+            site_index = mutation.get("site_index", 0)
+            default_length = 20  # Not used if comp matrix determined binding region
+            binding_seq = str(seq)[site_index : site_index + default_length]
+
+        if primer_type.lower() == "internal":
+            # For internal primers, add spacer " GAA" and BsmBI recognition site.
+            bsmbi_site = "CGTCTC"  # Example BsmBI recognition sequence
+            primer_body = binding_seq + " GAA" + bsmbi_site
+        elif primer_type.lower() == "external":
+            # For external primers, lookup the overhang based on the left part number.
+            overhang = self.utils.get_overhang(part_num_left)
+            primer_body = overhang + binding_seq
+        else:
+            raise ValueError(f"Unknown primer type: {primer_type}")
+
+        # Prepend the kozak sequence if provided.
+        if kozak:
+            return kozak + primer_body
+        else:
+            return primer_body
+
+
+    def _generate_reverse_primer(
+        self,
+        seq: Seq,
+        mutation: Dict,
+        part_num_left: str,
+        part_num_right: str,
+        kozak: str,
+        primer_type: str
+    ) -> str:
+        """
+        Generate the reverse primer based on mutation details and primer type.
+
+        For internal primers:
+        - Extract the binding sequence from the region defined by the mutation's
+            fragment reassembly range.
+        - Compute its reverse complement.
+        - Append " GAA" and the reverse complement of the BsmBI recognition site.
+        
+        For external primers:
+        - Extract the binding sequence (as above) and compute its reverse complement.
+        - Append the overhang looked up using the mtk right part number.
+        
+        The optional kozak sequence is prepended in either case.
+        """
+        if "fragment_reassembly_range" in mutation and mutation["fragment_reassembly_range"]:
+            frag_range = mutation["fragment_reassembly_range"]
+            binding_seq = str(seq)[frag_range.start : frag_range.end + 1]
+        else:
+            site_index = mutation.get("site_index", 0)
+            default_length = 20
+            binding_seq = str(seq)[site_index : site_index + default_length]
+
+        # Get reverse complement of the binding sequence.
+        binding_seq_rc = self._reverse_complement(binding_seq)
+
+        if primer_type.lower() == "internal":
+            bsmbi_site = "CGTCTC"
+            # Compute the reverse complement of the BsmBI recognition site.
+            bsmbi_site_rc = self._reverse_complement(bsmbi_site)
+            primer_body = binding_seq_rc + " GAA" + bsmbi_site_rc
+        elif primer_type.lower() == "external":
+            overhang = self.utils.get_overhang(part_num_right)
+            primer_body = binding_seq_rc + overhang
+        else:
+            raise ValueError(f"Unknown primer type: {primer_type}")
+
+        if kozak:
+            return kozak + primer_body
+        else:
+            return primer_body
+
+
+    def _get_edge_primers(
+        self,
+        sequence: Seq,
+        index: int,
+        part_end_dict: Dict[str, str],
+        part_num_left: List[str],
+        part_num_right: List[str],
+        kozak: str,
+        primer_name: Optional[List[str]]
+    ) -> List[List[str]]:
+        """Generate edge primers for a sequence."""
+        with self.debug_context("get_edge_primers"):
+            primer_data = []
+            left_name, left_primer = self.primer_designer.generate_GG_edge_primers(
+                sequence, part_end_dict, part_num_left[index], "forward", kozak, primer_name
+            )
+            right_name, right_primer = self.primer_designer.generate_GG_edge_primers(
+                sequence, part_end_dict, part_num_right[index], "reverse", kozak, primer_name
+            )
+            primer_data.append([left_name, left_primer, f"Amplicon_{index + 1}"])
+            primer_data.append([right_name, right_primer, f"Amplicon_{index + 1}"])
+            return primer_data

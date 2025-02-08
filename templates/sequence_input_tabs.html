@@ -4,34 +4,57 @@
 ] %}
 {% for i in range(num_sequences) %}
 <div class="sequence-tab-wrapper">
-<div class="form-row-top">
-  <div class="input-group">
-    <label for="primerName{{ i }}">Primer Name:</label>
-    <input type="text" id="primerName{{ i }}" name="sequences[{{ i }}][primerName]" class="form-control"
-           placeholder="Enter primer name (optional)"
-           value="{{ test_primer_name[i] if test_primer_name is defined and test_primer_name|length > i else '' }}" />
-  </div>
-  <div class="input-group">
-    <label for="mtkPart{{ i }}">MTK Part Number:</label>
-    <select id="mtkPart{{ i }}" name="sequences[{{ i }}][mtkPart]" class="form-select">
-      {% for val in mtk_part_nums %}
-        <option value="{{ val }}"
-          {% if test_part_number is defined and test_part_number|length > i and test_part_number[i] == val %}selected{% endif %}>
-          {{ val }}
-        </option>
-      {% endfor %}
-    </select>
-  </div>
-</div>
+    <div class="form-row-top">
+        <!-- Primer Name Input Group -->
+        <div class="input-group form-group">
+            <label for="primerName{{ i }}">Primer Name:</label>
+            <input type="text" 
+                   id="primerName{{ i }}" 
+                   name="sequences[{{ i }}][primerName]" 
+                   class="form-control input-field"
+                   placeholder="Enter primer name (optional)"
+                   value="{{ test_primer_name[i] if test_primer_name is defined and test_primer_name|length > i else '' }}"
+                   hx-post="{{ url_for('main.validate_field') }}"
+                   hx-trigger="change, keyup changed delay:500ms"
+                   hx-target="closest div"
+                   hx-vals='{"field": "primerName", "sequenceIndex": {{ i }}}' />
+            <div class="error-message" data-field="primerName"></div>
+        </div>
 
-<label>Sequence {{ i + 1 }}:</label>
-<textarea id="sequence{{ i }}" name="sequences[{{ i }}][sequence]" 
-          class="form-control dynamic-sequence-input sequence-input"
-          placeholder="Enter DNA sequence...">{{ test_sequence if test_sequence is defined else '' }}</textarea>
+        <!-- MTK Part Number Input Group -->
+        <div class="input-group form-group">
+            <label for="mtkPart{{ i }}">MTK Part Number:</label>
+            <select id="mtkPart{{ i }}" 
+                    name="sequences[{{ i }}][mtkPart]" 
+                    class="form-select input-field"
+                    hx-post="{{ url_for('main.validate_field') }}"
+                    hx-trigger="change"
+                    hx-target="closest div"
+                    hx-vals='{"field": "mtkPart", "sequenceIndex": {{ i }}}'>
+                {% for val in mtk_part_nums %}
+                    <option value="{{ val }}"
+                        {% if test_part_number is defined and test_part_number|length > i and test_part_number[i] == val %}selected{% endif %}>
+                        {{ val }}
+                    </option>
+                {% endfor %}
+            </select>
+            <div class="error-message" data-field="mtkPart"></div>
+        </div>
+    </div>
 
-<!-- ✅ NEW: Add a validation message container immediately after each input -->
-<div class="validation-message" id="sequence{{ i }}-validation" style="color: red;"></div>
-
-<div class="char-count-label" style="display:none;"></div>
+    <!-- Sequence Input -->
+    <div class="form-group">
+        <label>Sequence {{ i + 1 }}:</label>
+        <textarea id="sequence{{ i }}" 
+                  name="sequences[{{ i }}][sequence]" 
+                  class="form-control dynamic-sequence-input sequence-input input-field"
+                  placeholder="Enter DNA sequence..."
+                  hx-post="{{ url_for('main.validate_field') }}"
+                  hx-trigger="change, keyup changed delay:1000ms"
+                  hx-target="closest div"
+                  hx-vals='{"field": "sequence", "sequenceIndex": {{ i }}}'>{{ test_sequence if test_sequence is defined else '' }}</textarea>
+        <div class="error-message" data-field="sequence"></div>
+        <div class="char-count-label" style="display:none;"></div>
+    </div>
 </div>
 {% endfor %}
