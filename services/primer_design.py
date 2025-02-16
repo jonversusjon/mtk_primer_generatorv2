@@ -3,10 +3,11 @@ from typing import Dict, List, Optional, Any, Tuple
 import primer3
 from Bio.Seq import Seq
 from Bio.SeqUtils import MeltingTemp as mt
-from .base import GoldenGateDesigner
+from .base import PrimerDesignLogger
 from .utils import GoldenGateUtils
+import numpy as np
 
-class PrimerDesigner(GoldenGateDesigner):
+class PrimerDesigner(PrimerDesignLogger):
     def __init__(
         self, 
         part_num_left: List[str],
@@ -35,6 +36,143 @@ class PrimerDesigner(GoldenGateDesigner):
             'dna_conc': 250.0,
             'min_tm': 57
         }
+    
+        self.bsmbi_site = "CGTCTC"
+        self.spacer = "GAA"
+        self.utils = GoldenGateUtils()
+        
+    def design_primers(
+        self,
+        sequence: str,
+        seq_index: int,
+        mutations: Optional[List[Dict]] = None,
+        compatibility_matrices: List[np.ndarray] = None,
+        template_seq: Optional[str] = None,
+    ):
+        if mutations:
+            # print(f"mutations: {mutations}")
+            internal_primers = self.design_mutation_primers(sequence, mutations, compatibility_matrices)
+        
+        return
+ 
+
+    def design_mutation_primers(self, target_seq, mutation_sets, comp_matrices, annealing_length=18):
+        """Main entry point for designing mutation primers."""
+        self.logger.debug(f"Starting primer design with {len(mutation_sets)} mutation sets")
+        self.logger.debug(f"Compatibility matrices shapes: {[m.shape for m in comp_matrices]}")
+        for set_index, mutation_set in enumerate(mutation_sets):
+            # Find valid overhang combinations
+            valid_coords = self._find_valid_overhangs(comp_matrices[set_index])
+            if valid_coords is None:
+                self.logger.debug(f"No valid overhangs found for mutation set {set_index}")
+                continue
+
+            # Design primers for this mutation set
+            primers = self._design_primers_for_set(
+                target_seq, 
+                mutation_set, 
+                valid_coords[0],  # Use first valid combination
+                annealing_length
+            )
+            
+            if primers:
+                return primers
+        
+        return None
+
+    def _find_valid_overhangs(self, comp_matrix):
+        """Find valid overhang combinations from compatibility matrix."""
+        valid_coords = np.argwhere(comp_matrix == 1)
+        return valid_coords if valid_coords.size > 0 else None
+
+    def _apply_mutations(self, target_seq, mutation_set):
+        """Apply mutations to target sequence and log changes."""
+        mutated_seq = list(target_seq)
+        
+        for mut in mutation_set.values():
+            pos = mut["position"] - 1
+            alt_seq = mut["alternative_sequence"]
+            orig_seq = mut["original_sequence"]
+            
+            # Apply mutation
+            mutated_seq[pos:pos + len(orig_seq)] = alt_seq
+            
+            if self.verbose:
+                self._log_mutation(target_seq, mutated_seq, pos, len(orig_seq))
+        
+        return "".join(mutated_seq)
+
+    def _log_mutation(self, original_seq, mutated_seq, position, length):
+        """Log details of each mutation."""
+        for i in range(position, position + length):
+            old_base = original_seq[i] if i < len(original_seq) else "N/A"
+            new_base = mutated_seq[i] if i < len(mutated_seq) else "N/A"
+            if old_base != new_base:
+                self.logger.info(f"Mutated base at position {i+1}: {old_base} -> {new_base}")
+
+    def _get_primer_components(self, mut, selected_coord_idx):
+        """Extract overhang sequences for primer design."""
+        overhangs = mut["overhangs"]
+        return {
+            "forward_overhang": str(overhangs["top_strand_overhangs"][selected_coord_idx]),
+            "reverse_overhang": str(overhangs["bottom_strand_overhangs"][selected_coord_idx]),
+            "extra_forward": str(overhangs["top_extra_forward"][selected_coord_idx]),
+            "extra_reverse": str(overhangs["bottom_extra_reverse"][selected_coord_idx])
+        }
+
+    def _design_forward_primer(self, mutated_seq, position, components, annealing_length):
+        """Design forward primer with given components."""
+        if position + annealing_length > len(mutated_seq):
+            return None
+
+        binding = mutated_seq[position:position + annealing_length]
+        complete_overhang = components["extra_forward"] + components["forward_overhang"]
+        
+        primer = self.spacer + self.bsmbi_site + complete_overhang + binding
+        self.logger.debug(f"Forward primer: {primer}")
+        return primer
+
+    def _design_reverse_primer(self, mutated_seq, position, components, annealing_length):
+        """Design reverse primer with given components."""
+        start_index = position - annealing_length + 1
+        if start_index < 0:
+            return None
+
+        binding = mutated_seq[start_index:position + 1]
+        rev_binding = self.utils.reverse_complement(binding)
+        complete_overhang = components["extra_reverse"] + components["reverse_overhang"]
+        
+        primer = self.spacer + self.bsmbi_site + complete_overhang + rev_binding
+        self.logger.debug(f"Reverse primer: {primer}")
+        return primer
+
+    def _design_primers_for_set(self, target_seq, mutation_set, selected_coord, annealing_length):
+        """Design primers for a complete mutation set."""
+        # First apply all mutations to get final sequence
+        mutated_seq = self._apply_mutations(target_seq, mutation_set)
+        primers = {}
+
+        # Design primers for each mutation site
+        for j, mut in enumerate(mutation_set.values()):
+            position = mut["position"] - 1
+            
+            # Get overhang components
+            components = self._get_primer_components(mut, selected_coord[j])
+            
+            # Design forward and reverse primers
+            forward = self._design_forward_primer(mutated_seq, position, components, annealing_length)
+            reverse = self._design_reverse_primer(mutated_seq, position, components, annealing_length)
+            
+            if not forward or not reverse:
+                return None
+                
+            primers[mut["site"]] = {
+                "forward": forward,
+                "reverse": reverse
+            }
+
+        return primers
+
 
     def find_off_targets_for_primer(
         self,
@@ -109,42 +247,7 @@ class PrimerDesigner(GoldenGateDesigner):
             
         return off_targets
 
-    def design_primers_for_mutation(
-        self,
-        seq: Seq,
-        nucleotide_index: int,
-        new_nucleotide: str,
-        spacer: str,
-        bsmbi_site: str,
-        min_tm: float = 57,
-        template_seq: Optional[str] = None,
-    ) -> Dict[str, List[Dict]]:
-        """Design primers for a specific mutation."""
-        with self.debug_context("design_primers_for_mutation"):
-            self._validate_inputs(seq, nucleotide_index, new_nucleotide)
-            
-            self.state['current_operation'] = 'primer_design'
-            self.state['current_mutation'] = {
-                'position': nucleotide_index,
-                'new_base': new_nucleotide
-            }
-            
-            primers = {"forward": [], "reverse": []}
-            
-            for shift in range(6):
-                primer_pair = self._design_primer_pair(
-                    seq, nucleotide_index, new_nucleotide,
-                    spacer, bsmbi_site, shift, min_tm
-                )
-                if primer_pair:
-                    primers["forward"].append(primer_pair[0])
-                    primers["reverse"].append(primer_pair[1])
-                    self.state['primers_designed'] += 2
 
-            if template_seq:
-                self._perform_off_target_analysis(primers, template_seq)
-
-            return primers
 
     def _design_primer_pair(
         self,
@@ -152,7 +255,6 @@ class PrimerDesigner(GoldenGateDesigner):
         nucleotide_index: int,
         new_nucleotide: str,
         spacer: str,
-        bsmbi_site: str,
         shift: int,
         min_tm: float
     ) -> Optional[Tuple[Dict, Dict]]:
@@ -172,7 +274,7 @@ class PrimerDesigner(GoldenGateDesigner):
             return None
 
         primers = self._construct_primer_pair(
-            seq, spacer, bsmbi_site, six_nuc_seq, *binding_seqs
+            seq, spacer, self.bsmbi_site, six_nuc_seq, *binding_seqs
         )
         
         if self._validate_primer_pair(primers):
@@ -330,7 +432,6 @@ class PrimerDesigner(GoldenGateDesigner):
     def _construct_primer(
         self,
         spacer: str,
-        bsmbi_site: str,
         six_nuc_seq: str,
         binding_seq: str,
         reverse: bool = False
@@ -338,9 +439,9 @@ class PrimerDesigner(GoldenGateDesigner):
         """Construct a single primer."""
         if reverse:
             from Bio.Seq import Seq
-            overhang_sequence = bsmbi_site + str(Seq(six_nuc_seq).reverse_complement())
+            overhang_sequence = self.bsmbi_site + str(Seq(six_nuc_seq).reverse_complement())
         else:
-            overhang_sequence = bsmbi_site + six_nuc_seq
+            overhang_sequence = self.bsmbi_site + six_nuc_seq
 
         primer_sequence = spacer + overhang_sequence + binding_seq
         
@@ -350,7 +451,7 @@ class PrimerDesigner(GoldenGateDesigner):
             "primer_sequence": str(primer_sequence)
         }
 
-    def _validate_primer_pair(self, primers: Dict[str, Dict], bsmbi_site: str) -> bool:
+    def _validate_primer_pair(self, primers: Dict[str, Dict]) -> bool:
         """
         Validate both primers in a pair.
         
@@ -361,8 +462,8 @@ class PrimerDesigner(GoldenGateDesigner):
         Returns:
             bool: True if both primers have exactly one BsmBI site
         """
-        forward_site_count = primers["forward"]["overhang_sequence"].count(bsmbi_site)
-        reverse_site_count = primers["reverse"]["overhang_sequence"].count(bsmbi_site)
+        forward_site_count = primers["forward"]["overhang_sequence"].count(self.bsmbi_site)
+        reverse_site_count = primers["reverse"]["overhang_sequence"].count(self.bsmbi_site)
         return forward_site_count == 1 and reverse_site_count == 1
 
     def _format_primer_pair(self, primers: Dict[str, Dict]) -> Tuple[Dict, Dict]:
@@ -439,7 +540,6 @@ class PrimerDesigner(GoldenGateDesigner):
             for mutation in mutation_options:
                 # Use the mutation dictionary directly (it already contains the necessary info)
                 mutation_data = mutation  
-                print(f"mutation_data: {mutation_data}")
                 
                 # Extract site index and other mutation details
                 site_index = mutation_data.get("site_index")
@@ -488,7 +588,6 @@ class PrimerDesigner(GoldenGateDesigner):
         """Design primers based on a single mutation."""
         # This function will handle the design of primers based on the mutation.
 
-        print(f"mutation: {mutation}")
         mutation_data = mutation['mutation']
         mutated_seq = mutation_data['mutated_seq']
         mutated_base = mutation_data['new_nt']
@@ -607,9 +706,9 @@ class PrimerDesigner(GoldenGateDesigner):
         binding_seq_rc = self._reverse_complement(binding_seq)
 
         if primer_type.lower() == "internal":
-            bsmbi_site = "CGTCTC"
+            
             # Compute the reverse complement of the BsmBI recognition site.
-            bsmbi_site_rc = self._reverse_complement(bsmbi_site)
+            bsmbi_site_rc = self._reverse_complement(self.bsmbi_site)
             primer_body = binding_seq_rc + " GAA" + bsmbi_site_rc
         elif primer_type.lower() == "external":
             overhang = self.utils.get_overhang(part_num_right)

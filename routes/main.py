@@ -106,10 +106,9 @@ def validate_field():
 def generate_protocol():
     # Ensure we handle both JSON and form-encoded data
     packaged_data, error_message = utils.package_form_data(request)
-    verbose = packaged_data.get("verboseMode", "off") == "on"
+    verbose = packaged_data.get("verboseMode")
     
-    if verbose: print('Packaged Data Keys:', packaged_data.keys())
-    
+    print(f"main route verbose: {verbose}")
     if error_message:
         return jsonify({'error': error_message}), 400
 

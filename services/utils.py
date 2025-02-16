@@ -7,10 +7,11 @@ from functools import lru_cache
 from Bio.Seq import Seq
 from Bio.Data import CodonTable
 from typing import Dict, List, Optional, Any
-from .base import GoldenGateDesigner
+from .base import PrimerDesignLogger
+from Bio.Data import CodonTable
+import numpy as np
 
-
-class GoldenGateUtils(GoldenGateDesigner):
+class GoldenGateUtils(PrimerDesignLogger):
     def __init__(self, verbose: bool = False):
         super().__init__(verbose=verbose)
         self.data_dir = os.path.join(os.path.dirname(__file__), "../static/data")
@@ -57,10 +58,60 @@ class GoldenGateUtils(GoldenGateDesigner):
             self.logger.warning("Codon usage tables directory not found")
             return []
 
+
+    def reverse_complement(self, seq: str) -> str:
+        """
+        Returns the reverse complement of a DNA sequence.
+
+        Args:
+            seq (str): The DNA sequence.
+
+        Returns:
+            str: The reverse complement of the input sequence.
+        """
+        return str(Seq(seq).reverse_complement())
+
     def get_amino_acid(self, codon: str) -> str:
         """Translates a codon to its amino acid."""
         return str(Seq(codon).translate())
 
+
+    def get_codons_for_amino_acid(self, amino_acid: str):
+        """
+        Returns a list of codons (as strings) that encode the given amino acid,
+        based on the standard genetic code (NCBI table 1).
+
+        Args:
+            amino_acid (str): One-letter amino acid code (e.g., 'E' for Glutamic acid).
+
+        Returns:
+            list[str]: A list of codon strings.
+
+        Raises:
+            TypeError: If amino_acid is not a string.
+            ValueError: If amino_acid is not a single valid character.
+        """
+
+        if not isinstance(amino_acid, str):
+            raise TypeError("amino_acid must be a string")
+
+        if len(amino_acid) != 1:
+            raise ValueError("amino_acid must be a single character representing the amino acid")
+
+        valid_amino_acids = set("ACDEFGHIKLMNPQRSTVWY*")
+        amino_acid = amino_acid.upper()
+
+        if amino_acid not in valid_amino_acids:
+            raise ValueError(f"'{amino_acid}' is not a valid amino acid one-letter code")
+
+        table = CodonTable.unambiguous_dna_by_id[1]
+
+        if amino_acid == '*':
+            return table.stop_codons
+
+        return [codon for codon, aa in table.forward_table.items() if aa == amino_acid]
+
+    
     def export_primers_to_tsv(
         self,
         forward_primers: List[tuple],
@@ -125,6 +176,7 @@ class GoldenGateUtils(GoldenGateDesigner):
 
                 # Extract and validate main fields
                 packaged_data = self._extract_form_fields(data)
+                print(f"package_data verbose: {packaged_data['verboseMode']}")
                 
                 return packaged_data, None
                 
@@ -148,6 +200,7 @@ class GoldenGateUtils(GoldenGateDesigner):
         species = self._get_first_value(data, "species", "")
         kozak = self._get_first_value(data, "kozak", "")
         verbose_mode = self._get_first_value(data, "verbose_mode", "off").lower() == "on"
+        print(f"_extract_form_fields: verbose_mode: {verbose_mode}")
 
         sequences = []
         for i in range(num_sequences):
@@ -214,7 +267,7 @@ class GoldenGateUtils(GoldenGateDesigner):
 
             return error_messages
 
-    def _seq_to_index(self, seq: str) -> int:
+    def seq_to_index(self, seq: str) -> int:
         """
         Converts a 4-nucleotide sequence to its corresponding matrix index.
         Sequences are indexed in alphabetical order (A=0, C=1, G=2, T=3).
@@ -241,234 +294,124 @@ class GoldenGateUtils(GoldenGateDesigner):
             power = 3 - pos
             index += NT_VALUES[nt] * (4 ** power)
         
-        if self.verbose:
-            print(f"Converted sequence {seq} to index {index}")
-        
         return index
 
-# import json
-# import os
-# import csv
-# import logging
-# from functools import lru_cache
-# from Bio.Seq import Seq
-# from Bio.Data import CodonTable
+    def get_recognition_site_bases(self, frame, codon_index):
+        """
+        Given the reading frame and the codon index (0 for first codon, etc.),
+        returns a list of indices (0, 1, 2) indicating which bases in the codon
+        are within the 6-base restriction enzyme recognition site.
 
-# logging.basicConfig(level=logging.INFO)
+        Args:
+            frame (int): The reading frame (0, 1, or 2).
+            codon_index (int): The index of the codon in the list (0 for first, etc.)
 
-# def load_json_file(filename):
-#     """
-#     Loads a JSON file from the static/data directory.
-
-#     Args:
-#         filename (str): Name of the JSON file.
-
-#     Returns:
-#         dict: Parsed JSON data, or None if an error occurs.
-#     """
-#     filepath = os.path.join(os.path.dirname(__file__), "../static/data", filename)
-
-#     try:
-#         with open(filepath, "r") as file:
-#             return json.load(file)
-#     except FileNotFoundError:
-#         logging.error(f"File not found: {filepath}")
-#         return None
-#     except json.JSONDecodeError:
-#         logging.error(f"Invalid JSON format in: {filepath}")
-#         return None
-
-
-# @lru_cache(maxsize=10)
-# def get_codon_usage_dict(species):
-#     """
-#     Loads a codon usage table from a JSON file.
-
-#     Args:
-#         species (str): The name of the species (e.g., "homo_sapiens").
-
-#     Returns:
-#         dict: The codon usage table, or None if not found.
-#     """
-#     data_dir = "static/data/codon_usage_tables"
-#     filename = os.path.join(data_dir, f"{species}.json")
-#     try:
-#         with open(filename, "r") as f:
-#             codon_usage_table = json.load(f)
-#         return codon_usage_table
-#     except FileNotFoundError:
-#         return None
-
-
-# @lru_cache(maxsize=1)
-# def get_mtk_partend_sequences():
-#     """
-#     Loads MTK part-end sequences from a JSON file.
-
-#     Returns:
-#         dict: The MTK part-end sequences, or None if the file is not found.
-#     """
-#     return load_json_file("mtk_partend_sequences.json")
-
-
-# def get_available_species():
-#     """
-#     Gets a list of available species from JSON files in static/data/codon_usage_tables.
-
-#     Returns:
-#         list[str]: A list of species names.
-#     """
-#     data_dir = os.path.join(os.path.dirname(__file__), "../static/data/codon_usage_tables")
-
-#     if os.path.exists(data_dir):
-#         return [f[:-5] for f in os.listdir(data_dir) if f.endswith('.json')]
-    
-#     return []  # Return an empty list if the directory is missing
-
-
-# def get_amino_acid(codon):
-#     return Seq(codon).translate()
-
-
-# def export_primers_to_tsv(forward_primers, reverse_primers, filename="primers.tsv"):
-#     """
-#     Exports the forward and reverse primers to a TSV file.
-
-#     Args:
-#         forward_primers (list): List of (name, sequence) tuples.
-#         reverse_primers (list): List of (name, sequence) tuples.
-#         filename (str): Output file name.
-#     """
-#     filepath = os.path.join(os.path.dirname(__file__), "../static/data", filename)
-
-#     with open(filepath, mode='w', newline='') as file:
-#         writer = csv.writer(file, delimiter='\t')
-
-#         for name, sequence in forward_primers:
-#             writer.writerow([name, sequence, "Generated for Golden Gate Assembly"])
-
-#         for name, sequence in reverse_primers:
-#             writer.writerow([name, sequence, "Generated for Golden Gate Assembly"])
-
-#     logging.info(f"Primers exported to {filepath}")
-
-
-# def gc_content(seq):
-#     """
-#     Computes the GC content of a DNA sequence as a fraction.
-#     """
-#     gc_count = sum(1 for nt in seq.upper() if nt in "GC")
-#     return gc_count / len(seq) if seq else 0
-
-
-# def package_form_data(request):
-#     """
-#     Parses and restructures form data from HTMX to create a structured dictionary.
-#     """
-#     try:
-#         # Determine data format
-#         if request.content_type == "application/json":
-#             data = request.get_json()
-#         elif request.content_type in ["application/x-www-form-urlencoded", "multipart/form-data"]:
-#             data = request.form.to_dict(flat=False)
-#         else:
-#             return None, "Unsupported Media Type"
-
-#         if not data:
-#             return None, "No data received in the request."
+        Returns:
+            List[int]: The indices of the codon that are part of the recognition site.
+        """
+        if frame == 0:
+            # With frame 0, the recognition site aligns with codon boundaries:
+            return [0, 1, 2]
+        elif frame == 1:
+            # For frame=1, we assume three codons:
+            # First codon: only its last two bases (indices 1 and 2) are within the site.
+            # Second codon: all three bases are in.
+            # Third codon: only its first base (index 0) is in.
+            if codon_index == 0:
+                return [1, 2]
+            elif codon_index == 1:
+                return [0, 1, 2]
+            elif codon_index == 2:
+                return [0]
+        elif frame == 2:
+            # For frame=2, we assume three codons:
+            # First codon: only its third base (index 2) is within the site.
+            # Second codon: all three bases are in.
+            # Third codon: only its first two bases (indices 0 and 1) are in.
+            if codon_index == 0:
+                return [2]
+            elif codon_index == 1:
+                return [0, 1, 2]
+            elif codon_index == 2:
+                return [0, 1]
+        else:
+            raise ValueError("Frame must be 0, 1, or 2")
         
-#         # Extract main fields
-#         template_sequence = _get_first_value(data, "templateSequence", "")
-#         num_sequences = _get_first_value(data, "numSequences", 1, int)
-#         species = _get_first_value(data, "species", "")
-#         kozak = _get_first_value(data, "kozak", "")
-#         verbose_mode = _get_first_value(data, "verbose_mode", "off").lower() == "on"
-
-#         # 🔹 Transform sequence keys into a structured list
-#         sequences = []
-#         for i in range(num_sequences):
-#             sequences.append({
-#                 "primerName": _get_first_value(data, f"sequences[{i}][primerName]", ""),
-#                 "mtkPart": _get_first_value(data, f"sequences[{i}][mtkPart]", ""),
-#                 "sequence": _get_first_value(data, f"sequences[{i}][sequence]", ""),
-#             })
-
-#         # 🔹 Package data
-#         packaged_data = {
-#             "templateSequence": template_sequence,
-#             "numSequences": num_sequences,
-#             "species": species,
-#             "kozak": kozak,
-#             "sequences": sequences,
-#             "verboseMode": verbose_mode
-#         }
-
-#         return packaged_data, None  # Success
-
-#     except Exception as e:
-#         logging.error(f"Unexpected error in package_form_data: {str(e)}", exc_info=True)
-#         return None, f"An unexpected error occurred: {str(e)}"
-
-
-
-# def _get_first_value(data, key, default="", cast_type=str):
-#     """
-#     Safely retrieves the first value from a form field (list or single value).
+        
+    def _load_compatibility_table(self, path: str) -> np.ndarray:
+        """
+        Loads the binary compatibility table into a numpy array.
+        
+        The binary file contains a 256×256 compatibility matrix where each element
+        represents whether two 4-nucleotide sequences are compatible. The sequences
+        are ordered alphabetically, so AA[AA] is at [0,0] and TT[TT] is at [255,255].
+        
+        Args:
+            path: Path to the binary compatibility table file
+                
+        Returns:
+            256x256 numpy array where element [i,j] indicates if sequence i is compatible with j
+            
+        Raises:
+            FileNotFoundError: If compatibility table file cannot be found
+            ValueError: If table dimensions or content are invalid
+        """
+        try:
+            with open(path, 'rb') as f:
+                binary_data = f.read()
+            
+            expected_size = 256 * 256 // 8  # 65,536 bits = 8,192 bytes
+            if len(binary_data) != expected_size:
+                raise ValueError(
+                    f"Invalid compatibility table size. Expected {expected_size} bytes, "
+                    f"got {len(binary_data)} bytes"
+                )
+                
+            compatibility_bits = np.unpackbits(
+                np.frombuffer(binary_data, dtype=np.uint8)
+            )
+            compatibility_matrix = compatibility_bits.reshape(256, 256)
+            
+            if self.verbose:
+                self.logger.info(f"Loaded compatibility matrix with shape: {compatibility_matrix.shape}")
+                self.logger.info(f"Number of compatible pairs: {np.sum(compatibility_matrix)}")
+                self.logger.info(f"Matrix density: {np.mean(compatibility_matrix):.2%}")
+            
+            return compatibility_matrix
+            
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                f"Compatibility table not found at {path}. "
+                "Please ensure the binary file is in the correct location."
+            )
+        except Exception as e:
+            raise ValueError(f"Error loading compatibility table: {str(e)}")
     
-#     Args:
-#         data (dict): Form or JSON data.
-#         key (str): Key to fetch.
-#         default (any): Default value if key is missing.
-#         cast_type (type): Data type to cast the value to.
-    
-#     Returns:
-#         Value of the key, properly casted.
-#     """
-#     value = data.get(key, default)
 
-#     # Ensure value is a string or a single element (not a list)
-#     if isinstance(value, list):
-#         value = value[0] if value else default  # Use default if list is empty
+    def get_codon_usage(self, codon: str, amino_acid: str, codon_usage_dict: dict, default_usage: float = 0.0) -> float:
+        """
+        Converts a DNA codon (T → U) to RNA and retrieves its codon usage frequency.
 
-#     try:
-#         return cast_type(value)
-#     except (ValueError, TypeError):
-#         logging.error(f"Failed to cast {key}={value} to {cast_type.__name__}")
-#         return default  # Return default if casting fails
+        Args:
+            codon (str): A three-letter DNA codon (e.g., "GAA").
+            amino_acid (str): The corresponding amino acid (single-letter code).
+            codon_usage_dict (dict): Dictionary mapping amino acids to codon usage frequencies.
+            default_usage (float, optional): Default usage value if the codon is not found. Defaults to 1.0.
 
+        Returns:
+            float: The codon usage frequency.
+        """
+        if not isinstance(codon, str) or len(codon) != 3:
+            raise ValueError(f"Invalid codon: {codon}. Must be a three-letter DNA string.")
 
-# def validate_form_data(data, required_fields=None, field_validators=None):
-#     """
-#     Validates form data against required fields and custom validation rules.
+        if amino_acid not in codon_usage_dict:
+            print(f"Warning: Amino acid {amino_acid} not found in codon usage dictionary.")
+            return default_usage
 
-#     Args:
-#         data (dict): The parsed JSON data from the request.
-#         required_fields (list, optional): List of required field names.
-#         field_validators (dict, optional): Validation functions {field_name: validator_function}.
+        # Convert DNA (T) to RNA (U) for lookup
+        codon_rna = codon.replace("T", "U")
 
-#     Returns:
-#         list: List of error messages, or an empty list if no errors.
-#     """
-#     error_messages = []
+        # Retrieve codon usage, return default if not found
+        usage_value = codon_usage_dict[amino_acid].get(codon_rna, default_usage)
 
-#     # Check required fields
-#     if required_fields:
-#         missing_fields = [field for field in required_fields if field not in data]
-#         if missing_fields:
-#             error_messages.append(f"Missing required fields: {', '.join(missing_fields)}")
-
-#     # Apply field-specific validation functions
-#     if field_validators:
-#         for field, validator in field_validators.items():
-#             if field in data:
-#                 validation_error = validator(data[field])
-#                 if validation_error:
-#                     error_messages.append(validation_error)
-
-#     return error_messages  # Return all validation errors
-
-# def translate_codon(codon):
-#     """Translates a codon into its corresponding amino acid."""
-#     codon = codon.upper().replace("U", "T")  # Ensure DNA format
-#     standard_table = CodonTable.unambiguous_dna_by_id[1]  # Standard table
-#     return standard_table.forward_table.get(codon, "?")  # Returns "?" if not found
+        return usage_value

@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+    <style>
+        /* Light mode colors */
+        :root {
+            --bg-color: white;
+            --text-color: black;
+            --muted-text: #666666;
+            --spacer-bg: #E8E8E8;
+            --bsmbi-bg: #FFE8E8;
+            --seq-bg: #E8E8FF;
+            --binding-bg: #F0F0F0;
+            --legend-bg: #f8f8f8;
+            --legend-border: #ddd;
+        }
+        
+        /* Dark mode colors */
+        :root .dark-mode {
+            --bg-color: #1a1a1a;
+            --text-color: #ffffff;
+            --muted-text: #999999;
+            --spacer-bg: #2d2d2d;
+            --bsmbi-bg: #3d2828;
+            --seq-bg: #28283d;
+            --binding-bg: #2d2d2d;
+            --legend-bg: #2d2d2d;
+            --legend-border: #404040;
+        }
+
+        .bg-rect { fill: var(--bg-color); }
+        .spacer-domain { fill: var(--spacer-bg); }
+        .bsmbi-domain { fill: var(--bsmbi-bg); }
+        .seq-domain { fill: var(--seq-bg); }
+        .binding-domain { fill: var(--binding-bg); }
+        .main-text { fill: var(--text-color); }
+        .muted-text { fill: var(--muted-text); }
+        .legend-box { fill: var(--legend-bg); stroke: var(--legend-border); }
+    </style>
+
+    <!-- Background -->
+    <rect width="800" height="500" class="bg-rect"/>
+    
+    <!-- Title -->
+    <text x="400" y="40" text-anchor="middle" font-family="Arial" font-size="20" font-weight="bold" class="main-text">BsmBI Cutting Pattern in Primers</text>
+    
+    <!-- Forward Primer -->
+    <g transform="translate(100, 150)">
+        <!-- Domain background rectangles -->
+        <rect x="-5" y="-15" width="45" height="40" class="spacer-domain" rx="3"/>
+        <rect x="40" y="-15" width="70" height="40" class="bsmbi-domain" rx="3"/>
+        <rect x="110" y="-15" width="80" height="40" class="seq-domain" rx="3"/>
+        <rect x="190" y="-15" width="190" height="40" class="binding-domain" rx="3"/>
+        
+        <!-- DNA sequence -->
+        <text x="0" y="0" font-family="monospace" font-size="16">
+            <tspan class="muted-text" x="5">gaa</tspan>
+            <tspan x="50" class="main-text">cgtctc</tspan>
+            <tspan x="117" class="main-text">G</tspan>
+            <tspan x="132" font-weight="bold" class="main-text">AAAC</tspan>
+            <tspan x="175" class="main-text">C</tspan>
+            <tspan x="200" class="muted-text">tccgcgccccgcaacctcc</tspan>
+        </text>
+        <text x="0" y="20" font-family="monospace" font-size="16">
+            <tspan class="muted-text" x="5">ctt</tspan>
+            <tspan x="50" class="main-text">gcagag</tspan>
+            <tspan x="117" class="main-text">C</tspan>
+            <tspan x="132" font-weight="bold" class="main-text">TTTG</tspan>
+            <tspan x="175" class="main-text">G</tspan>
+            <tspan x="200" class="muted-text">aggcgcggggcgttggagg</tspan>
+        </text>
+        
+        <!-- Forward primer cutting arrows -->
+        <path d="M 102,25 L 102,45" stroke="#E63946" stroke-width="2" fill="none" marker-end="url(#arrowhead1)" class="forward-bottom"/>
+        <path d="M 182,-5 L 182,-25" stroke="#457B9D" stroke-width="2" fill="none" marker-end="url(#arrowhead2)" class="forward-top"/>
+        
+        <!-- Domain labels -->
+        <text x="15" y="-25" font-family="Arial" font-size="12" text-anchor="middle" class="main-text">Spacer</text>
+        <text x="85" y="-25" font-family="Arial" font-size="12" text-anchor="middle" class="main-text">BsmBI site</text>
+        <text x="175" y="-25" font-family="Arial" font-size="12" text-anchor="middle" class="main-text">6nt sequence</text>
+        <text x="340" y="-25" font-family="Arial" font-size="12" text-anchor="middle" class="main-text">Binding region</text>
+        
+        <!-- Primer label -->
+        <text x="-80" y="10" font-family="Arial" font-size="14" font-weight="bold" class="main-text">Forward</text>
+    </g>
+    
+    <!-- Reverse Primer -->
+    <g transform="translate(100, 300)">
+        <!-- Domain background rectangles -->
+        <rect x="-5" y="-15" width="45" height="40" class="spacer-domain" rx="3"/>
+        <rect x="40" y="-15" width="70" height="40" class="bsmbi-domain" rx="3"/>
+        <rect x="110" y="-15" width="80" height="40" class="seq-domain" rx="3"/>
+        <rect x="190" y="-15" width="190" height="40" class="binding-domain" rx="3"/>
+        
+        <!-- DNA sequence -->
+        <text x="0" y="0" font-family="monospace" font-size="16">
+            <tspan class="muted-text" x="5">gaa</tspan>
+            <tspan x="50" class="main-text">cgtctc</tspan>
+            <tspan x="117" class="main-text">A</tspan>
+            <tspan x="132" font-weight="bold" class="main-text">CAGT</tspan>
+            <tspan x="175" class="main-text">G</tspan>
+            <tspan x="200" class="muted-text">tctcggtgaaggcctcccag</tspan>
+        </text>
+        <text x="0" y="20" font-family="monospace" font-size="16">
+            <tspan class="muted-text" x="5">ctt</tspan>
+            <tspan x="50" class="main-text">gcagag</tspan>
+            <tspan x="117" class="main-text">T</tspan>
+            <tspan x="132" font-weight="bold" class="main-text">GTCA</tspan>
+            <tspan x="175" class="main-text">C</tspan>
+            <tspan x="200" class="muted-text">agagccacttccggagggtc</tspan>
+        </text>
+        
+       <!-- Reverse primer cutting arrows -->
+       <path d="M 102,25 L 102,45" stroke="#2A9D8F" stroke-width="2" fill="none" marker-end="url(#arrowhead3)" class="reverse-bottom"/>
+       <path d="M 182,-5 L 182,-25" stroke="#F4A261" stroke-width="2" fill="none" marker-end="url(#arrowhead4)" class="reverse-top"/>
+        
+        <!-- Primer label -->
+        <text x="-80" y="10" font-family="Arial" font-size="14" font-weight="bold" class="main-text">Reverse</text>
+    </g>
+    
+    <!-- Arrow marker definitions -->
+    <defs>
+        <marker id="arrowhead1" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#E63946"/>
+        </marker>
+        <marker id="arrowhead2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#457B9D"/>
+        </marker>
+        <marker id="arrowhead3" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#2A9D8F"/>
+        </marker>
+        <marker id="arrowhead4" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#F4A261"/>
+        </marker>
+    </defs>
+    
+    <!-- Legend -->
+    <g transform="translate(100, 400)">
+        <rect x="0" y="0" width="600" height="80" class="legend-box" rx="5"/>
+        <text x="20" y="30" font-family="Arial" font-size="14" font-weight="bold" class="main-text">Primer Domains:</text>
+        <g transform="translate(20, 50)">
+            <rect x="0" y="-15" width="30" height="20" class="spacer-domain" rx="3"/>
+            <text x="40" y="0" font-family="Arial" font-size="12" class="main-text">Spacer</text>
+            
+            <rect x="120" y="-15" width="30" height="20" class="bsmbi-domain" rx="3"/>
+            <text x="150" y="0" font-family="Arial" font-size="12" class="main-text">BsmBI recognition site</text>
+            
+            <rect x="300" y="-15" width="30" height="20" class="seq-domain" rx="3"/>
+            <text x="280" y="0" font-family="Arial" font-size="12" class="main-text">6nt sequence (4bp overhang in bold)</text>
+            
+            <rect x="480" y="-15" width="30" height="20" class="binding-domain" rx="3"/>
+            <text x="520" y="0" font-family="Arial" font-size="12" class="main-text">Binding region</text>
+        </g>
+    </g>
+</svg>

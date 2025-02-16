@@ -3,8 +3,21 @@ import logging
 from typing import Optional, List
 from contextlib import contextmanager
 import time
+from colorlog import ColoredFormatter
+import traceback
 
-class GoldenGateDesigner:
+class CustomFormatter(ColoredFormatter):
+    def format(self, record):
+        if record.levelname in ["DEBUG", "ERROR"]:
+            self._fmt = "%(log_color)s%(levelname)s - %(name)s - %(filename)s:%(lineno)d - %(funcName)s - %(message)s"
+        elif record.levelname == "INFO":
+            self._fmt = "%(log_color)s%(message)s"  # No log level shown for INFO
+        else:  # WARNING and others
+            self._fmt = "%(log_color)s%(levelname)s - %(message)s"
+
+        return super().format(record)
+    
+class PrimerDesignLogger:
     def __init__(self, verbose: bool = False, log_level: str = "DEBUG"):
         # Set up logging and state management
         self.logger = self._setup_logger(log_level)
@@ -16,8 +29,15 @@ class GoldenGateDesigner:
         logger = logging.getLogger(self.__class__.__name__)
         if not logger.handlers:
             handler = logging.StreamHandler()
-            formatter = logging.Formatter(
-                '%(levelname)s - %(name)s - %(message)s'
+            formatter = CustomFormatter(
+                "%(log_color)s%(levelname)s - %(message)s",
+                log_colors={
+                    'DEBUG': 'purple',
+                    'INFO': 'white',
+                    'WARNING': 'blue',
+                    'ERROR': 'yellow',
+                    'CRITICAL': 'red,bg_white'
+                }
             )
             handler.setFormatter(formatter)
             logger.addHandler(handler)
@@ -32,11 +52,17 @@ class GoldenGateDesigner:
         try:
             yield
         except Exception as e:
-            self.logger.error(f"Error in {step_name}: {str(e)}")
+            tb = traceback.extract_tb(e.__traceback__)[-1]  # Get last frame of the traceback
+            filename, line, func, text = tb
+            self.logger.error(
+                f"Error in {step_name} | Function: {func} | Line {line} | {e.__class__.__name__}: {str(e)}"
+            )
+            self.logger.debug("Traceback details:\n" + "".join(traceback.format_tb(e.__traceback__)))
             raise
         finally:
             duration = time.time() - start_time
             self.logger.debug(f"Completed {step_name} in {duration:.2f}s")
+
 
     def log_state(self, message: str):
         """Log current state with message."""

@@ -1,58 +1,25 @@
-from typing import Dict, List, Optional, Tuple, Set
+from typing import Dict, List, Union
+from Bio.Seq import Seq
 import numpy as np
-from dataclasses import dataclass
-from services.base import GoldenGateDesigner
+from services.base import PrimerDesignLogger
 from itertools import product
+from .utils import GoldenGateUtils
+import random
+from tqdm import tqdm
 
-@dataclass
-class FragmentReassemblyRange:
+class MutationOptimizer(PrimerDesignLogger):
     """
-    Represents the range of valid fragment reassembly points for a restriction site.
-    For any 6-nt restriction site, the region is defined as:
-      - start: 24 bp upstream of the 5'-most base of the recognition site
-      - end:   15 bp upstream of the 3'-most base of the recognition site
+    Optimizes mutations for Golden Gate assembly by balancing codon usage,
+    sequence stability, and restriction site compatibility.
     """
-    start: int  # 24 bp upstream of the 5'-most base
-    end: int    # 15 bp upstream of the 3'-most base
 
-    @property
-    def range_size(self) -> int:
-        """Number of possible reassembly points in the range"""
-        return self.end - self.start + 1
-
-
-def calculate_fragment_reassembly_range(recognition_site: Dict) -> FragmentReassemblyRange:
-    """
-    Calculate the valid fragment reassembly range based solely on recognition site coordinates.
+    def __init__(
+        self,
+        verbose: bool = False
+    ):
+        super().__init__(verbose=verbose)
+        self.utils = GoldenGateUtils()
     
-    The range is defined as 24 bp upstream of the 5'-most base to 15 bp upstream of the 3'-most base.
-    If the recognition site dictionary does not include an explicit end, it is assumed to be 6 nt wide.
-    
-    Args:
-        recognition_site: Dict that should contain either:
-            - 'start' and 'end' keys, or
-            - 'start_index' (with a 6-nt site assumed).
-            
-    Returns:
-        FragmentReassemblyRange with calculated start and end reassembly points.
-    """
-    # Determine the start of the recognition site.
-    start = recognition_site.get('start', recognition_site.get('start_index'))
-    # Determine the end of the recognition site. If not provided, assume a 6-nt site.
-    end = recognition_site.get('end', start + 5)
-    reassembly_start = start - 24  # 24 bp upstream of the first base
-    reassembly_end = end - 15      # 15 bp upstream of the last base
-    return FragmentReassemblyRange(start=reassembly_start, end=reassembly_end)
-
-    
-class MutationOptimizer(GoldenGateDesigner):
-    """
-    Optimizes mutation selection based on compatibility and codon usage frequency.
-    Uses a precomputed binary compatibility table for fast lookups.
-    Note: All references to "cut site" have been refactored to "fragment reassembly point".
-    """
-    
-    def __init__(self, verbose: bool = False):
         """
         Initialize the optimizer with a precomputed compatibility table.
         
@@ -60,313 +27,473 @@ class MutationOptimizer(GoldenGateDesigner):
             verbose: Whether to print detailed progress information
         """
         self.verbose = verbose
+        
+        self.utils = GoldenGateUtils()
         self.compatibility_table_path = 'static/data/compatibility_table.bin'
-        self.compatibility_matrix = self._load_compatibility_table(self.compatibility_table_path)
-
-    def _load_compatibility_table(self, path: str) -> np.ndarray:
-        """
-        Loads the binary compatibility table into a numpy array.
-        
-        The binary file contains a 256×256 compatibility matrix where each element
-        represents whether two 4-nucleotide sequences are compatible. The sequences
-        are ordered alphabetically, so AA[AA] is at [0,0] and TT[TT] is at [255,255].
-        
-        Args:
-            path: Path to the binary compatibility table file
-                
-        Returns:
-            256x256 numpy array where element [i,j] indicates if sequence i is compatible with j
-            
-        Raises:
-            FileNotFoundError: If compatibility table file cannot be found
-            ValueError: If table dimensions or content are invalid
-        """
-        try:
-            with open(path, 'rb') as f:
-                binary_data = f.read()
-            
-            expected_size = 256 * 256 // 8  # 65,536 bits = 8,192 bytes
-            if len(binary_data) != expected_size:
-                raise ValueError(
-                    f"Invalid compatibility table size. Expected {expected_size} bytes, "
-                    f"got {len(binary_data)} bytes"
-                )
-                
-            compatibility_bits = np.unpackbits(
-                np.frombuffer(binary_data, dtype=np.uint8)
-            )
-            compatibility_matrix = compatibility_bits.reshape(256, 256)
-            
-            if self.verbose:
-                print(f"Loaded compatibility matrix with shape: {compatibility_matrix.shape}")
-                print(f"Number of compatible pairs: {np.sum(compatibility_matrix)}")
-                print(f"Matrix density: {np.mean(compatibility_matrix):.2%}")
-            
-            return compatibility_matrix
-            
-        except FileNotFoundError:
-            raise FileNotFoundError(
-                f"Compatibility table not found at {path}. "
-                "Please ensure the binary file is in the correct location."
-            )
-        except Exception as e:
-            raise ValueError(f"Error loading compatibility table: {str(e)}")
-    
-
-
-    def get_sticky_end(self, sequence: str, reassembly_point: int) -> str:
-        """
-        Get 4bp sticky end that would result from cutting at the given fragment reassembly point.
-        
-        Args:
-            sequence: The full sequence to be cut.
-            reassembly_point: The position at which the fragment reassembly point is defined.
-            
-        Returns:
-            4-nucleotide sticky end sequence.
-        """
-        return sequence[reassembly_point:reassembly_point + 4]
-
+        self.compatibility_table = self.utils._load_compatibility_table(self.compatibility_table_path)
 
     def optimize_mutations(
         self,
-        mutation_result: Dict,
-        compatibility_tensor: np.ndarray
-    ) -> Tuple[List[Dict], List[int]]:
-        """
-        Find the optimal combination of mutations that are compatible according to the compatibility_tensor.
-        
-        For each restriction site, mutation options are extracted from mutation_result['restriction_sites'].
-        The compatibility_tensor is assumed to have dimensions corresponding to the number of options per site.
-        The optimal combination is defined as the one with the highest total usage score (sum of 'usage' across sites).
-        
-        Args:
-            mutation_result: Dictionary containing mutation data (including a key 'restriction_sites')
-            compatibility_tensor: A numpy array representing the compatibility of each combination.
-        
-        Returns:
-            A tuple (best_mutations, valid_positions), where:
-            - best_mutations is a list of chosen mutation dictionaries (one per site),
-            - valid_positions is a list of indices (one per site) representing the position of the selected mutation.
-        """
-        # Extract mutation options per site.
-        # Note: We now include the "site_index" key (using the site's start_index) for downstream compatibility.
-        site_mutations = []
-        for site in mutation_result.get("restriction_sites", []):
-            site_muts = []
-            for codon in site.get("codons", []):
-                if "mutations" in codon:
-                    for mutation in codon["mutations"]:
-                        mut_copy = mutation.copy()
-                        # Update the mutation info to include site_index (and other site-specific info)
-                        mut_copy.update({
-                            "site_index": site.get("start_index"),
-                            "enzyme": site.get("enzyme"),
-                            "strand": site.get("strand")
-                        })
-                        site_muts.append(mut_copy)
-            if site_muts:
-                site_mutations.append(site_muts)
-
-        if not site_mutations:
-            return ([], [])
-
-        best_combo = None
-        best_usage = -float("inf")
-        best_indices = None
-
-        # Iterate over every possible combination (one mutation per site)
-        for indices in product(*(range(len(site)) for site in site_mutations)):
-            combo = [site_mutations[i][j] for i, j in enumerate(indices)]
-            # Check compatibility: compatibility_tensor is assumed to return 1 if compatible.
-            if compatibility_tensor[indices] == 1:
-                total_usage = sum(mut.get("usage", 0) for mut in combo)
-                if total_usage > best_usage:
-                    best_usage = total_usage
-                    best_combo = combo
-                    best_indices = indices
-
-        if best_combo is None:
-            return ([], [])
-        else:
-            return (best_combo, list(best_indices))
-
-
-    def _gather_site_mutations(self, mutation_dict: Dict) -> List[List[Dict]]:
-        """
-        Gather possible mutations for each restriction site and attach the fragment reassembly range
-        computed from the recognition site. (Note: mutable positions are no longer used.)
-        
-        Args:
-            mutation_dict: Dictionary containing restriction sites and associated codon mutations.
-            
-        Returns:
-            A list (per site) of mutation dictionaries.
-        """
-        site_mutations = []
-        
-        for site in mutation_dict['restriction_sites']:
-            site_muts = []
-            # Compute fragment reassembly range based on recognition site.
-            # Use 'start' if available; otherwise, use 'start_index' (with a 6-nt assumption).
-            frag_range = calculate_fragment_reassembly_range(site)
-            
-            for codon in site['codons']:
-                for mutation in codon.get('mutations', []):
-                    site_muts.append({
-                        'site_index': site.get('start', site.get('start_index')),
-                        'mutated_base': mutation['rs_index'],
-                        'usage': mutation['usage'],
-                        'mutation': mutation,
-                        'fragment_reassembly_range': frag_range
-                    })
-            
-            site_mutations.append(site_muts)
-            print(f"Found {len(site_muts)} possible mutations for site {site.get('start', site.get('start_index'))}")
-        
-        return site_mutations
-
-    def _filter_compatible_combinations(self, mutation_combinations, compatibility_matrix):
-        compatible_sets = []
-        
-        for mut_set in mutation_combinations:
-            cut_ranges = self._calculate_cut_ranges(mut_set)
-            
-            # Check compatibility matrix
-            sliced_matrix = self._get_sliced_matrix(cut_ranges, compatibility_matrix)
-            
-            if np.any(sliced_matrix == 1):
-                total_usage = sum(mut['usage'] for mut in mut_set)
-                compatible_sets.append({
-                    'mutations': mut_set,
-                    'total_usage': total_usage,
-                    'cut_ranges': cut_ranges
-                })
-        
-        return compatible_sets
-
-    def _calculate_cut_ranges(self, mut_set):
-        cut_ranges = []
-        
-        for mut in mut_set:
-            rs_index = mut['mutation']['rs_index']
-            max_rs_index = max(mut['mutable_positions'])
-            offset = max_rs_index - rs_index
-            cut_ranges.append((offset, offset + 9))
-        
-        return cut_ranges
-
-    def _get_sliced_matrix(self, cut_ranges, compatibility_matrix):
-        sliced_matrix = compatibility_matrix[
-            cut_ranges[0][0]:cut_ranges[0][1],
-            cut_ranges[1][0]:cut_ranges[1][1],
-            cut_ranges[2][0]:cut_ranges[2][1]
-        ]
-        return sliced_matrix
-
-    def _find_valid_positions(self, best_set, compatibility_matrix):
-        valid_positions = []
-        sliced_matrix = self._get_sliced_matrix(best_set['cut_ranges'], compatibility_matrix)
-        
-        for i in range(sliced_matrix.shape[0]):
-            for j in range(sliced_matrix.shape[1]):
-                for k in range(sliced_matrix.shape[2]):
-                    if sliced_matrix[i, j, k] == 1:
-                        relative_positions = [pos - 24 for pos in [i, j, k]]
-                        valid_positions.append({
-                            'matrix_indices': (i, j, k),
-                            'relative_positions': relative_positions,
-                            'mutations': best_set['mutations']
-                        })
-                        print(f"Valid position found: matrix{(i, j, k)} -> relative{relative_positions}")
-        
-        return valid_positions
-
-    def create_compatibility_tensor(
-        self,
         sequence: str,
-        mutation_options: List[List[Dict]]
-    ) -> Tuple[np.ndarray, List[Tuple[int, int]]]:
+        mutation_options: Dict
+    ) -> List[Dict]:
         """
-        Given a sequence and mutation options (a list of mutation lists per site),
-        create an M-dimensional compatibility tensor and corresponding cut ranges.
-
-        For each restriction site, the fragment reassembly range is computed (using the first
-        mutation option's stored 'fragment_reassembly_range'). That range defines the valid reassembly
-        positions for that site. For each candidate position, the sticky end is extracted using 
-        self.get_sticky_end, converted to an index via self._seq_to_index, and then used to check
-        pairwise compatibility with candidate sticky ends from other sites (via self.compatibility_matrix).
-
-        The resulting tensor has shape [m1, m2, m3, ...] where each mᵢ is the number of valid 
-        reassembly positions (i.e. range size) for that site. A given cell is set to 1 if, for that 
-        combination of reassembly positions, all pairs of sticky ends are compatible; otherwise 0.
+        Find the optimal combination of mutations that are compatible according to the BsmBI sticky-end strategy.
 
         Args:
-            sequence: The full DNA sequence.
-            mutation_options: A list (per site) of lists of mutation dictionaries.
-                            (Each mutation dictionary is assumed to have a 'fragment_reassembly_range'
-                            key containing a FragmentReassemblyRange instance.)
+            sequence (str): The full sequence being analyzed.
+            sites_to_mutate (Dict): Dictionary of restriction sites to mutate.
+            mutation_options (Dict): Mutation site properties and possible mutations.
 
         Returns:
-            A tuple (compatibility_tensor, cut_ranges) where:
-            - compatibility_tensor is an M-dimensional numpy array of 0s and 1s.
-            - cut_ranges is a list of (start, end_exclusive) tuples (one per site).
+            List[Dict]: A list of optimized mutation sets.
         """
-        cut_ranges = []
-        # For each site, derive the reassembly range from the first mutation option.
-        for site_muts in mutation_options:
-            if site_muts:
-                # Use the stored fragment reassembly range.
-                frag_range = site_muts[0]['fragment_reassembly_range']
-                # For slicing, we use (start, end+1) since the end is inclusive in our definition.
-                cut_ranges.append((frag_range.start, frag_range.end + 1))
-            else:
-                cut_ranges.append((0, 0))
+        with self.debug_context("mutation_optimization"):
+            self.logger.info("Step 1: Predicting BsmBI reassembly overhangs for each mutation option...")
+            mutation_options_with_overhangs = self.add_predicted_overhangs(sequence, mutation_options)
+            
+            self.logger.info("Step 2: Generating possible mutation sets...")
+            mutation_sets = self.generate_mutation_sets(mutation_options_with_overhangs)
+            self.logger.debug(f"Generated {len(mutation_sets)} mutation sets.")
+            
+            self.logger.info("Step 3: Computing compatibility matrices...")
+            compatibility_matrices = self.create_compatibility_matrices(mutation_sets)
+
+            self.logger.info("Step 4: Filtering mutation sets based on compatibility...")
+            optimized_mutations = self.filter_compatible_mutations(mutation_sets, compatibility_matrices)
+            
+            self.logger.debug(f"\nFinal number of optimized mutation sets: {len(optimized_mutations)}")
+
+            return optimized_mutations, compatibility_matrices
+
+    
+    # def add_predicted_overhangs(self, sequence: str, mutation_options: Dict) -> Dict:
+    #     """
+    #     Captures four possible BsmBI reassembly overhangs for each proposed alternative codon.
+    #     Each alternative codon contributes four different overhangs based on where the mutated base is positioned.
+
+    #     Args:
+    #         seq (str): The full sequence being analyzed.
+    #         mutation_options (Dict): Dictionary containing mutation sites and alternative codons.
+
+    #     Returns:
+    #         Dict: Dictionary mapping mutation sites to their predicted overhangs.
+    #     """
+    #     def calculate_overhangs(sequence, position, offset, utils):
+    #         mutation_position = position + offset
+            
+    #         # Calculate valid sequence window for 4-base overhangs
+    #         OVERHANG_LENGTH = 4
+    #         start_index = max(0, mutation_position - 3)
+    #         end_index = min(mutation_position, len(sequence) - OVERHANG_LENGTH)
+            
+    #         top_strand_overhangs = []
+    #         btm_strand_overhangs = []
+            
+    #         for i in range(start_index, end_index + 1):
+    #             overhang_top = sequence[i:i + OVERHANG_LENGTH]
+    #             overhang_bottom = utils.reverse_complement(overhang_top)
+    #             top_strand_overhangs.append(overhang_top)
+    #             btm_strand_overhangs.append(overhang_bottom)
+            
+    #         return {
+    #             "+": top_strand_overhangs,
+    #             "-": btm_strand_overhangs
+    #         }
+            
+    #     for _, site_data in mutation_options.items():
+    #         for codon in site_data["codons"]:
+    #             position = codon["position"]
+    #             for alternative in codon["alternative_codons"]:
+    #                 offset = alternative["mutations"].index(1)
+    #                 alternative["overhangs"] = calculate_overhangs(
+    #                     sequence, position, offset, self.utils
+    #                 )              
         
-        # For each site, compute the candidate reassembly positions and their sticky end indices.
-        dims = []           # Will hold the number of candidate positions per site.
-        sticky_indices = [] # List (per site) of sticky end indices for each candidate position.
-        for (start, end) in cut_ranges:
-            size = end - start  # since 'end' is exclusive
-            dims.append(size)
-            site_sticky_indices = []
-            for pos in range(start, end):
-                # Extract the sticky end from the sequence at the candidate reassembly position.
-                sticky_end = self.get_sticky_end(sequence, pos)
-                # Convert the 4-nt sticky end to its corresponding index (0-255).
-                idx = self._seq_to_index(sticky_end)
-                site_sticky_indices.append(idx)
-            sticky_indices.append(site_sticky_indices)
+    #     return mutation_options
+
+    def add_predicted_overhangs(self, sequence: str, mutation_options: Dict) -> Dict:
+        """
+        Captures four possible BsmBI reassembly overhangs for each proposed alternative codon.
+        Each alternative codon contributes four different overhangs based on where the mutated base is positioned.
+
+        This refactored version slices an 8-bp chunk (2 bp upstream + 4 bp overhang + 2 bp downstream)
+        for each valid position, and uses the reverse complement of that chunk to keep
+        top and bottom strands consistent.
+        """
+        # print(f"[DEBUG] Starting add_predicted_overhangs. Sequence length: {len(sequence)}")
+
+        def calculate_overhangs(sequence, position, offset, utils):
+            """
+            Extracts predicted overhangs from a given sequence at a specified mutation position.
+            Ensures correct 4-bp overhang determination and maintains top/bottom strand consistency.
+
+            Args:
+                sequence (str): The full sequence being analyzed.
+                position (int): The base position of the codon in the sequence.
+                offset (int): The relative index of the mutation within the codon.
+                utils: Utility functions for sequence manipulation.
+
+            Returns:
+                Dict: Contains extracted overhangs and adjacent bases for both strands.
+            """
+            mutation_position = position + offset
+            print(f"[DEBUG] In calculate_overhangs: position={position}, offset={offset}, mutation_position={mutation_position}")
+
+            # Define base slicing parameters
+            OVERHANG_LENGTH = 4
+            EXTRA_LENGTH_UP = 2
+            EXTRA_LENGTH_DOWN = 2
+            CHUNK_LEN = OVERHANG_LENGTH + EXTRA_LENGTH_UP + EXTRA_LENGTH_DOWN  # Total = 8 bases
+
+            # Ensure valid slicing boundaries
+            start_index = max(0, mutation_position - 3)
+            end_index = min(mutation_position, len(sequence) - CHUNK_LEN)
+
+            if start_index < EXTRA_LENGTH_UP:
+                start_index = EXTRA_LENGTH_UP
+
+            if end_index < start_index:
+                print(f"[DEBUG] No valid i range: start_index={start_index}, end_index={end_index}")
+                return {}
+
+            # Storage for different overhang possibilities
+            top_strand_overhangs = []
+            bottom_strand_overhangs = []
+            top_extra_forward = []
+            top_extra_reverse = []
+            bottom_extra_forward = []
+            bottom_extra_reverse = []
+
+            # Loop over possible positions to extract overhangs
+            for i in range(start_index, end_index + 1):
+                # Define the 8-bp region (2bp upstream + 4bp overhang + 2bp downstream)
+                chunk_start = i - EXTRA_LENGTH_UP
+                chunk_end = i + OVERHANG_LENGTH + EXTRA_LENGTH_DOWN
+                full_top = sequence[chunk_start:chunk_end]
+
+                # Skip invalid sequences (boundary issues)
+                if len(full_top) != CHUNK_LEN:
+                    print(f"[DEBUG] i={i}: chunk length {len(full_top)} != {CHUNK_LEN}, skipping.")
+                    continue
+
+                # Reverse complement for bottom strand
+                full_bottom = utils.reverse_complement(full_top)
+
+                # Slice out the extra bases and overhangs
+                t_extra_fwd = full_top[:EXTRA_LENGTH_UP]  # First 2 bases (upstream)
+                t_overhang = full_top[EXTRA_LENGTH_UP:EXTRA_LENGTH_UP + OVERHANG_LENGTH]  # Middle 4 bases
+                t_extra_rev = full_top[EXTRA_LENGTH_UP + OVERHANG_LENGTH:]  # Last 2 bases (downstream)
+
+                b_extra_fwd = full_bottom[:EXTRA_LENGTH_UP]  
+                b_overhang = full_bottom[EXTRA_LENGTH_UP:EXTRA_LENGTH_UP + OVERHANG_LENGTH]  
+                b_extra_rev = full_bottom[EXTRA_LENGTH_UP + OVERHANG_LENGTH:]
+
+                # Debugging printout to verify correctness
+                print(f"[DEBUG] i={i}, Top Overhang: {t_overhang}, Bottom Overhang (expected): {b_overhang}")
+                print(f"[DEBUG] Full Top Strand Context: {full_top}")
+                print(f"[DEBUG] Full Bottom Strand Context: {full_bottom}")
+                print(f"[DEBUG] Extra bases -> top_extra_fwd='{t_extra_fwd}', top_extra_rev='{t_extra_rev}', "
+                    f"bottom_extra_fwd='{b_extra_fwd}', bottom_extra_rev='{b_extra_rev}'")
+
+                # Append results
+                top_strand_overhangs.append(t_overhang)
+                bottom_strand_overhangs.append(b_overhang)
+                top_extra_forward.append(t_extra_fwd)
+                top_extra_reverse.append(t_extra_rev)
+                bottom_extra_forward.append(b_extra_fwd)
+                bottom_extra_reverse.append(b_extra_rev)
+
+            return {
+                "top_strand_overhangs": top_strand_overhangs,
+                "bottom_strand_overhangs": bottom_strand_overhangs,
+                "top_extra_forward": top_extra_forward,
+                "top_extra_reverse": top_extra_reverse,
+                "bottom_extra_forward": bottom_extra_forward,
+                "bottom_extra_reverse": bottom_extra_reverse
+            }
+
+
+        # -- Main logic: iterate through mutation sites, codons, and alternative codons --
+        for site_key, site_data in mutation_options.items():
+            # print(f"[DEBUG] Processing mutation site: {site_key}")
+            for codon in site_data["codons"]:
+                position = codon["position"]
+                # print(f"[DEBUG] Processing codon at position: {position}")
+                for idx, alternative in enumerate(codon["alternative_codons"]):
+                    try:
+                        offset = alternative["mutations"].index(1)
+                        print(f"[DEBUG] Applying mutation at position {position + offset}: {sequence[position + offset]}")
+
+                        # print(f"[DEBUG] Alternative codon index {idx}: Found mutation at offset {offset}")
+                    except ValueError:
+                        # print(f"[DEBUG] Alternative codon index {idx}: No mutation found in {alternative['mutations']}")
+                        continue
+
+                    overhangs = calculate_overhangs(sequence, position, offset, self.utils)
+                    alternative["overhangs"] = overhangs
+                    
+                    # print(f"[DEBUG] Assigned overhangs for alternative codon index {idx}")
+
+        # print("[DEBUG] Completed add_predicted_overhangs")
+        print(f"mutation_options: {mutation_options}")
+        return mutation_options
+
+
+
+    # def add_predicted_overhangs(self, sequence: str, mutation_options: Dict) -> Dict:
+    #     """
+    #     Captures four possible BsmBI reassembly overhangs for each proposed alternative codon,
+    #     calculating them on the mutated sequence (where the wild-type codon is replaced by the mutated one).
+
+    #     Args:
+    #         sequence (str): The full wild-type sequence.
+    #         mutation_options (Dict): Dictionary containing mutation sites and alternative codons.
+
+    #     Returns:
+    #         Dict: Dictionary mapping mutation sites to their predicted overhangs.
+    #     """
+    #     def calculate_overhangs(seq: str, position: int, offset: int, utils) -> Dict:
+    #         mutation_position = position + offset
+    #         OVERHANG_LENGTH = 4
+    #         # Define window boundaries for extracting 4-base overhangs.
+    #         start_index = max(0, mutation_position - 3)
+    #         end_index = min(mutation_position, len(seq) - OVERHANG_LENGTH)
+            
+    #         top_strand_overhangs = []
+    #         btm_strand_overhangs = []
+            
+    #         for i in range(start_index, end_index + 1):
+    #             overhang_top = seq[i:i + OVERHANG_LENGTH]
+    #             overhang_bottom = utils.reverse_complement(overhang_top)
+    #             top_strand_overhangs.append(overhang_top)
+    #             btm_strand_overhangs.append(overhang_bottom)
+            
+    #         return {"+": top_strand_overhangs, "-": btm_strand_overhangs}
+
+    #     for site, site_data in mutation_options.items():
+    #         for codon in site_data["codons"]:
+    #             position = codon["position"]
+    #             for alternative in codon["alternative_codons"]:
+    #                 # Use the mutated codon from the 'seq' key
+    #                 mutated_codon = alternative["seq"]
+    #                 # Replace the wild-type codon at 'position' with the mutated codon.
+    #                 mutated_sequence = (
+    #                     sequence[:position] + mutated_codon + sequence[position + len(mutated_codon):]
+    #                 )
+    #                 # Identify the index of the mutated base within the codon
+    #                 offset = alternative["mutations"].index(1)
+    #                 alternative["overhangs"] = calculate_overhangs(
+    #                     mutated_sequence, position, offset, self.utils
+    #                 )
+
+    #     return mutation_options
+
+
+    def generate_mutation_sets(self, mutation_options: Dict) -> List[Dict]:
+        """
+        Generates all possible mutation sets by selecting exactly one alternative codon per restriction site.
+        Each mutation includes a predicted 4-nt reassembly overhang.
+
+        Args:
+            seq (str): The full sequence being analyzed.
+            mutation_options (Dict): Mutation site properties and possible mutations.
+            overhangs_per_site (Dict): Precomputed overhangs for each mutation option.
+
+        Returns:
+            List[Dict]: List of mutation sets, where each set is a dictionary containing one mutation per site.
+        """
+
+        mutation_choices_per_site = []
+
+        for site, site_data in mutation_options.items():
+            site_mutation_choices = []
+
+            for codon in site_data["codons"]:
+                for alternative in codon["alternative_codons"]:
+                    mutation_entry = {
+                        "site": site,
+                        "position": site_data["position"],
+                        "original_sequence": codon["original_sequence"],
+                        "alternative_sequence": alternative["seq"],
+                        "mutated_base_index": (codon["position"] - site_data["position"] + site_data["frame"]) % 6,
+                        "usage": alternative["usage"],
+                        "overhangs": alternative["overhangs"],
+                    }
+                    site_mutation_choices.append(mutation_entry)
+
+            mutation_choices_per_site.append(site_mutation_choices)
+
+        # Generate mutation sets: One mutation per site
+        all_mutation_sets = [
+            {mutation["site"]: mutation for mutation in mutation_combination}
+            for mutation_combination in product(*mutation_choices_per_site)
+        ]
+
+        print(f"Created {len(all_mutation_sets)} mutation sets")
+
+        return all_mutation_sets
+
+
+    def create_compatibility_matrices(self, mutation_sets: List[Dict]) -> List[np.ndarray]:
+        """
+        Generates compatibility matrices for a set of mutation sites and their respective overhangs.
+
+        Parameters:
+        -----------
+        mutation_sets : List[Dict]
+            A list of dictionaries, where each dictionary represents a set of mutation sites.
+            Each mutation set contains position keys with corresponding overhang lists under:
+            `mutation_set[pos]["overhangs"]["+"]`.
+
+        Returns:
+        --------
+        List[np.ndarray]
+            A list of compatibility matrices (numpy arrays), each indicating valid overhang combinations.
+            Each matrix has a shape `(4, 4, ..., 4)` based on the number of mutation sites.
+
+        Debugging:
+        ----------
+        - Randomly selects a few overhang combinations to report as compatible or not compatible.
+        - If an overhang combination is incompatible, prints a reason why.
+        """
+
+        compatibility_matrices = []
         
-        tensor_shape = tuple(dims)
-        # Create an empty tensor of the required shape.
-        comp_tensor = np.zeros(tensor_shape, dtype=np.uint8)
-        
-        # Iterate over every combination of candidate positions using np.ndindex.
-        # Each combination is a tuple (i1, i2, ..., i_M) where i_k is the candidate index for site k.
-        for combination in np.ndindex(tensor_shape):
-            # For each site, get the sticky index for the candidate position.
-            candidate_sticky_idxs = [
-                sticky_indices[site_idx][combination[site_idx]]
-                for site_idx in range(len(combination))
-            ]
-            # Check pairwise compatibility among all candidate sticky ends.
-            all_compatible = True
-            num_sites = len(candidate_sticky_idxs)
-            for i in range(num_sites):
-                for j in range(i + 1, num_sites):
-                    idx_i = candidate_sticky_idxs[i]
-                    idx_j = candidate_sticky_idxs[j]
-                    # If the preloaded compatibility matrix indicates incompatibility, mark as not compatible.
-                    if self.compatibility_matrix[idx_i, idx_j] != 1:
-                        all_compatible = False
+        for mutation_set_idx, mutation_set in enumerate(tqdm(mutation_sets, desc="Processing Mutation Sets", unit="set")):
+            
+            position_keys = list(mutation_set.keys())  # Identify mutation site positions
+            overhang_lists = [mutation_set[pos]["overhangs"]["top_strand_overhangs"] for pos in position_keys]
+
+            # Define the shape of the compatibility matrix
+            matrix_shape = (4,) * len(position_keys)
+            compatibility_matrix = np.zeros(matrix_shape, dtype=int)
+            
+            all_ones = 0  # Counter for valid combinations
+            tested_combos = []  # Store some tested combinations for debug output
+
+            for combo in product(*overhang_lists):
+                # Extract the position of each element within its respective group
+                try:
+                    positions = tuple(group.index(combo[i]) for i, group in enumerate(overhang_lists))
+                except ValueError as e:
+                    print(f"Error: {combo[i]} not found in its corresponding overhang group! Overhang lists: {overhang_lists}")
+                    raise e
+
+                
+                # Check pairwise compatibility and exit early if any pair is incompatible
+                compatible = True
+                n_sites = len(combo)
+                for i in range(n_sites):
+                    for j in range(i + 1, n_sites):
+                        idx1 = self.utils.seq_to_index(combo[i])
+                        idx2 = self.utils.seq_to_index(combo[j])
+                        if self.compatibility_table[idx1][idx2] != 1:
+                            compatible = False
+                            break
+                    if not compatible:
                         break
-                if not all_compatible:
-                    break
-            comp_tensor[combination] = 1 if all_compatible else 0
+
+                if compatible:
+                    all_ones += 1
+                    if all(0 <= pos < 4 for pos in positions):  # Ensure all indices are in range (0-3)
+                        compatibility_matrix[positions] = 1
+                    else:
+                        print(f"Warning: Computed index {positions} is out of range for compatibility_matrix with shape {matrix_shape}.")
+
+                else:
+                    tested_combos.append((combo, self.analyze_incompatibility_reason(combo)))
+
+            # Print random subset of compatibility results for easy verification
+            # if self.verbose:
+            #     self.logger.info(f"\nTotal valid combinations for this mutation set: {all_ones}")
+            #     # sample_size = min(5, len(tested_combos))  # Pick at most 5 samples
+            #     # sampled_results = random.sample(tested_combos, sample_size)
+            
+                # for combo, status in sampled_results:
+                #     self.logger.info(f"{combo} → {status}")
+
+            # Append the matrix for this mutation set to the list
+            compatibility_matrices.append(compatibility_matrix)
+            
+        # Debugging: Count how many matrices are composed entirely of zeroes
+        zero_matrices_count = sum(1 for matrix in compatibility_matrices if np.all(matrix == 0))
+        self.logger.debug(f"\n ⚠️ {zero_matrices_count} out of {len(compatibility_matrices)} compatibility matrices are all zeroes. ⚠️")
+        
+        if zero_matrices_count == len(compatibility_matrices):
+            self.logger.warning("❗ No valid combinatations found.")
+
+
+        return compatibility_matrices
+
+
+    def filter_compatible_mutations(self, mutation_sets: list, compatibility_matrices: list) -> list:
+        """
+        Filters mutation sets by removing those whose compatibility matrices contain only zeros.
+        Processes in reverse order to avoid index shifting issues.
+
+        Args:
+            mutation_sets (list): List of mutation sets, each containing mutation sites and precomputed overhangs.
+            compatibility_matrices (list): List of computed compatibility matrices corresponding to mutation_sets.
+
+        Returns:
+            list: Filtered list of mutation sets with at least one valid compatibility.
+        """
+        print(f"self.verbose: {self.verbose}")
+        # Identify indices of mutation sets where the compatibility matrix is entirely zero
+        indices_to_remove = [i for i, matrix in enumerate(compatibility_matrices) if np.all(matrix == 0)]
+
+        # Process in reverse order to avoid index shifting while removing elements
+        for idx in reversed(indices_to_remove):
+            del mutation_sets[idx]
+            del compatibility_matrices[idx]  # Keep compatibility_matrices in sync if needed later
         
         if self.verbose:
-            print(f"Created compatibility tensor with shape: {tensor_shape}")
-            print(f"Cut ranges (per site): {cut_ranges}")
-        
-        return comp_tensor, cut_ranges
+            if len(indices_to_remove) == 0:
+                self.logger.info(f"All mutation sets have at least 1 valid overhang combinations.")
+            else:    
+                self.logger.info(f"Removed {len(indices_to_remove)} mutation sets that had no valid overhang combinations.")
+                
+        return mutation_sets
+
+
+
+    def analyze_incompatibility_reason(self, combo):
+        """
+        Analyzes why a given combination of overhangs is incompatible.
+
+        Parameters:
+        -----------
+        combo : tuple of str
+            A combination of overhang sequences.
+
+        Returns:
+        --------
+        str
+            A reason explaining why the overhang combination is incompatible.
+        """
+        # Rule 1: Check if any overhang has more than 3 consecutive identical bases
+        for seq in combo:
+            for i in range(len(seq) - 3):
+                if seq[i] == seq[i + 1] == seq[i + 2] == seq[i + 3]:
+                    return f"Overhang {seq} has more than 3 consecutive identical bases."
+
+        # Rule 2: Check if any two overhangs share the same 3 consecutive bases
+        seen_triplets = set()
+        for seq in combo:
+            for i in range(len(seq) - 2):
+                triplet = seq[i:i + 3]
+                if triplet in seen_triplets:
+                    return f"Multiple overhangs share the triplet '{triplet}'."
+                seen_triplets.add(triplet)
+
+        # Rule 3: Check if any overhang has 0% or 100% GC content
+        for seq in combo:
+            gc_content = sum(1 for base in seq if base in "GC") / len(seq) * 100
+            if gc_content == 0:
+                return f"Overhang {seq} has 0% GC content (all A/T)."
+            elif gc_content == 100:
+                return f"Overhang {seq} has 100% GC content (all G/C)."
+
+        return "Unknown reason (should not happen)."
+

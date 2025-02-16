@@ -1,12 +1,13 @@
 # services/sequence_prep.py
-from Bio.Seq import Seq
+from Bio.Seq import Seq, CodonTable
 from prettytable import PrettyTable
 import re
 from typing import Dict, Optional, Union, List
-from .base import GoldenGateDesigner
+from .base import PrimerDesignLogger
+from collections import defaultdict
 
 
-class SequencePreparator(GoldenGateDesigner):
+class SequencePreparator(PrimerDesignLogger):
     def __init__(self, verbose: bool = False):
         super().__init__(verbose=verbose)
         self.state = {
@@ -50,38 +51,94 @@ class SequencePreparator(GoldenGateDesigner):
                 seq = seq[3:]
 
             return seq
+        
 
-    def find_bsmbi_bsai_sites(
-        self,
-        sequence_index: int,
-        seq: Union[str, Seq],
-        verbose: bool = False,
-    ) -> Dict:
-        """Identifies restriction sites within a DNA sequence."""
+    def find_bsmbi_bsai_sites(self, sequence, verbose):
+        """
+        Finds restriction enzyme recognition sites within a DNA sequence,
+        and records the codons spanned by the site.
+
+        Args:
+            sequence (str or Bio.Seq): The DNA sequence.
+            recognition_seq (str): The recognition sequence of the restriction enzyme.
+
+        Returns:
+            A list of dictionaries, where each dictionary represents a
+            recognition site and contains:
+                'position':  The 1-based start position of the site in the sequence.
+                'sequence':  The recognized sequence (may be reverse complement).
+                'frame':     The reading frame (0, 1, or 2).
+                'strand':    '+' for forward strand, '-' for reverse strand.
+                'codons':    A list of codons spanned by the recognition site.
+                            Each codon is a tuple: (codon_sequence, codon_position, amino_acid).
+                'enzyme':    The name of the enzyme (e.g., 'BsmBI' or 'BsaI').
+        """
+        
+        seq = str(sequence)  # Ensure seq is a string for consistent indexing
+
         with self.debug_context("find_bsmbi_bsai_sites"):
             recognition_sequences = {
                 'BsmBI': 'CGTCTC',
                 'BsaI': 'GGTCTC'
             }
-
-            found_sites = {}
-            seq_obj = Seq(str(seq).upper())
+            seq_obj = Seq(seq.upper())
             
+            sites_to_mutate = []
             for enzyme, recognition_seq in recognition_sequences.items():
-                site_details = self._find_sites_for_enzyme(
-                    seq_obj, 
-                    recognition_seq
-                )
-                found_sites[enzyme] = site_details
+                site_details = self._find_sites_for_enzyme(seq_obj, recognition_seq)
+                for site in site_details:
+                    site['enzyme'] = enzyme
+                    sites_to_mutate.append(site)
+                    
+            sites_to_mutate.sort(key=lambda site: site['position'])
 
-            self.state['restriction_sites'] = found_sites
-            total_sites = sum(len(sites) for sites in found_sites.values())
+            return sites_to_mutate
+
+
+    def get_codons(self, seq, start_index, length, frame):
+        """
+        Extracts codons spanned by the recognition site, handling edge cases
+        and strand orientation.
+
+        Args:
+            seq (Seq): The full template sequence being domesticated.
+            start_index (int): The 0-based start index of the recognition site.
+            length (int): The length of the recognition site sequence.
+            frame (int): The frame offset (0, 1, or 2).
+
+        Returns:
+            List of tuples (codon_sequence, codon_position, amino_acid)
+        """
+        with self.debug_context("find_codons"):
+            codons = []
+            translation_table = CodonTable.unambiguous_dna_by_id[1]  # Standard genetic code
+
+            if frame == 0:
+                codon_positions = [start_index, start_index + 3]
+            elif frame == 1:
+                codon_positions = [start_index - 1, start_index + 2, start_index + 5]
+            elif frame == 2:
+                codon_positions = [start_index - 2, start_index + 1, start_index + 4]
+            else:
+                raise ValueError("Frame must be 0, 1, or 2")
+
+            # Extract codons, ensuring we stay within bounds
+            for codon_pos in codon_positions:
+                if 0 <= codon_pos <= len(seq) - 3:  # Ensure valid triplet extraction
+                    codon_dict = {}
+                    codon_seq = seq[codon_pos:codon_pos + 3]
+                    codon_dict["codon_seq"] = str(codon_seq)
+                    codon_dict["amino_acid"] = translation_table.forward_table.get(str(codon_seq), 'X')  # 'X' for unknown/stop
+                    codon_dict["position"] = codon_pos + 1
+                    codons.append(codon_dict)  # Store 1-based codon position
             
-            self.logger.info(
-                f"Found {total_sites} restriction sites in sequence {sequence_index + 1}"
-            )
-            
-            return found_sites
+            if self.verbose:
+                self.logger.info(
+                    f"Extracted codons for sequence of length {len(seq)} with start_index {start_index}, "
+                    f"length {length}, and frame {frame}: {codons}"
+                )
+            return codons
+
 
     def _find_sites_for_enzyme(
         self,
@@ -94,9 +151,14 @@ class SequencePreparator(GoldenGateDesigner):
         # Forward strand matches
         forward_matches = re.finditer(f"(?={recognition_seq})", str(seq))
         for match in forward_matches:
+            index = match.start()
+            frame = (index) % 3  # Calculate frame (0, 1, or 2)
+            codons = self.get_codons(seq, index, len(recognition_seq), frame)
             site_details.append({
-                'position': match.start(),
+                'position': index+1,
                 'sequence': recognition_seq,
+                'frame': frame,
+                'codons': codons,
                 'strand': '+'
             })
 
@@ -104,15 +166,21 @@ class SequencePreparator(GoldenGateDesigner):
         rev_comp = str(Seq(recognition_seq).reverse_complement())
         reverse_matches = re.finditer(f"(?={rev_comp})", str(seq))
         for match in reverse_matches:
+            index = match.start()
+            frame = (index) % 3  # Calculate frame (0, 1, or 2)
+            codons = self.get_codons(seq, index, len(recognition_seq), frame)
             site_details.append({
-                'position': match.start(),
+                'position': index+1,
                 'sequence': rev_comp,
+                'frame': frame,
+                'codons': codons,
                 'strand': '-'
             })
 
         return site_details
 
-    def summarize_bsmbi_bsai_sites(self, site_details: Dict):
+
+    def summarize_bsmbi_bsai_sites(self, site_details):
         """Creates a formatted summary of restriction sites."""
         with self.debug_context("summarize_restriction_sites"):
             site_type_descriptions = {
@@ -120,27 +188,36 @@ class SequencePreparator(GoldenGateDesigner):
                 'BsaI': 'BsaI Restriction Site',
             }
 
+            # Ensure site_details is structured as a dictionary
+            if isinstance(site_details, list):
+                grouped_sites = defaultdict(list)
+                for site in site_details:
+                    # Infer site type from sequence (if applicable) or provide a key in `site`
+                    site_type = "BsmBI" if site["sequence"] == "GAGACC" else "BsaI"
+                    grouped_sites[site_type].append(site)
+                site_details = grouped_sites
+
             table = PrettyTable()
             table.field_names = ["Site Type", "Number of Instances", "Position(s)"]
 
             for site_type, details_list in site_details.items():
                 if not details_list:
                     continue
-                    
+
                 site_type_description = site_type_descriptions.get(site_type, site_type)
                 positions = ', '.join(str(details['position']) for details in details_list)
                 number_of_instances = len(details_list)
-                
+
                 table.add_row([
                     site_type_description,
                     number_of_instances,
                     positions
                 ])
-             
-            self.logger.info("\n")    
-            print("\nRestriction Site Analysis Summary:")
-            print(str(table))
-        
+
+            self.logger.info("\n")
+            self.logger.info("\nRestriction Site Analysis Summary:")
+            self.logger.info(f"\n{str(table)}")
+
     def preprocess_sequence(self, sequence: str) -> Seq:
         """Converts sequence to uppercase and adjusts for frame and codons."""
         with self.debug_context("preprocess_sequence"):
@@ -150,7 +227,7 @@ class SequencePreparator(GoldenGateDesigner):
     def find_and_summarize_sites(self, sequence: Seq, index: int) -> List[Dict]:
         """Finds and summarizes restriction sites needing mutation."""
         with self.debug_context("find_and_summarize_sites"):
-            sites_to_mutate = self.find_bsmbi_bsai_sites(index, sequence, verbose=self.verbose)
+            sites_to_mutate = self.find_bsmbi_bsai_sites(sequence, self.verbose)
             if sites_to_mutate:
                 self.summarize_bsmbi_bsai_sites(sites_to_mutate)
             return sites_to_mutate
