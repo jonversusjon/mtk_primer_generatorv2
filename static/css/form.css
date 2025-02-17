@@ -1,0 +1,190 @@
+/* --- Consolidated .form-row ---*/
+.form-row,
+.form-row-top {
+    display: flex;
+    width: 100%;
+    margin-bottom: 10px;
+    gap: 1rem;
+    /*Consistent gap*/
+}
+
+.form-row .input-group {
+    flex: 1;
+    position: relative;
+}
+
+
+/* --- Form Styling --- */
+#primer-form {
+    margin: 20px;
+    border-radius: 12px;
+    background-color: #f3ffe6;
+    box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.3);
+}
+
+.dynamic-form {
+    margin: 12px 12px 0px 12px;
+}
+
+.instruction-text-container {
+    padding: 15px 15px 15px 0px;
+}
+
+.instruction-text {
+    font-size: 0.8em;
+    color: #666;
+    margin: 1em;
+    line-height: 1.25em;
+}
+
+/* .form-row Replaced with consolidated version below */
+
+.form-group {
+    margin-bottom: 0 !important;
+    /* Override potential Bootstrap styles */
+    /* New validation styles - Consolidated */
+    position: relative;
+}
+
+
+.sub-box {
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+}
+
+/* --- Form Element Alignment --- */
+.left-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0px 12px;
+}
+
+#clearForm {
+    align-self: flex-start;
+    width: 250px;
+}
+
+/* --- Header (Static Inputs) --- */
+.header-container {
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+.form-header-container {
+    margin-bottom: 15px;
+}
+
+.dropdown-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+
+.dropdown-item {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+
+
+.dropdown-item label {
+    margin: 0;
+    /* Remove default label margins */
+}
+
+.button-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.num-sequences-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* --- Smaller Font Size for Some Inputs --- */
+.form-label {
+    margin: 0;
+    align-self: center;
+    font-size: 0.9em;
+}
+
+.form-select,
+.form-control {
+    font-size: 0.9em;
+    /* Smaller font size */
+}
+
+.form-control-small {
+    max-width: 80px;
+}
+
+/* --- Template and Domestication --- */
+.template-container,
+.domestication-container {
+    padding: 32px;
+    border-bottom: 1px solid #ddd;
+}
+
+.flex-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 250px;
+    gap: 4px;
+}
+
+.flex-container input[type="checkbox"] {
+    margin-top: 8px;
+}
+
+/* .sequence-pane .form-row replaced with consolidated version */
+
+.sequence-pane label {
+    margin-right: 10px;
+    margin-bottom: 0;
+}
+
+/* Consolidated .sequence-pane form control and select styles */
+.sequence-pane .form-control,
+.sequence-pane .form-select {
+    font-size: 0.9em;
+    /*Ensure consistency*/
+}
+
+/* Consolidated .sequence-pane .form-row styles with media query */
+.sequence-pane .form-row-top {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    align-items: center;
+    /* Added for consistent vertical alignment */
+    margin-bottom: 10px;
+}
+
+.sequence-pane .form-row-top .input-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 150px;
+}
+
+.sequence-pane .form-row-top .form-control {
+    flex: 2;
+}
+
+.sequence-pane .form-row-top .form-select {
+    flex: 0.75;
+}

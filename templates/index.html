@@ -102,18 +102,8 @@
       <!-- Sequences to Domesticate Section -->
       <div class="domestication-container">
         <h3>Sequences to Domesticate</h3>
-        <div class="dropdown-item form-group">
-          <label for="maxMutPerSite" class="form-label">Max mutations per site:</label>
-          <select id="maxMutPerSite" name="max-mut-per-site" class="form-select form-control-small input-field"
-            hx-post="{{ url_for('main.validate_field') }}" hx-trigger="change" hx-target="closest div">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-          </select>
-          <div class="error-message" data-field="max-mut-per-site"></div>
-        </div>
-        <div class="dropdown-container">
-          <div class="dropdown-item form-group">
+        <div class="dropdown-container form-header-container">
+          <div class="dropdown-item form-group col-medium">
             <label for="species" class="form-label">Species:</label>
             <select id="species" name="species" class="form-select input-field"
               hx-get="{{ url_for('main.get_species') }}" hx-trigger="load" hx-target="this"
@@ -122,7 +112,7 @@
             </select>
             <div class="error-message" data-field="species"></div>
           </div>
-          <div class="dropdown-item form-group">
+          <div class="dropdown-item form-group col-small">
             <label for="kozak" class="form-label">Kozak:</label>
             <select id="kozak" name="kozak" class="form-select input-field"
               hx-post="{{ url_for('main.validate_field') }}" hx-trigger="change" hx-target="closest div">
@@ -130,19 +120,28 @@
               <option value="Canonical">Canonical</option>
             </select>
             <div class="error-message" data-field="kozak"></div>
-            <!-- Number of Sequences Input -->
-            <div class="num-sequences-container form-group">
-              <label for="numSequences" class="form-label">Number of Sequences:</label>
-              <input type="number" id="numSequences" name="numSequences"
-                class="form-control form-control-small input-field" min="1" max="10" value="1"
-                hx-post="{{ url_for('main.validate_field') }}" hx-trigger="change" hx-target="closest div"
-                oninput="updateSequenceInputs(this.value)" />
-              <div class="error-message" data-field="numSequences"></div>
-            </div>
-            <div id="sequence-container" class="breakout-holder">
-              <!-- Dynamic sequence inputs will be inserted here via HTMX (rendered by Jinja) -->
-            </div>
           </div>
+          <div class="dropdown-item form-group col-medium">
+            <label for="maxMutPerSite" class="form-label">Max mutations per site:</label>
+            <select id="maxMutPerSite" name="max-mut-per-site" class="form-select form-control-small input-field"
+              hx-post="{{ url_for('main.validate_field') }}" hx-trigger="change" hx-target="closest div">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+            </select>
+            <div class="error-message" data-field="max-mut-per-site"></div>
+          </div>
+        </div>
+        <!-- Number of Sequences Input -->
+        <div class="num-sequences-container form-group">
+          <label for="numSequences" class="form-label">Number of Sequences:</label>
+          <input type="number" id="numSequences" name="numSequences" class="form-control form-control-small input-field"
+            min="1" max="10" value="1" hx-post="{{ url_for('main.validate_field') }}" hx-trigger="change"
+            hx-target="closest div" oninput="updateSequenceInputs(this.value)" />
+          <div class="error-message" data-field="numSequences"></div>
+        </div>
+        <div id="sequence-container" class="breakout-holder">
+          <!-- Dynamic sequence inputs will be inserted here via HTMX (rendered by Jinja) -->
         </div>
 
         <!-- Buttons Section -->

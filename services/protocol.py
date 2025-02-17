@@ -73,7 +73,7 @@ class GoldenGateProtocol(PrimerDesignLogger):
         for i, single_seq in enumerate(self.seq):
             self.logger.info("Running Townsend primer generator")
             protocol = generate_GG_protocol(single_seq, self.part_num_left[0], True)
-            print(f"intended error: {intended_erro}")
+            # print(f"intended error: {intended_erro}")
             try:
                 # 1. Remove start/stop codons and find restriction sites
                 with self.debug_context("Preprocessing sequence"):

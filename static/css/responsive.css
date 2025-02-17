@@ -1,0 +1,129 @@
+@media (min-width: 600px) {
+    .form-row .input-group {
+        flex-direction: row;
+        /*Make horizontal*/
+        align-items: center;
+    }
+
+    .form-row .input-group label {
+        margin-right: 8px;
+        white-space: nowrap;
+    }
+
+    .sequence-pane .form-row-top .input-group {
+        flex-direction: row;
+        /*Ensure it remains row on larger screens*/
+        align-items: center;
+    }
+
+    .sequence-pane .form-row-top .input-group label {
+        margin-right: 8px;
+        white-space: nowrap;
+    }
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .sequence-tabs-nav {
+        height: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .sequence-tab-btn {
+        min-width: 100px;
+        padding: 10px 15px;
+        font-size: 0.8em;
+    }
+
+    .sequence-tabs-content {
+        padding: 15px;
+        margin: 0 10px;
+    }
+
+    .sequence-tab-wrapper .form-row-top {
+        flex-direction: column;
+    }
+
+    .sequence-tab-wrapper .input-group {
+        width: 100%;
+    }
+}
+
+/* --- Responsive Design --- */
+@media screen and (max-width: 600px) {
+    body {
+        max-width: 100%;
+        padding: 10px;
+    }
+
+    button,
+    textarea,
+    input,
+    select {
+        font-size: 14px;
+    }
+}
+
+/* Responsive: Adjust for small screens */
+@media (max-width: 600px) {
+    .info-tooltip {
+        width: 200px;
+        font-size: 12px;
+        padding: 8px;
+    }
+
+    /* Consolidated form-row styles for smaller screens */
+    .form-row-top,
+    .sequence-pane .form-row-top {
+        flex-direction: column;
+        /* Stack elements vertically */
+    }
+
+    .input-group {
+        flex-direction: column;
+        align-items: stretch;
+        /* Stretch items to full width */
+    }
+
+    .input-group label {
+        margin-right: 0;
+        /* Remove margin for vertical layout */
+        margin-bottom: 4px;
+    }
+}
+
+/* Responsive Toggle Button (Smaller Screens) */
+@media (max-width: 1000px) {
+    .dark-mode-btn {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        justify-content: center;
+    }
+
+    .dark-mode-btn .button-text {
+        display: none;
+    }
+
+    .dark-mode-btn .moon-icon {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 768px) {
+    .dropdown-container {
+        flex-direction: column;
+    }
+
+    .dropdown-item {
+        width: 100%;
+    }
+
+    .col-large,
+    .col-medium,
+    .col-small {
+        flex: 1;
+        /* Full width on mobile */
+    }
+}

@@ -117,12 +117,10 @@ class MutationOptimizer(PrimerDesignLogger):
         Captures four possible BsmBI reassembly overhangs for each proposed alternative codon.
         Each alternative codon contributes four different overhangs based on where the mutated base is positioned.
 
-        This refactored version slices an 8-bp chunk (2 bp upstream + 4 bp overhang + 2 bp downstream)
-        for each valid position, and uses the reverse complement of that chunk to keep
-        top and bottom strands consistent.
+        This version extracts the exact 4-bp overhang while also tracking an extended 6-bp sequence
+        that includes one base on either side of the overhang.
         """
-        # print(f"[DEBUG] Starting add_predicted_overhangs. Sequence length: {len(sequence)}")
-
+        
         def calculate_overhangs(sequence, position, offset, utils):
             """
             Extracts predicted overhangs from a given sequence at a specified mutation position.
@@ -135,109 +133,78 @@ class MutationOptimizer(PrimerDesignLogger):
                 utils: Utility functions for sequence manipulation.
 
             Returns:
-                Dict: Contains extracted overhangs and adjacent bases for both strands.
+                Dict: Contains extracted overhangs and extended sequences for both strands.
             """
             mutation_position = position + offset
-            print(f"[DEBUG] In calculate_overhangs: position={position}, offset={offset}, mutation_position={mutation_position}")
 
             # Define base slicing parameters
             OVERHANG_LENGTH = 4
-            EXTRA_LENGTH_UP = 2
-            EXTRA_LENGTH_DOWN = 2
-            CHUNK_LEN = OVERHANG_LENGTH + EXTRA_LENGTH_UP + EXTRA_LENGTH_DOWN  # Total = 8 bases
+            EXTENDED_LENGTH = 6  # Overhang + 1 nt on either side
 
             # Ensure valid slicing boundaries
-            start_index = max(0, mutation_position - 3)
-            end_index = min(mutation_position, len(sequence) - CHUNK_LEN)
+            start_index = max(0, mutation_position - 2)
+            end_index = min(mutation_position, len(sequence) - OVERHANG_LENGTH)
 
-            if start_index < EXTRA_LENGTH_UP:
-                start_index = EXTRA_LENGTH_UP
+            if start_index < 1:
+                start_index = 1
 
             if end_index < start_index:
-                print(f"[DEBUG] No valid i range: start_index={start_index}, end_index={end_index}")
                 return {}
 
             # Storage for different overhang possibilities
             top_strand_overhangs = []
             bottom_strand_overhangs = []
-            top_extra_forward = []
-            top_extra_reverse = []
-            bottom_extra_forward = []
-            bottom_extra_reverse = []
+            top_extended_sequences = []
+            bottom_extended_sequences = []
 
             # Loop over possible positions to extract overhangs
             for i in range(start_index, end_index + 1):
-                # Define the 8-bp region (2bp upstream + 4bp overhang + 2bp downstream)
-                chunk_start = i - EXTRA_LENGTH_UP
-                chunk_end = i + OVERHANG_LENGTH + EXTRA_LENGTH_DOWN
+                chunk_start = i - 1  # 1 nt before the overhang
+                chunk_end = i + OVERHANG_LENGTH + 1  # 1 nt after the overhang
                 full_top = sequence[chunk_start:chunk_end]
 
                 # Skip invalid sequences (boundary issues)
-                if len(full_top) != CHUNK_LEN:
-                    print(f"[DEBUG] i={i}: chunk length {len(full_top)} != {CHUNK_LEN}, skipping.")
+                if len(full_top) != EXTENDED_LENGTH:
                     continue
 
                 # Reverse complement for bottom strand
                 full_bottom = utils.reverse_complement(full_top)
 
-                # Slice out the extra bases and overhangs
-                t_extra_fwd = full_top[:EXTRA_LENGTH_UP]  # First 2 bases (upstream)
-                t_overhang = full_top[EXTRA_LENGTH_UP:EXTRA_LENGTH_UP + OVERHANG_LENGTH]  # Middle 4 bases
-                t_extra_rev = full_top[EXTRA_LENGTH_UP + OVERHANG_LENGTH:]  # Last 2 bases (downstream)
+                # Slice out the overhang and extended sequences
+                t_overhang = full_top[1:1 + OVERHANG_LENGTH]  # Middle 4 bases
+                t_extended = full_top  # Full 6 bases
 
-                b_extra_fwd = full_bottom[:EXTRA_LENGTH_UP]  
-                b_overhang = full_bottom[EXTRA_LENGTH_UP:EXTRA_LENGTH_UP + OVERHANG_LENGTH]  
-                b_extra_rev = full_bottom[EXTRA_LENGTH_UP + OVERHANG_LENGTH:]
-
-                # Debugging printout to verify correctness
-                print(f"[DEBUG] i={i}, Top Overhang: {t_overhang}, Bottom Overhang (expected): {b_overhang}")
-                print(f"[DEBUG] Full Top Strand Context: {full_top}")
-                print(f"[DEBUG] Full Bottom Strand Context: {full_bottom}")
-                print(f"[DEBUG] Extra bases -> top_extra_fwd='{t_extra_fwd}', top_extra_rev='{t_extra_rev}', "
-                    f"bottom_extra_fwd='{b_extra_fwd}', bottom_extra_rev='{b_extra_rev}'")
+                b_overhang = full_bottom[1:1 + OVERHANG_LENGTH]
+                b_extended = full_bottom
 
                 # Append results
                 top_strand_overhangs.append(t_overhang)
                 bottom_strand_overhangs.append(b_overhang)
-                top_extra_forward.append(t_extra_fwd)
-                top_extra_reverse.append(t_extra_rev)
-                bottom_extra_forward.append(b_extra_fwd)
-                bottom_extra_reverse.append(b_extra_rev)
+                top_extended_sequences.append(t_extended)
+                bottom_extended_sequences.append(b_extended)
 
             return {
                 "top_strand_overhangs": top_strand_overhangs,
                 "bottom_strand_overhangs": bottom_strand_overhangs,
-                "top_extra_forward": top_extra_forward,
-                "top_extra_reverse": top_extra_reverse,
-                "bottom_extra_forward": bottom_extra_forward,
-                "bottom_extra_reverse": bottom_extra_reverse
+                "top_extended_sequences": top_extended_sequences,
+                "bottom_extended_sequences": bottom_extended_sequences
             }
-
 
         # -- Main logic: iterate through mutation sites, codons, and alternative codons --
         for site_key, site_data in mutation_options.items():
-            # print(f"[DEBUG] Processing mutation site: {site_key}")
             for codon in site_data["codons"]:
                 position = codon["position"]
-                # print(f"[DEBUG] Processing codon at position: {position}")
                 for idx, alternative in enumerate(codon["alternative_codons"]):
                     try:
                         offset = alternative["mutations"].index(1)
-                        print(f"[DEBUG] Applying mutation at position {position + offset}: {sequence[position + offset]}")
-
-                        # print(f"[DEBUG] Alternative codon index {idx}: Found mutation at offset {offset}")
                     except ValueError:
-                        # print(f"[DEBUG] Alternative codon index {idx}: No mutation found in {alternative['mutations']}")
                         continue
 
                     overhangs = calculate_overhangs(sequence, position, offset, self.utils)
                     alternative["overhangs"] = overhangs
-                    
-                    # print(f"[DEBUG] Assigned overhangs for alternative codon index {idx}")
 
-        # print("[DEBUG] Completed add_predicted_overhangs")
-        print(f"mutation_options: {mutation_options}")
         return mutation_options
+
 
 
 

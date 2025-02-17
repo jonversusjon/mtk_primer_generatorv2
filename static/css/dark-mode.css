@@ -1,0 +1,105 @@
+/* --- Dark Mode --- */
+.dark-mode {
+    background-color: #121212;
+    color: #fff;
+}
+
+.dark-mode h1,
+.dark-mode h2,
+.dark-mode h3,
+.dark-mode h4,
+.dark-mode h5,
+.dark-mode h6 {
+    color: #fff;
+}
+
+.dark-mode label {
+    color: #fff;
+}
+
+.dark-mode select,
+.dark-mode input,
+.dark-mode textarea,
+.dark-mode button {
+    background-color: #222;
+    color: white;
+    border: 1px solid #555;
+}
+
+.dark-mode button:hover {
+    background-color: #444;
+}
+
+.dark-mode .btn-primary {
+    background-color: #48A9FF;
+}
+
+.dark-mode .btn-warning {
+    background-color: #FFB84D;
+}
+
+/* Dark Mode Support */
+.dark-mode .sequence-tab-btn.active {
+    background-color: #2E6F40 !important;
+    color: white;
+}
+
+.dark-mode .sequence-tabs-content {
+    background: #1a1a1a;
+    border-color: #4a4a4a;
+}
+
+/* Dark Mode Tooltip Arrow */
+.dark-mode .info-tooltip::after {
+    border-color: rgba(50, 50, 50, 0.95) transparent transparent transparent;
+    /* Match dark background */
+}
+
+/* Dark Mode Tooltip */
+.dark-mode .info-tooltip {
+    background: rgba(50, 50, 50, 0.95);
+    color: #f8f8f8;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .input-field.invalid,
+.dark-mode .validation-fail {
+    border-color: #ff4d4d !important;
+    background-color: rgba(255, 77, 77, 0.2);
+}
+
+.dark-mode .dynamic-sequence-input {
+    background: #2c2c2c;
+    color: #ffffff;
+    border: 1px solid #555;
+}
+
+.dark-mode .sequence-content {
+    background: #1e1e1e;
+    color: #f1f1f1;
+    box-shadow: 2px 2px 10px rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .char-count-label {
+    color: #888;
+}
+
+.dark-mode .tab-button.active,
+.dark-mode .sequence-tab.active {
+    background-color: #2E6F40 !important;
+    color: white;
+}
+
+.dark-mode #primer-form {
+    background-color: #181818;
+    box-shadow: 5px 5px 10px rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .instruction-text {
+    color: #b0b3b8;
+}
+
+.dark-mode .sequence-input {
+    color: #b0b3b8;
+}

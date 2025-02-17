@@ -293,7 +293,7 @@ def generate_GG_PMut_primers(seq, ix, mutate_to):
         left = ix - (6 - len(mutate_to)) + shift
         right = ix + (6 - len(mutate_to)) + shift
         six_nuc_seq = target_seq[left:right].upper()
-        
+        print(f"shift={shift} six_nuc_seq: {six_nuc_seq}")
         n_R = calculate_optimal_primer_length(seq, right, 'forward')
         n_L = calculate_optimal_primer_length(seq, left, 'reverse')
         

@@ -1,0 +1,270 @@
+/* --- Custom Tab Styling --- */
+.breakout-holder {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.tab-buttons {
+    display: flex;
+    margin: 0px 26px -1px 26px;
+    padding-left: 20px;
+    height: 28px;
+    align-items: flex-end;
+}
+
+.tab-button,
+.sequence-tab {
+    font-weight: normal;
+    font-size: 0.85em;
+    background-color: lightgrey;
+    color: black;
+    height: 90%;
+    width: auto;
+    padding: 14px 20px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-top: 1px solid black;
+    border-right: 1px solid black;
+    border-left: 1px solid black;
+    border-radius: 15px 15px 0 0;
+    cursor: pointer;
+    z-index: 0;
+    position: relative;
+    margin-left: -5px;
+}
+
+.tab-button:first-child,
+.sequence-tab:first-child {
+    margin-left: 0;
+}
+
+.tab-button.active,
+.sequence-tab.active {
+    background-color: lightgreen !important;
+    z-index: 5;
+}
+
+
+
+/* --- sequence-tab-wrapper (Preserve styles, added to main) ---*/
+.sequence-tab-wrapper {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+}
+
+/* Base Tab Container */
+.sequence-tabs {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+/* Tab Navigation */
+.sequence-tabs-nav {
+    display: flex;
+    margin: 0 26px -1px 26px;
+    padding-left: 20px;
+    height: 40px;
+    align-items: flex-end;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+/* Tab Buttons */
+.sequence-tab-btn {
+    font-weight: normal;
+    font-size: 0.85em;
+    background-color: lightgrey;
+    color: black;
+    height: 90%;
+    min-width: 120px;
+    padding: 14px 20px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-top: 1px solid black;
+    border-right: 1px solid black;
+    border-left: 1px solid black;
+    border-radius: 15px 15px 0 0;
+    cursor: pointer;
+    z-index: 0;
+    position: relative;
+    margin-left: -5px;
+    white-space: nowrap;
+    transition: background-color 0.2s;
+}
+
+.sequence-tab-btn:first-child {
+    margin-left: 0;
+}
+
+.sequence-tab-btn.active {
+    background-color: lightgreen !important;
+    z-index: 5;
+}
+
+/* Tab Shadow Effects */
+.sequence-tab-btn::before,
+.sequence-tab-btn::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 2px;
+    box-shadow: -3px 0px 4px 1px rgba(0, 0, 0, 0.3);
+    transform: skew(-5deg, -10deg);
+    width: 1px;
+    height: 60%;
+    border-radius: 0;
+    display: none;
+}
+
+.sequence-tab-btn::after {
+    left: auto;
+    right: 0;
+    box-shadow: 3px 1px 4px 1px rgba(0, 0, 0, 0.3);
+    transform: skew(5deg, 10deg);
+}
+
+.sequence-tab-btn.active::before,
+.sequence-tab-btn.active::after {
+    z-index: -1;
+    display: block;
+}
+
+.sequence-tab-btn.active:first-child::before {
+    display: none;
+}
+
+.sequence-tab-btn.active:last-child::after {
+    display: none;
+}
+
+/* Tab Content Container */
+.sequence-tabs-content {
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    padding: 20px;
+    z-index: 1;
+    position: relative;
+    margin: 0 26px;
+    background: #fff;
+}
+
+/* Individual Tab Content */
+.sequence-tab-content {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sequence-tab-content.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Form Layout within Tabs */
+.sequence-tab-wrapper {
+    width: 100%;
+}
+
+.sequence-tab-wrapper .form-row-top {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.sequence-tab-wrapper .input-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 150px;
+}
+
+.sequence-tab-wrapper .form-control {
+    font-size: 0.9em;
+}
+
+.sequence-tab-wrapper .form-select {
+    font-size: 0.9em;
+}
+
+/* Side Shadow Effect for Tabs */
+.tab-button::before,
+.tab-button::after,
+.sequence-tab::before,
+.sequence-tab::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 2px;
+    box-shadow: -3px 0px 4px 1px rgba(0, 0, 0, 0.3);
+    transform: skew(-5deg, -10deg);
+    width: 1px;
+    height: 60%;
+    border-radius: 0;
+    display: none;
+}
+
+.tab-button::after,
+.sequence-tab::after {
+    left: auto;
+    right: 0;
+    box-shadow: 3px 1px 4px 1px rgba(0, 0, 0, 0.3);
+    transform: skew(5deg, 10deg);
+}
+
+.tab-button.active::before,
+.tab-button.active::after,
+.sequence-tab.active::before,
+.sequence-tab.active::after {
+    z-index: -1;
+    display: block;
+}
+
+.tab-button.active:first-child::before,
+.sequence-tab.active:first-child::before {
+    display: none;
+}
+
+.tab-button.active:last-child::after,
+.sequence-tab.active:last-child::after {
+    display: none;
+}
+
+/* Tab Content */
+.tab-content,
+.sequence-content {
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    padding: 20px;
+    z-index: 1;
+    position: relative;
+    margin: 0px 26px;
+}
+
+.tab-pane,
+.sequence-pane {
+    display: none;
+}
+
+.tab-pane.active,
+.sequence-pane.active {
+    display: block;
+}
+
+/* --- Sequence Tab Specific --- */
+.sequence-tabs {
+    display: flex;
+    margin-bottom: -1px;
+    padding-left: 20px;
+    height: 40px;
+    align-items: flex-end;
+}
