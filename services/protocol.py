@@ -67,12 +67,22 @@ class GoldenGateProtocol(PrimerDesignLogger):
         Each step is clearly defined and its output feeds into the next step.
         """
         self.logger.info("Starting Golden Gate protocol creation...")
+        print("Debug values:")
+        print(f"seq: {self.seq}")
+        # print(f"species_codon_usage: {self.species_codon_usage}")
+        print(f"part_num_left: {self.part_num_left}")
+        # print(f"part_num_right: {self.part_num_right}")
+        print(f"max_mutations: {self.max_mutations}")
+        # print(f"primer_name: {self.primer_name}")
+        print(f"template_seq: {self.template_seq}")
+        # print(f"kozak: {self.kozak}")
+        print(f"verbose: {self.verbose}")
         
         # Process each sequence and collect all primer data
         all_primer_data = []
         for i, single_seq in enumerate(self.seq):
             self.logger.info("Running Townsend primer generator")
-            protocol = generate_GG_protocol(single_seq, self.part_num_left[0], True)
+            # protocol = generate_GG_protocol(single_seq, self.part_num_left[0], True)
             # print(f"intended error: {intended_erro}")
             try:
                 # 1. Remove start/stop codons and find restriction sites

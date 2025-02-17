@@ -12,14 +12,15 @@ utils = GoldenGateUtils()
 validator = ProtocolValidator()
 
 MTK_PART_NUMS = ['', '1', '2', '3', '3a', '3b', '3c', '3d', '3e', '3f',
-  '3g', '4', '4a', '4b', '4aII', '3bI', '3bII', '5', '6', '7', '8', '8a', '8b']
+                 '3g', '4', '4a', '4b', '4aII', '3bI', '3bII', '5', '6', '7', '8', '8a', '8b']
+
 
 @main.route("/")
 def home():
     return render_template(
         "index.html",
         title="Home Page",
-        num_sequences = 1,
+        num_sequences=1,
         mtk_part_nums=MTK_PART_NUMS,
         test_seq=current_app.config.get('TEST_SEQ'),
         test_template_seq=current_app.config.get('TEST_TEMPLATE_SEQ'),
@@ -39,20 +40,22 @@ def get_species():
 def get_sequence_inputs():
     num_sequences = int(request.args.get("numSequences", 1))
     is_testing = request.args.get("testingMode", "false").lower() == "true"
-    
+
     print(f"/get_sequence_inputs Testing mode: {is_testing}")
-    print(f"/get_sequence_inputs Number of sequences: {num_sequences}")
+
     # Initialize empty values
     test_primer_names = ["" for _ in range(num_sequences)]
     test_part_numbers = ["" for _ in range(num_sequences)]
     test_sequences = ["" for _ in range(num_sequences)]  # Array of sequences
-    
+
     # Only populate test data if explicitly in testing mode
     if is_testing:
-        test_primer_names = [f"Test Primer {i+1}" for i in range(num_sequences)]
+        test_primer_names = [
+            f"Test Primer {i+1}" for i in range(num_sequences)]
         test_part_numbers = ["6" for _ in range(num_sequences)]
-        test_sequences = [f"{TEST_SEQ}_{i+1}" for i in range(num_sequences)]  # Different sequence per tab if desired
-    
+        # Different sequence per tab if desired
+        test_sequences = [f"{TEST_SEQ}_{i+1}" for i in range(num_sequences)]
+
     return render_template(
         "sequence_input_tabs.html",
         num_sequences=num_sequences,
@@ -85,20 +88,20 @@ def validate_field():
     if field_name == 'sequence':
         valid = validator._is_valid_dna_sequence(value)
         message = 'Invalid DNA sequence' if not valid else ''
-    
+
     elif field_name == 'mtkPart':
         valid = value.strip().isdigit()
         message = 'MTK part must be a number' if not valid else ''
-    
+
     elif field_name == 'primerName':
         valid = bool(value.strip())
         message = 'Primer name is required' if not valid else ''
-    
+
     elif field_name == 'species':
         error = validator._validate_species(value)
         valid = error is None
         message = error if error else ''
-    
+
     elif field_name == 'max-mut-per-site':
         try:
             max_mut = int(value)
@@ -107,7 +110,7 @@ def validate_field():
         except ValueError:
             valid = False
             message = 'Must be a number'
-    
+
     else:
         valid = True
         message = ''
@@ -122,40 +125,84 @@ def validate_field():
 
 @main.route('/generate_protocol', methods=['POST'])
 def generate_protocol():
-    # Ensure we handle both JSON and form-encoded data
-    packaged_data, error_message = utils.package_form_data(request)
-    verbose = packaged_data.get("verboseMode")
-    
-    print(f"main route verbose: {verbose}")
-    if error_message:
-        return jsonify({'error': error_message}), 400
-
-    # Extract and format required data
-    seq = [entry["sequence"] for entry in packaged_data.get("sequences", [])]
-    part_num_left = [entry["mtkPart"] for entry in packaged_data.get("sequences", [])]
-    primer_name = [entry["primerName"] for entry in packaged_data.get("sequences", [])]
-
-    # Use `.get()` with a fallback value
-    max_mutations = int(packaged_data.get("max-mut-per-site", 3))
-    template_seq = packaged_data.get("templateSequence", None)
-    kozak = packaged_data.get("kozak", "MTK")
-    
-    species = packaged_data.get("species", "")
-    
-    part_num_right = [entry.get("partNumRight", "") for entry in packaged_data.get("sequences", [])]
-
-    species_codon_usage = utils.get_codon_usage_dict(species)
-    protocol_maker = GoldenGateProtocol(
-        seq=seq,
-        codon_usage_dict=species_codon_usage,
-        part_num_left=part_num_left,
-        part_num_right=part_num_right,
-        max_mutations=max_mutations,
-        primer_name=primer_name,
-        template_seq=template_seq,
-        kozak=kozak,
-        verbose=verbose)
-    
-    protocol = protocol_maker.create_gg_protocol()
-
-    return jsonify({'protocol': protocol})
+    try:
+        print("Starting generate_protocol")
+        # Ensure we handle both JSON and form-encoded data
+        packaged_data, error_message = utils.package_form_data(request)
+        
+        if error_message:
+            print(f"Error in package_form_data: {error_message}")
+            return jsonify({'error': error_message}), 400
+            
+        if packaged_data is None:
+            return jsonify({'error': 'No data received'}), 400
+            
+        verbose = packaged_data.get("verboseMode", False)
+        print(f"Verbose mode: {verbose}")
+        
+        # Extract and validate required data
+        sequences = packaged_data.get("sequences", [])
+        
+        # Log the sequences data for debugging
+        print("Sequences data:", sequences)
+        
+        # Check if sequences exist and have required data
+        if not sequences or not sequences[0].get('sequence'):
+            return jsonify({'error': 'No valid sequence data provided'}), 400
+            
+        seq = [entry.get("sequence", "").strip() for entry in sequences]
+        part_num_left = [entry.get("mtkPart", "").strip() for entry in sequences]
+        primer_name = [entry.get("primerName", "").strip() for entry in sequences]
+        
+        # Log the extracted data
+        print("Extracted data:")
+        print(f"seq: {seq}")
+        print(f"part_num_left: {part_num_left}")
+        print(f"primer_name: {primer_name}")
+        
+        max_mutations = int(packaged_data.get("max-mut-per-site", 3))
+        template_seq = packaged_data.get("templateSequence", "").strip()
+        kozak = packaged_data.get("kozak", "MTK")
+        species = packaged_data.get("species", "")
+        part_num_right = ["" for _ in sequences]  # Empty strings for now
+        
+        # Validate required fields
+        if not seq[0]:
+            return jsonify({'error': 'Sequence is required'}), 400
+        if not part_num_left[0]:
+            return jsonify({'error': 'MTK part number is required'}), 400
+        if not template_seq:
+            return jsonify({'error': 'Template sequence is required'}), 400
+            
+        try:
+            species_codon_usage = utils.get_codon_usage_dict(species)
+            protocol_maker = GoldenGateProtocol(
+                seq=seq,
+                codon_usage_dict=species_codon_usage,
+                part_num_left=part_num_left,
+                part_num_right=part_num_right,
+                max_mutations=max_mutations,
+                primer_name=primer_name,
+                template_seq=template_seq,
+                kozak=kozak,
+                verbose=verbose)
+            
+            protocol = protocol_maker.create_gg_protocol()
+            return jsonify({'protocol': protocol})
+            
+        except Exception as e:
+            print(f"Error in protocol generation: {str(e)}")
+            print(f"Error details:", {
+                'seq': seq,
+                'part_num_left': part_num_left,
+                'max_mutations': max_mutations,
+                'primer_name': primer_name,
+                'template_seq': template_seq[:100] + '...',  # First 100 chars for readability
+                'kozak': kozak,
+                'verbose': verbose
+            })
+            return jsonify({'error': str(e)}), 500
+            
+    except Exception as e:
+        print(f"Error in generate_protocol: {str(e)}")
+        return jsonify({'error': str(e)}), 500

@@ -11,17 +11,20 @@ from .base import PrimerDesignLogger
 from Bio.Data import CodonTable
 import numpy as np
 
+
 class GoldenGateUtils(PrimerDesignLogger):
     def __init__(self, verbose: bool = False):
         super().__init__(verbose=verbose)
-        self.data_dir = os.path.join(os.path.dirname(__file__), "../static/data")
-        self.codon_tables_dir = os.path.join(self.data_dir, "codon_usage_tables")
+        self.data_dir = os.path.join(
+            os.path.dirname(__file__), "../static/data")
+        self.codon_tables_dir = os.path.join(
+            self.data_dir, "codon_usage_tables")
 
     def load_json_file(self, filename: str) -> Optional[Dict]:
         """Loads a JSON file from the static/data directory."""
         with self.debug_context("load_json_file"):
             filepath = os.path.join(self.data_dir, filename)
-            
+
             try:
                 with open(filepath, "r") as file:
                     return json.load(file)
@@ -41,7 +44,8 @@ class GoldenGateUtils(PrimerDesignLogger):
                 with open(filename, "r") as f:
                     return json.load(f)
             except FileNotFoundError:
-                self.logger.error(f"Codon usage table not found for species: {species}")
+                self.logger.error(
+                    f"Codon usage table not found for species: {species}")
                 return None
 
     @lru_cache(maxsize=1)
@@ -53,11 +57,10 @@ class GoldenGateUtils(PrimerDesignLogger):
         """Gets list of available species from codon usage tables."""
         with self.debug_context("get_available_species"):
             if os.path.exists(self.codon_tables_dir):
-                return [f[:-5] for f in os.listdir(self.codon_tables_dir) 
+                return [f[:-5] for f in os.listdir(self.codon_tables_dir)
                         if f.endswith('.json')]
             self.logger.warning("Codon usage tables directory not found")
             return []
-
 
     def reverse_complement(self, seq: str) -> str:
         """
@@ -74,7 +77,6 @@ class GoldenGateUtils(PrimerDesignLogger):
     def get_amino_acid(self, codon: str) -> str:
         """Translates a codon to its amino acid."""
         return str(Seq(codon).translate())
-
 
     def get_codons_for_amino_acid(self, amino_acid: str):
         """
@@ -96,13 +98,15 @@ class GoldenGateUtils(PrimerDesignLogger):
             raise TypeError("amino_acid must be a string")
 
         if len(amino_acid) != 1:
-            raise ValueError("amino_acid must be a single character representing the amino acid")
+            raise ValueError(
+                "amino_acid must be a single character representing the amino acid")
 
         valid_amino_acids = set("ACDEFGHIKLMNPQRSTVWY*")
         amino_acid = amino_acid.upper()
 
         if amino_acid not in valid_amino_acids:
-            raise ValueError(f"'{amino_acid}' is not a valid amino acid one-letter code")
+            raise ValueError(
+                f"'{amino_acid}' is not a valid amino acid one-letter code")
 
         table = CodonTable.unambiguous_dna_by_id[1]
 
@@ -111,7 +115,6 @@ class GoldenGateUtils(PrimerDesignLogger):
 
         return [codon for codon, aa in table.forward_table.items() if aa == amino_acid]
 
-    
     def export_primers_to_tsv(
         self,
         forward_primers: List[tuple],
@@ -121,27 +124,27 @@ class GoldenGateUtils(PrimerDesignLogger):
         """Exports primers to TSV file."""
         with self.debug_context("export_primers"):
             filepath = os.path.join(self.data_dir, filename)
-            
+
             try:
                 with open(filepath, mode='w', newline='') as file:
                     writer = csv.writer(file, delimiter='\t')
-                    
+
                     for name, sequence in forward_primers:
                         writer.writerow([
                             name,
                             sequence,
                             "Generated for Golden Gate Assembly"
                         ])
-                    
+
                     for name, sequence in reverse_primers:
                         writer.writerow([
                             name,
                             sequence,
                             "Generated for Golden Gate Assembly"
                         ])
-                        
+
                 self.logger.info(f"Primers exported to {filepath}")
-                
+
             except Exception as e:
                 self.logger.error(f"Error exporting primers: {str(e)}")
                 raise
@@ -164,60 +167,137 @@ class GoldenGateUtils(PrimerDesignLogger):
                 self.logger.error(f"Error translating codon {codon}: {str(e)}")
                 return "?"
 
-    # Form handling methods
     def package_form_data(self, request: Any) -> tuple:
         """Parses and restructures form data from HTMX."""
         with self.debug_context("package_form_data"):
             try:
                 # Determine data format and get data
                 data = self._get_request_data(request)
+                self.logger.debug(f"Got request data: {data}")
+
+                if data is None:
+                    return None, "No data received"
+
                 if not isinstance(data, dict):
-                    return None, "Invalid data format"
+                    return None, f"Invalid data format: expected dict, got {type(data)}"
 
                 # Extract and validate main fields
-                packaged_data = self._extract_form_fields(data)
-                print(f"package_data verbose: {packaged_data['verboseMode']}")
-                
-                return packaged_data, None
-                
+                try:
+                    packaged_data = self._extract_form_fields(data)
+                    self.logger.debug(
+                        f"Extracted form fields: {packaged_data}")
+
+                    if packaged_data is None:
+                        return None, "Failed to extract form fields"
+
+                    # Ensure verboseMode exists with a default value
+                    packaged_data['verboseMode'] = packaged_data.get(
+                        'verboseMode', False)
+                    self.logger.debug(
+                        f"package_data verbose: {packaged_data['verboseMode']}")
+
+                    return packaged_data, None
+
+                except Exception as e:
+                    self.logger.error(
+                        f"Error in _extract_form_fields: {str(e)}")
+                    return None, str(e)
+
             except Exception as e:
                 self.logger.error(f"Error packaging form data: {str(e)}")
                 return None, str(e)
 
-    def _get_request_data(self, request: Any) -> Dict:
-        """Extracts data from request based on content type."""
-        if request.content_type == "application/json":
-            return request.get_json()
-        elif request.content_type in ["application/x-www-form-urlencoded", "multipart/form-data"]:
-            return request.form.to_dict(flat=False)
-        else:
-            raise ValueError("Unsupported Media Type")
+    def _get_request_data(self, request: Any) -> dict:
+        """Get data from request object, handling different content types."""
+        try:
+            # Log request details for debugging
+            self.logger.debug(f"Request Content-Type: {request.content_type}")
+            self.logger.debug(f"Request Headers: {dict(request.headers)}")
+            
+            # Try to get raw data first
+            raw_data = request.get_data()
+            self.logger.debug(f"Raw request data: {raw_data}")
 
-    def _extract_form_fields(self, data: Dict) -> Dict:
-        """Extracts and structures form fields."""
-        template_sequence = self._get_first_value(data, "templateSequence", "")
-        num_sequences = self._get_first_value(data, "numSequences", 1, int)
-        species = self._get_first_value(data, "species", "")
-        kozak = self._get_first_value(data, "kozak", "")
-        verbose_mode = self._get_first_value(data, "verbose_mode", "off").lower() == "on"
-        print(f"_extract_form_fields: verbose_mode: {verbose_mode}")
+            if request.is_json:
+                # Handle JSON data
+                try:
+                    json_data = request.get_json(force=True)
+                    self.logger.debug(f"Parsed JSON data: {json_data}")
+                    return json_data
+                except Exception as e:
+                    self.logger.error(f"Error parsing JSON: {str(e)}")
+                    return None
+            elif request.form:
+                # Handle form data
+                form_data = dict(request.form)
+                self.logger.debug(f"Form data: {form_data}")
+                return form_data
+            elif raw_data:
+                # Try to parse raw data as JSON
+                try:
+                    json_data = json.loads(raw_data)
+                    self.logger.debug(f"Parsed raw data as JSON: {json_data}")
+                    return json_data
+                except json.JSONDecodeError as e:
+                    self.logger.error(f"Failed to parse raw data as JSON: {e}")
+                    return None
+            else:
+                self.logger.error("No data found in request")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Error getting request data: {str(e)}")
+            return None
 
-        sequences = []
-        for i in range(num_sequences):
-            sequences.append({
-                "primerName": self._get_first_value(data, f"sequences[{i}][primerName]", ""),
-                "mtkPart": self._get_first_value(data, f"sequences[{i}][mtkPart]", ""),
-                "sequence": self._get_first_value(data, f"sequences[{i}][sequence]", ""),
-            })
-
-        return {
-            "templateSequence": template_sequence,
-            "numSequences": num_sequences,
-            "species": species,
-            "kozak": kozak,
-            "sequences": sequences,
-            "verboseMode": verbose_mode
-        }
+    def _extract_form_fields(self, data: dict) -> dict:
+        """Extract and validate form fields from the request data."""
+        try:
+            self.logger.debug("Extracting form fields from data: %s", data)
+            
+            # Initialize the packaged data with defaults
+            packaged_data = {
+                'templateSequence': data.get('templateSequence', ''),
+                'numSequences': int(data.get('numSequences', 1)),
+                'species': data.get('species', ''),
+                'kozak': data.get('kozak', 'MTK'),
+                'sequences': [],
+                'verboseMode': data.get('verboseMode', False)
+            }
+            
+            # Extract sequence information
+            sequences = data.get('sequences', [])
+            self.logger.debug("Found sequences: %s", sequences)
+            
+            # Validate each sequence
+            for seq in sequences:
+                if not isinstance(seq, dict):
+                    self.logger.error(f"Invalid sequence format: {seq}")
+                    continue
+                    
+                sequence_data = {
+                    'primerName': seq.get('primerName', ''),
+                    'mtkPart': seq.get('mtkPart', ''),
+                    'sequence': seq.get('sequence', '')
+                }
+                
+                # Log the sequence data being added
+                self.logger.debug("Adding sequence data: %s", sequence_data)
+                packaged_data['sequences'].append(sequence_data)
+                
+            # Check if we have at least one sequence
+            if not packaged_data['sequences']:
+                self.logger.error("No valid sequences found in form data")
+                packaged_data['sequences'] = [{
+                    'primerName': '',
+                    'mtkPart': '',
+                    'sequence': ''
+                }]
+                
+            return packaged_data
+            
+        except Exception as e:
+            self.logger.error(f"Error in _extract_form_fields: {str(e)}")
+            raise
 
     def _get_first_value(
         self,
@@ -228,14 +308,15 @@ class GoldenGateUtils(PrimerDesignLogger):
     ) -> Any:
         """Safely retrieves first value from form field."""
         value = data.get(key, default)
-        
+
         if isinstance(value, list):
             value = value[0] if value else default
 
         try:
             return cast_type(value)
         except (ValueError, TypeError):
-            self.logger.error(f"Failed to cast {key}={value} to {cast_type.__name__}")
+            self.logger.error(
+                f"Failed to cast {key}={value} to {cast_type.__name__}")
             return default
 
     def validate_form_data(
@@ -250,7 +331,7 @@ class GoldenGateUtils(PrimerDesignLogger):
 
             if required_fields:
                 missing_fields = [
-                    field for field in required_fields 
+                    field for field in required_fields
                     if field not in data
                 ]
                 if missing_fields:
@@ -271,29 +352,31 @@ class GoldenGateUtils(PrimerDesignLogger):
         """
         Converts a 4-nucleotide sequence to its corresponding matrix index.
         Sequences are indexed in alphabetical order (A=0, C=1, G=2, T=3).
-        
+
         Args:
             seq: String containing exactly 4 nucleotides (ACTG only)
-            
+
         Returns:
             Integer index from 0 to 255 corresponding to sequence position in matrix
-            
+
         Raises:
             ValueError: If sequence is not exactly 4 nucleotides or contains invalid characters
         """
         if len(seq) != 4:
-            raise ValueError(f"Sequence must be exactly 4 nucleotides, got {len(seq)}: {seq}")
-        
+            raise ValueError(
+                f"Sequence must be exactly 4 nucleotides, got {len(seq)}: {seq}")
+
         seq = seq.upper()
         if not all(nt in 'ACTG' for nt in seq):
-            raise ValueError(f"Sequence must contain only A, C, G, T, got: {seq}")
-        
+            raise ValueError(
+                f"Sequence must contain only A, C, G, T, got: {seq}")
+
         NT_VALUES = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
         index = 0
         for pos, nt in enumerate(seq):
             power = 3 - pos
             index += NT_VALUES[nt] * (4 ** power)
-        
+
         return index
 
     def get_recognition_site_bases(self, frame, codon_index):
@@ -336,22 +419,21 @@ class GoldenGateUtils(PrimerDesignLogger):
                 return [0, 1]
         else:
             raise ValueError("Frame must be 0, 1, or 2")
-        
-        
+
     def _load_compatibility_table(self, path: str) -> np.ndarray:
         """
         Loads the binary compatibility table into a numpy array.
-        
+
         The binary file contains a 256×256 compatibility matrix where each element
         represents whether two 4-nucleotide sequences are compatible. The sequences
         are ordered alphabetically, so AA[AA] is at [0,0] and TT[TT] is at [255,255].
-        
+
         Args:
             path: Path to the binary compatibility table file
-                
+
         Returns:
             256x256 numpy array where element [i,j] indicates if sequence i is compatible with j
-            
+
         Raises:
             FileNotFoundError: If compatibility table file cannot be found
             ValueError: If table dimensions or content are invalid
@@ -359,26 +441,29 @@ class GoldenGateUtils(PrimerDesignLogger):
         try:
             with open(path, 'rb') as f:
                 binary_data = f.read()
-            
+
             expected_size = 256 * 256 // 8  # 65,536 bits = 8,192 bytes
             if len(binary_data) != expected_size:
                 raise ValueError(
                     f"Invalid compatibility table size. Expected {expected_size} bytes, "
                     f"got {len(binary_data)} bytes"
                 )
-                
+
             compatibility_bits = np.unpackbits(
                 np.frombuffer(binary_data, dtype=np.uint8)
             )
             compatibility_matrix = compatibility_bits.reshape(256, 256)
-            
+
             if self.verbose:
-                self.logger.info(f"Loaded compatibility matrix with shape: {compatibility_matrix.shape}")
-                self.logger.info(f"Number of compatible pairs: {np.sum(compatibility_matrix)}")
-                self.logger.info(f"Matrix density: {np.mean(compatibility_matrix):.2%}")
-            
+                self.logger.info(
+                    f"Loaded compatibility matrix with shape: {compatibility_matrix.shape}")
+                self.logger.info(
+                    f"Number of compatible pairs: {np.sum(compatibility_matrix)}")
+                self.logger.info(
+                    f"Matrix density: {np.mean(compatibility_matrix):.2%}")
+
             return compatibility_matrix
-            
+
         except FileNotFoundError:
             raise FileNotFoundError(
                 f"Compatibility table not found at {path}. "
@@ -386,7 +471,6 @@ class GoldenGateUtils(PrimerDesignLogger):
             )
         except Exception as e:
             raise ValueError(f"Error loading compatibility table: {str(e)}")
-    
 
     def get_codon_usage(self, codon: str, amino_acid: str, codon_usage_dict: dict, default_usage: float = 0.0) -> float:
         """
@@ -402,16 +486,19 @@ class GoldenGateUtils(PrimerDesignLogger):
             float: The codon usage frequency.
         """
         if not isinstance(codon, str) or len(codon) != 3:
-            raise ValueError(f"Invalid codon: {codon}. Must be a three-letter DNA string.")
+            raise ValueError(
+                f"Invalid codon: {codon}. Must be a three-letter DNA string.")
 
         if amino_acid not in codon_usage_dict:
-            print(f"Warning: Amino acid {amino_acid} not found in codon usage dictionary.")
+            print(
+                f"Warning: Amino acid {amino_acid} not found in codon usage dictionary.")
             return default_usage
 
         # Convert DNA (T) to RNA (U) for lookup
         codon_rna = codon.replace("T", "U")
 
         # Retrieve codon usage, return default if not found
-        usage_value = codon_usage_dict[amino_acid].get(codon_rna, default_usage)
+        usage_value = codon_usage_dict[amino_acid].get(
+            codon_rna, default_usage)
 
         return usage_value
