@@ -1,5 +1,5 @@
 # routes/main.py
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, current_app
 from tests.test_data import TEST_SEQ, TEST_TEMPLATE_SEQ
 from services.utils import GoldenGateUtils
 from services.protocol import GoldenGateProtocol
@@ -11,17 +11,21 @@ TESTING_MODE = True
 utils = GoldenGateUtils()
 validator = ProtocolValidator()
 
-# protocol_maker = GoldenGateProtocol()
+MTK_PART_NUMS = ['', '1', '2', '3', '3a', '3b', '3c', '3d', '3e', '3f',
+  '3g', '4', '4a', '4b', '4aII', '3bI', '3bII', '5', '6', '7', '8', '8a', '8b']
 
 @main.route("/")
 def home():
     return render_template(
         "index.html",
         title="Home Page",
-        test_seq=TEST_SEQ,
-        test_template_seq=TEST_TEMPLATE_SEQ,
-        testing_mode=TESTING_MODE
+        num_sequences = 1,
+        mtk_part_nums=MTK_PART_NUMS,
+        test_seq=current_app.config.get('TEST_SEQ'),
+        test_template_seq=current_app.config.get('TEST_TEMPLATE_SEQ'),
+        testing_mode=current_app.config['TESTING'],
     )
+
 
 @main.route("/get_species")
 def get_species():
@@ -30,20 +34,34 @@ def get_species():
         f'<option value="{s}">{s}</option>' for s in species)
     return options_html
 
+
 @main.route("/get_sequence_inputs", methods=["GET"])
 def get_sequence_inputs():
     num_sequences = int(request.args.get("numSequences", 1))
+    is_testing = request.args.get("testingMode", "false").lower() == "true"
     
-    # Optionally, if in testing mode, prepare test values:
-    test_primer_name = ["Test Primer 1"] if num_sequences > 0 else []
-    test_part_number = ["6"] if num_sequences > 0 else []
-    test_sequence = TEST_SEQ
+    print(f"/get_sequence_inputs Testing mode: {is_testing}")
+    print(f"/get_sequence_inputs Number of sequences: {num_sequences}")
+    # Initialize empty values
+    test_primer_names = ["" for _ in range(num_sequences)]
+    test_part_numbers = ["" for _ in range(num_sequences)]
+    test_sequences = ["" for _ in range(num_sequences)]  # Array of sequences
     
-    return render_template("sequence_input_tabs.html",
-                           num_sequences=num_sequences,
-                           test_primer_name=test_primer_name,
-                           test_part_number=test_part_number,
-                           test_sequence=test_sequence)
+    # Only populate test data if explicitly in testing mode
+    if is_testing:
+        test_primer_names = [f"Test Primer {i+1}" for i in range(num_sequences)]
+        test_part_numbers = ["6" for _ in range(num_sequences)]
+        test_sequences = [f"{TEST_SEQ}_{i+1}" for i in range(num_sequences)]  # Different sequence per tab if desired
+    
+    return render_template(
+        "sequence_input_tabs.html",
+        num_sequences=num_sequences,
+        test_primer_name=test_primer_names,
+        test_part_number=test_part_numbers,
+        test_sequences=test_sequences,  # Pass array of sequences
+        mtk_part_nums=MTK_PART_NUMS
+    )
+
 
 @main.route('/validate_field', methods=['POST'])
 def validate_field():

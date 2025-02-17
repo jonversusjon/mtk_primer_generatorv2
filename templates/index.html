@@ -23,6 +23,19 @@
     {{ test_template_seq | tojson }}
   </script>
 
+  <!-- Initialize APP_STATE -->
+  <script>
+    // Initialize APP_STATE before loading other scripts
+    const APP_STATE = {
+      testSeq: JSON.parse(document.getElementById("test-seq-data").textContent || "[]"),
+      testTemplateSeq: JSON.parse(document.getElementById("test-template-seq").textContent || "\"\""),
+      testingMode: JSON.parse(document.getElementById("testing-mode-data").textContent || "false")
+    };
+
+    // Debug log to verify initialization
+    console.log("APP_STATE initialized:", APP_STATE);
+  </script>
+
   <!-- External JS files -->
   <script defer src="{{ url_for('static', filename='js/dom.js') }}"></script>
   <script defer type="module" src="{{ url_for('static', filename='js/dark-mode.js') }}"></script>
@@ -142,6 +155,7 @@
         </div>
         <div id="sequence-container" class="breakout-holder">
           <!-- Dynamic sequence inputs will be inserted here via HTMX (rendered by Jinja) -->
+          {% include 'sequence_input_tabs.html' %}
         </div>
 
         <!-- Buttons Section -->

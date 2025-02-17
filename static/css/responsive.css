@@ -1,28 +1,56 @@
+/* Base breakpoint variables */
 @media (min-width: 600px) {
-    .form-row .input-group {
-        flex-direction: row;
-        /*Make horizontal*/
-        align-items: center;
-    }
 
-    .form-row .input-group label {
-        margin-right: 8px;
-        white-space: nowrap;
-    }
-
+    .form-row .input-group,
     .sequence-pane .form-row-top .input-group {
         flex-direction: row;
-        /*Ensure it remains row on larger screens*/
         align-items: center;
     }
 
+    .form-row .input-group label,
     .sequence-pane .form-row-top .input-group label {
         margin-right: 8px;
         white-space: nowrap;
     }
 }
 
-/* Mobile Responsiveness */
+/* Mobile styles */
+@media (max-width: 600px) {
+    body {
+        max-width: 100%;
+        padding: 10px;
+    }
+
+    button,
+    textarea,
+    input,
+    select {
+        font-size: 14px;
+    }
+
+    .info-tooltip {
+        width: 200px;
+        font-size: 12px;
+        padding: 8px;
+    }
+
+    .form-row-top,
+    .sequence-pane .form-row-top,
+    .input-group {
+        flex-direction: column;
+    }
+
+    .input-group {
+        align-items: stretch;
+    }
+
+    .input-group label {
+        margin-right: 0;
+        margin-bottom: 4px;
+    }
+}
+
+/* Tablet styles */
 @media (max-width: 768px) {
     .sequence-tabs-nav {
         height: auto;
@@ -48,52 +76,23 @@
     .sequence-tab-wrapper .input-group {
         width: 100%;
     }
-}
 
-/* --- Responsive Design --- */
-@media screen and (max-width: 600px) {
-    body {
-        max-width: 100%;
-        padding: 10px;
-    }
-
-    button,
-    textarea,
-    input,
-    select {
-        font-size: 14px;
-    }
-}
-
-/* Responsive: Adjust for small screens */
-@media (max-width: 600px) {
-    .info-tooltip {
-        width: 200px;
-        font-size: 12px;
-        padding: 8px;
-    }
-
-    /* Consolidated form-row styles for smaller screens */
-    .form-row-top,
-    .sequence-pane .form-row-top {
+    .dropdown-container {
         flex-direction: column;
-        /* Stack elements vertically */
     }
 
-    .input-group {
-        flex-direction: column;
-        align-items: stretch;
-        /* Stretch items to full width */
+    .dropdown-item {
+        width: 100%;
     }
 
-    .input-group label {
-        margin-right: 0;
-        /* Remove margin for vertical layout */
-        margin-bottom: 4px;
+    .col-large,
+    .col-medium,
+    .col-small {
+        flex: 1;
     }
 }
 
-/* Responsive Toggle Button (Smaller Screens) */
+/* Dark mode button adjustments */
 @media (max-width: 1000px) {
     .dark-mode-btn {
         width: 30px;
@@ -108,22 +107,5 @@
 
     .dark-mode-btn .moon-icon {
         font-size: 14px;
-    }
-}
-
-@media (max-width: 768px) {
-    .dropdown-container {
-        flex-direction: column;
-    }
-
-    .dropdown-item {
-        width: 100%;
-    }
-
-    .col-large,
-    .col-medium,
-    .col-small {
-        flex: 1;
-        /* Full width on mobile */
     }
 }

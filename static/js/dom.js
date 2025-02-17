@@ -1,99 +1,96 @@
-// Initialize state and constants from embedded data
-const APP_STATE = {
-  testSeq: JSON.parse(document.getElementById("test-seq-data")?.textContent || "[]"),
-  testTemplateSeq: JSON.parse(document.getElementById("test-template-seq")?.textContent || "\"\""),
-  testingMode: JSON.parse(document.getElementById("testing-mode-data")?.textContent || "false"),
-};
+// static/js/dom.js
 
-class SequenceManager {
+
+/**
+ * Manages sequence-related functionality
+ */
+class SequenceHandler {
   constructor() {
-    this.container = document.getElementById("sequence-container");
-    this.numSequencesInput = document.getElementById("numSequences");
-    this.templateSequence = document.getElementById("templateSequence");
-    this.setupEventListeners();
+    this.setupCharacterCounters();
     this.initializeState();
   }
 
-  setupEventListeners() {
-    if (this.numSequencesInput) {
-      this.numSequencesInput.addEventListener("input", (e) => this.updateSequenceInputs(e.target.value));
+  setupCharacterCounters() {
+    // Setup for template sequence
+    const templateSequence = document.getElementById("templateSequence");
+    if (templateSequence) {
+      templateSequence.addEventListener("input", () => this.updateCharCount(templateSequence));
+      if (templateSequence.value) this.updateCharCount(templateSequence);
     }
-    if (this.templateSequence) {
-      this.templateSequence.addEventListener("input", () => this.updateCharCount(this.templateSequence));
-    }
-  }
 
-  initializeState() {
-    // Initialize with current number of sequences
-    if (this.numSequencesInput) {
-      this.updateSequenceInputs(this.numSequencesInput.value);
-    }
-    // Initialize template sequence if in testing mode
-    if (APP_STATE.testingMode && this.templateSequence && APP_STATE.testTemplateSeq) {
-      this.templateSequence.value = APP_STATE.testTemplateSeq;
-      this.updateCharCount(this.templateSequence);
-    }
-  }
-
-  updateCharCount(element) {
-    const label = element.nextElementSibling;
-    if (!label?.classList.contains("char-count-label")) return;
-    
-    const length = element.value.length;
-    label.style.display = length > 0 ? "block" : "none";
-    if (length > 0) {
-      label.textContent = `Length: ${length} bp`;
-    }
-  }
-
-  attachSequenceInputListeners() {
+    // Setup for dynamic sequence inputs
     document.querySelectorAll(".dynamic-sequence-input").forEach(input => {
       input.addEventListener("input", () => this.updateCharCount(input));
       if (input.value) this.updateCharCount(input);
     });
   }
 
-  async updateSequenceInputs(num) {
-    num = Math.max(1, Math.min(10, Number(num)));
-    try {
-      const response = await fetch(`/get_sequence_inputs?numSequences=${num}`);
-      const html = await response.text();
-      if (this.container) {
-        this.container.innerHTML = html;
-        this.attachSequenceInputListeners();
-        this.initializeTabs();
+  initializeState() {
+    if (APP_STATE.testingMode) {
+      // Initialize template sequence if it exists
+      const templateSequence = document.getElementById("templateSequence");
+      if (templateSequence && APP_STATE.testTemplateSeq) {
+        templateSequence.value = APP_STATE.testTemplateSeq;
+        this.updateCharCount(templateSequence);
       }
-    } catch (error) {
-      console.error("Error updating sequence inputs:", error);
+
+      // Update sequence inputs with test data
+      this.updateSequenceInputsWithTestData();
+    } else {
+      // If not in testing mode, load without test data
+      this.updateSequenceInputs("1");
     }
   }
 
-  initializeTabs() {
-    const tabButtons = document.querySelectorAll('.sequence-tab-btn');
-    tabButtons.forEach(button => {
-      button.addEventListener('click', () => this.switchTab(button.dataset.tabIndex));
+  updateSequenceInputsWithTestData() {
+    const numSequences = document.getElementById("numSequences")?.value || "1";
+    htmx.ajax('GET', '/get_sequence_inputs', {
+      target: '#sequence-container',
+      swap: 'innerHTML',
+      values: {
+        numSequences: numSequences,
+        testingMode: true,
+        testSeq: APP_STATE.testSeq
+      }
+    }).then(() => {
+      initializeTabs();
+      this.setupCharacterCounters();
     });
-    // Activate first tab
-    if (tabButtons.length > 0) {
-      this.switchTab(0);
-    }
   }
 
-  switchTab(index) {
-    document.querySelectorAll('.sequence-tab-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.tabIndex === index.toString());
+  updateSequenceInputs(value) {
+    const numSequences = parseInt(value) || 1;
+    htmx.ajax('GET', '/get_sequence_inputs', {
+      target: '#sequence-container',
+      swap: 'innerHTML',
+      values: {
+        numSequences: numSequences,
+        testingMode: false
+      }
+    }).then(() => {
+      initializeTabs();
+      this.setupCharacterCounters();
     });
-    document.querySelectorAll('.sequence-tab-content').forEach(content => {
-      content.classList.toggle('active', content.dataset.tabIndex === index.toString());
-    });
+  }
+
+  updateCharCount(element) {
+    const label = element.nextElementSibling;
+    if (!label?.classList.contains("char-count-label")) return;
+
+    const length = element.value.length;
+    label.style.display = length > 0 ? "block" : "none";
+    if (length > 0) {
+      label.textContent = `Length: ${length} bp`;
+    }
   }
 }
 
-class FormManager {
+/**
+ * Manages form clearing and reset functionality
+ */
+class FormHandler {
   constructor() {
-    this.runDesignButton = document.getElementById("run-design-primer");
     this.clearFormButton = document.getElementById("clear-form");
-    this.resultsElement = document.getElementById("results");
     this.setupEventListeners();
   }
 
@@ -101,44 +98,34 @@ class FormManager {
     if (this.clearFormButton) {
       this.clearFormButton.addEventListener("click", () => this.clearForm());
     }
-    if (this.runDesignButton) {
-      this.runDesignButton.addEventListener("click", () => this.handleDesignSubmission());
-    }
   }
 
   clearForm() {
-    document.getElementById("fileUpload")?.value = "";
+    // Reset file upload
+    const fileUpload = document.getElementById("fileUpload");
+    if (fileUpload) {
+        fileUpload.value = "";
+    }
+
+    // Reset number of sequences
     const numSequencesInput = document.getElementById("numSequences");
     if (numSequencesInput) {
       numSequencesInput.value = "1";
-      numSequencesInput.dispatchEvent(new Event("input"));
+      // Trigger HTMX request to update sequence inputs
+      htmx.trigger(numSequencesInput, 'change');
     }
-    if (this.resultsElement) {
-      this.resultsElement.innerHTML = "";
-    }
-  }
 
-  async handleDesignSubmission() {
-    if (!this.runDesignButton || !this.resultsElement) return;
-
-    this.runDesignButton.disabled = true;
-    this.clearFormButton.disabled = true;
-    this.resultsElement.innerHTML = "<p>Designing primers...</p>";
-
-    try {
-      // Replace with actual submission logic
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      this.resultsElement.innerHTML = "<p>Primer design completed.</p>";
-    } catch (error) {
-      this.resultsElement.innerHTML = "<p>Error designing primers.</p>";
-      console.error("Error:", error);
-    } finally {
-      this.runDesignButton.disabled = false;
-      this.clearFormButton.disabled = false;
+    // Clear results
+    const resultsElement = document.getElementById("results");
+    if (resultsElement) {
+      resultsElement.innerHTML = "";
     }
   }
 }
 
+/**
+ * Manages tooltip functionality
+ */
 class TooltipManager {
   constructor() {
     this.setupTooltips();
@@ -187,11 +174,68 @@ class TooltipManager {
   }
 }
 
+/**
+ * Updates sequence inputs based on the selected number of sequences
+ * @param {string|number} value - The number of sequences to generate
+ */
+function updateSequenceInputs(value) {
+  const numSequences = parseInt(value) || 1;
+  const isTestingMode = APP_STATE.testingMode;
+
+  htmx.ajax('GET', '/get_sequence_inputs', {
+    target: '#sequence-container',
+    swap: 'innerHTML',
+    values: {
+      numSequences: numSequences,
+      testingMode: isTestingMode
+    }
+  }).then(() => {
+    initializeTabs();
+    const sequenceHandler = new SequenceHandler();
+  });
+}
+
+/**
+ * Initializes tab functionality for sequence inputs
+ */
+function initializeTabs() {
+  const tabBtns = document.querySelectorAll('.sequence-tab-btn');
+  const tabContents = document.querySelectorAll('.sequence-tab-content');
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tabIndex = btn.getAttribute('data-tab-index');
+
+      // Remove active class from all buttons and contents
+      tabBtns.forEach(b => b.classList.remove('active'));
+      tabContents.forEach(c => c.classList.remove('active'));
+
+      // Add active class to clicked button and corresponding content
+      btn.classList.add('active');
+      document.querySelector(`.sequence-tab-content[data-tab-index="${tabIndex}"]`)
+        ?.classList.add('active');
+    });
+  });
+}
+
 // Initialize everything when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
-  const sequenceManager = new SequenceManager();
-  const formManager = new FormManager();
-  const tooltipManager = new TooltipManager();
+  console.log("DOM Content Loaded. Testing mode:", APP_STATE.testingMode);
+
+  // Initial load of sequence input
+  htmx.ajax('GET', '/get_sequence_inputs', {
+    target: '#sequence-container',
+    swap: 'innerHTML',
+    values: {
+      numSequences: 1,
+      testingMode: APP_STATE.testingMode  // Add this line
+    }
+  }).then(() => {
+    initializeTabs();
+    const sequenceHandler = new SequenceHandler();
+    const formHandler = new FormHandler();
+    const tooltipManager = new TooltipManager();
+  });
 
   // Set testing mode checkbox if needed
   if (APP_STATE.testingMode) {
