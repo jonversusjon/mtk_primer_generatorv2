@@ -3,18 +3,38 @@ from Bio.Seq import Seq, CodonTable
 from prettytable import PrettyTable
 import re
 from typing import Dict, Optional, Union, List
-from .base import PrimerDesignLogger
 from collections import defaultdict
+import logging
+from config.logging_config import logger
+from .base import debug_context
 
+class SequencePreparator:
+    """
+    Handles sequence preprocessing for Golden Gate assembly,
+    including frame adjustments and restriction site analysis.
+    """
 
-class SequencePreparator(PrimerDesignLogger):
     def __init__(self, verbose: bool = False):
-        super().__init__(verbose=verbose)
+        self.logger = logger.getChild("SequencePreparator")
+        
+        """
+        Initialize sequence preparation parameters.
+        
+        Args:
+            verbose (bool): If True, provide user-facing logs in production.
+        """
+        self.verbose = verbose
+
         self.state = {
             'current_sequence': None,
             'adjustments_made': [],
             'restriction_sites': {}
         }
+
+        self.logger.debug("SequencePreparator initialized.")
+
+        if self.verbose:
+            self.logger.info("SequencePreparator is running in verbose mode.")
 
     def adjust_sequence_for_frame_and_codons(
         self, 
@@ -33,7 +53,7 @@ class SequencePreparator(PrimerDesignLogger):
             seq = seq[:len(seq) - (len(seq) % 3)]
             if len(seq) != original_length:
                 self.state['adjustments_made'].append('frame_adjusted')
-                self.logger.info(f"Trimmed {original_length - len(seq)} nucleotides for frame adjustment")
+                logger.info(f"Trimmed {original_length - len(seq)} nucleotides for frame adjustment")
 
             # Check codons
             translated_seq = seq.translate()
@@ -41,13 +61,13 @@ class SequencePreparator(PrimerDesignLogger):
             # Handle stop codon
             if translated_seq[-1] == '*':
                 self.state['adjustments_made'].append('stop_codon_removed')
-                self.logger.info('Stop codon removed from the end of the sequence')
+                logger.info('Stop codon removed from the end of the sequence')
                 seq = seq[:-3]
 
             # Handle start codon
             if translated_seq[0] == 'M':
                 self.state['adjustments_made'].append('start_codon_removed')
-                self.logger.info('Start codon removed from the beginning of the sequence')
+                logger.info('Start codon removed from the beginning of the sequence')
                 seq = seq[3:]
 
             return seq
@@ -133,7 +153,7 @@ class SequencePreparator(PrimerDesignLogger):
                     codons.append(codon_dict)  # Store 1-based codon position
             
             if self.verbose:
-                self.logger.info(
+                logger.info(
                     f"Extracted codons for sequence of length {len(seq)} with start_index {start_index}, "
                     f"length {length}, and frame {frame}: {codons}"
                 )
@@ -214,9 +234,9 @@ class SequencePreparator(PrimerDesignLogger):
                     positions
                 ])
 
-            self.logger.info("\n")
-            self.logger.info("\nRestriction Site Analysis Summary:")
-            self.logger.info(f"\n{str(table)}")
+            logger.info("\n")
+            logger.info("\nRestriction Site Analysis Summary:")
+            logger.info(f"\n{str(table)}")
 
     def preprocess_sequence(self, sequence: str) -> Seq:
         """Converts sequence to uppercase and adjusts for frame and codons."""

@@ -7,14 +7,16 @@ from functools import lru_cache
 from Bio.Seq import Seq
 from Bio.Data import CodonTable
 from typing import Dict, List, Optional, Any
-from .base import PrimerDesignLogger
 from Bio.Data import CodonTable
 import numpy as np
+import logging
+from config.logging_config import logger
+from .base import debug_context
 
-
-class GoldenGateUtils(PrimerDesignLogger):
+class GoldenGateUtils:
     def __init__(self, verbose: bool = False):
-        super().__init__(verbose=verbose)
+        self.verbose = verbose
+        self.logger = logger.getChild("GoldenGateUtils")
         self.data_dir = os.path.join(
             os.path.dirname(__file__), "../static/data")
         self.codon_tables_dir = os.path.join(
@@ -22,29 +24,29 @@ class GoldenGateUtils(PrimerDesignLogger):
 
     def load_json_file(self, filename: str) -> Optional[Dict]:
         """Loads a JSON file from the static/data directory."""
-        with self.debug_context("load_json_file"):
+        with debug_context("load_json_file"):
             filepath = os.path.join(self.data_dir, filename)
 
             try:
                 with open(filepath, "r") as file:
                     return json.load(file)
             except FileNotFoundError:
-                self.logger.error(f"File not found: {filepath}")
+                logger.error(f"File not found: {filepath}")
                 return None
             except json.JSONDecodeError:
-                self.logger.error(f"Invalid JSON format in: {filepath}")
+                logger.error(f"Invalid JSON format in: {filepath}")
                 return None
 
     @lru_cache(maxsize=10)
     def get_codon_usage_dict(self, species: str) -> Optional[Dict]:
         """Loads a codon usage table for a species."""
-        with self.debug_context("get_codon_usage_dict"):
+        with debug_context("get_codon_usage_dict"):
             filename = os.path.join(self.codon_tables_dir, f"{species}.json")
             try:
                 with open(filename, "r") as f:
                     return json.load(f)
             except FileNotFoundError:
-                self.logger.error(
+                logger.error(
                     f"Codon usage table not found for species: {species}")
                 return None
 
@@ -55,11 +57,11 @@ class GoldenGateUtils(PrimerDesignLogger):
 
     def get_available_species(self) -> List[str]:
         """Gets list of available species from codon usage tables."""
-        with self.debug_context("get_available_species"):
+        with debug_context("get_available_species"):
             if os.path.exists(self.codon_tables_dir):
                 return [f[:-5] for f in os.listdir(self.codon_tables_dir)
                         if f.endswith('.json')]
-            self.logger.warning("Codon usage tables directory not found")
+            logger.warning("Codon usage tables directory not found")
             return []
 
     def reverse_complement(self, seq: str) -> str:
@@ -122,7 +124,7 @@ class GoldenGateUtils(PrimerDesignLogger):
         filename: str = "primers.tsv"
     ) -> None:
         """Exports primers to TSV file."""
-        with self.debug_context("export_primers"):
+        with debug_context("export_primers"):
             filepath = os.path.join(self.data_dir, filename)
 
             try:
@@ -143,10 +145,10 @@ class GoldenGateUtils(PrimerDesignLogger):
                             "Generated for Golden Gate Assembly"
                         ])
 
-                self.logger.info(f"Primers exported to {filepath}")
+                logger.info(f"Primers exported to {filepath}")
 
             except Exception as e:
-                self.logger.error(f"Error exporting primers: {str(e)}")
+                logger.error(f"Error exporting primers: {str(e)}")
                 raise
 
     def gc_content(self, seq: str) -> float:
@@ -158,22 +160,22 @@ class GoldenGateUtils(PrimerDesignLogger):
 
     def translate_codon(self, codon: str) -> str:
         """Translates a codon into its corresponding amino acid."""
-        with self.debug_context("translate_codon"):
+        with debug_context("translate_codon"):
             try:
                 codon = codon.upper().replace("U", "T")
                 standard_table = CodonTable.unambiguous_dna_by_id[1]
                 return standard_table.forward_table.get(codon, "?")
             except Exception as e:
-                self.logger.error(f"Error translating codon {codon}: {str(e)}")
+                logger.error(f"Error translating codon {codon}: {str(e)}")
                 return "?"
 
     def package_form_data(self, request: Any) -> tuple:
         """Parses and restructures form data from HTMX."""
-        with self.debug_context("package_form_data"):
+        with debug_context("package_form_data"):
             try:
                 # Determine data format and get data
                 data = self._get_request_data(request)
-                self.logger.debug(f"Got request data: {data}")
+                logger.debug(f"Got request data: {data}")
 
                 if data is None:
                     return None, "No data received"
@@ -184,7 +186,7 @@ class GoldenGateUtils(PrimerDesignLogger):
                 # Extract and validate main fields
                 try:
                     packaged_data = self._extract_form_fields(data)
-                    self.logger.debug(
+                    logger.debug(
                         f"Extracted form fields: {packaged_data}")
 
                     if packaged_data is None:
@@ -193,66 +195,66 @@ class GoldenGateUtils(PrimerDesignLogger):
                     # Ensure verboseMode exists with a default value
                     packaged_data['verboseMode'] = packaged_data.get(
                         'verboseMode', False)
-                    self.logger.debug(
+                    logger.debug(
                         f"package_data verbose: {packaged_data['verboseMode']}")
 
                     return packaged_data, None
 
                 except Exception as e:
-                    self.logger.error(
+                    logger.error(
                         f"Error in _extract_form_fields: {str(e)}")
                     return None, str(e)
 
             except Exception as e:
-                self.logger.error(f"Error packaging form data: {str(e)}")
+                logger.error(f"Error packaging form data: {str(e)}")
                 return None, str(e)
 
     def _get_request_data(self, request: Any) -> dict:
         """Get data from request object, handling different content types."""
         try:
             # Log request details for debugging
-            self.logger.debug(f"Request Content-Type: {request.content_type}")
-            self.logger.debug(f"Request Headers: {dict(request.headers)}")
+            logger.debug(f"Request Content-Type: {request.content_type}")
+            logger.debug(f"Request Headers: {dict(request.headers)}")
             
             # Try to get raw data first
             raw_data = request.get_data()
-            self.logger.debug(f"Raw request data: {raw_data}")
+            logger.debug(f"Raw request data: {raw_data}")
 
             if request.is_json:
                 # Handle JSON data
                 try:
                     json_data = request.get_json(force=True)
-                    self.logger.debug(f"Parsed JSON data: {json_data}")
+                    logger.debug(f"Parsed JSON data: {json_data}")
                     return json_data
                 except Exception as e:
-                    self.logger.error(f"Error parsing JSON: {str(e)}")
+                    logger.error(f"Error parsing JSON: {str(e)}")
                     return None
             elif request.form:
                 # Handle form data
                 form_data = dict(request.form)
-                self.logger.debug(f"Form data: {form_data}")
+                logger.debug(f"Form data: {form_data}")
                 return form_data
             elif raw_data:
                 # Try to parse raw data as JSON
                 try:
                     json_data = json.loads(raw_data)
-                    self.logger.debug(f"Parsed raw data as JSON: {json_data}")
+                    logger.debug(f"Parsed raw data as JSON: {json_data}")
                     return json_data
                 except json.JSONDecodeError as e:
-                    self.logger.error(f"Failed to parse raw data as JSON: {e}")
+                    logger.error(f"Failed to parse raw data as JSON: {e}")
                     return None
             else:
-                self.logger.error("No data found in request")
+                logger.error("No data found in request")
                 return None
                 
         except Exception as e:
-            self.logger.error(f"Error getting request data: {str(e)}")
+            logger.error(f"Error getting request data: {str(e)}")
             return None
 
     def _extract_form_fields(self, data: dict) -> dict:
         """Extract and validate form fields from the request data."""
         try:
-            self.logger.debug("Extracting form fields from data: %s", data)
+            logger.debug("Extracting form fields from data: %s", data)
             
             # Initialize the packaged data with defaults
             packaged_data = {
@@ -266,12 +268,12 @@ class GoldenGateUtils(PrimerDesignLogger):
             
             # Extract sequence information
             sequences = data.get('sequences', [])
-            self.logger.debug("Found sequences: %s", sequences)
+            logger.debug("Found sequences: %s", sequences)
             
             # Validate each sequence
             for seq in sequences:
                 if not isinstance(seq, dict):
-                    self.logger.error(f"Invalid sequence format: {seq}")
+                    logger.error(f"Invalid sequence format: {seq}")
                     continue
                     
                 sequence_data = {
@@ -281,12 +283,12 @@ class GoldenGateUtils(PrimerDesignLogger):
                 }
                 
                 # Log the sequence data being added
-                self.logger.debug("Adding sequence data: %s", sequence_data)
+                logger.debug("Adding sequence data: %s", sequence_data)
                 packaged_data['sequences'].append(sequence_data)
                 
             # Check if we have at least one sequence
             if not packaged_data['sequences']:
-                self.logger.error("No valid sequences found in form data")
+                logger.error("No valid sequences found in form data")
                 packaged_data['sequences'] = [{
                     'primerName': '',
                     'mtkPart': '',
@@ -296,7 +298,7 @@ class GoldenGateUtils(PrimerDesignLogger):
             return packaged_data
             
         except Exception as e:
-            self.logger.error(f"Error in _extract_form_fields: {str(e)}")
+            logger.error(f"Error in _extract_form_fields: {str(e)}")
             raise
 
     def _get_first_value(
@@ -315,7 +317,7 @@ class GoldenGateUtils(PrimerDesignLogger):
         try:
             return cast_type(value)
         except (ValueError, TypeError):
-            self.logger.error(
+            logger.error(
                 f"Failed to cast {key}={value} to {cast_type.__name__}")
             return default
 
@@ -326,7 +328,7 @@ class GoldenGateUtils(PrimerDesignLogger):
         field_validators: Optional[Dict] = None
     ) -> List[str]:
         """Validates form data against requirements and rules."""
-        with self.debug_context("validate_form_data"):
+        with debug_context("validate_form_data"):
             error_messages = []
 
             if required_fields:
@@ -455,11 +457,11 @@ class GoldenGateUtils(PrimerDesignLogger):
             compatibility_matrix = compatibility_bits.reshape(256, 256)
 
             if self.verbose:
-                self.logger.info(
+                logger.info(
                     f"Loaded compatibility matrix with shape: {compatibility_matrix.shape}")
-                self.logger.info(
+                logger.info(
                     f"Number of compatible pairs: {np.sum(compatibility_matrix)}")
-                self.logger.info(
+                logger.info(
                     f"Matrix density: {np.mean(compatibility_matrix):.2%}")
 
             return compatibility_matrix

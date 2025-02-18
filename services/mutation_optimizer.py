@@ -1,36 +1,41 @@
-from typing import Dict, List, Union
+from typing import Dict, List
 from Bio.Seq import Seq
 import numpy as np
-from services.base import PrimerDesignLogger
 from itertools import product
 from .utils import GoldenGateUtils
 import random
 from tqdm import tqdm
+import logging
+from config.logging_config import logger
+from services.base import debug_context
 
-class MutationOptimizer(PrimerDesignLogger):
+class MutationOptimizer:
     """
     Optimizes mutations for Golden Gate assembly by balancing codon usage,
     sequence stability, and restriction site compatibility.
     """
 
-    def __init__(
-        self,
-        verbose: bool = False
-    ):
-        super().__init__(verbose=verbose)
+    def __init__(self, verbose: bool = False):
+        self.logger = logger.getChild("MutationOptimizer")
         self.utils = GoldenGateUtils()
-    
+        
         """
         Initialize the optimizer with a precomputed compatibility table.
         
         Args:
-            verbose: Whether to print detailed progress information
+            verbose (bool): If True, provide more user-friendly logs in production.
         """
         self.verbose = verbose
-        
-        self.utils = GoldenGateUtils()
+
+        # Load compatibility table
         self.compatibility_table_path = 'static/data/compatibility_table.bin'
         self.compatibility_table = self.utils._load_compatibility_table(self.compatibility_table_path)
+
+        self.logger.debug("MutationOptimizer initialized with compatibility table.")
+
+        if self.verbose:
+            self.logger.info("MutationOptimizer is running in verbose mode.")
+
 
     def optimize_mutations(
         self,
@@ -49,68 +54,23 @@ class MutationOptimizer(PrimerDesignLogger):
             List[Dict]: A list of optimized mutation sets.
         """
         with self.debug_context("mutation_optimization"):
-            self.logger.info("Step 1: Predicting BsmBI reassembly overhangs for each mutation option...")
+            logger.info("Step 1: Predicting BsmBI reassembly overhangs for each mutation option...")
             mutation_options_with_overhangs = self.add_predicted_overhangs(sequence, mutation_options)
             
-            self.logger.info("Step 2: Generating possible mutation sets...")
+            logger.info("Step 2: Generating possible mutation sets...")
             mutation_sets = self.generate_mutation_sets(mutation_options_with_overhangs)
-            self.logger.debug(f"Generated {len(mutation_sets)} mutation sets.")
+            logger.debug(f"Generated {len(mutation_sets)} mutation sets.")
             
-            self.logger.info("Step 3: Computing compatibility matrices...")
+            logger.info("Step 3: Computing compatibility matrices...")
             compatibility_matrices = self.create_compatibility_matrices(mutation_sets)
 
-            self.logger.info("Step 4: Filtering mutation sets based on compatibility...")
+            logger.info("Step 4: Filtering mutation sets based on compatibility...")
             optimized_mutations = self.filter_compatible_mutations(mutation_sets, compatibility_matrices)
             
-            self.logger.debug(f"\nFinal number of optimized mutation sets: {len(optimized_mutations)}")
+            logger.debug(f"\nFinal number of optimized mutation sets: {len(optimized_mutations)}")
 
             return optimized_mutations, compatibility_matrices
 
-    
-    # def add_predicted_overhangs(self, sequence: str, mutation_options: Dict) -> Dict:
-    #     """
-    #     Captures four possible BsmBI reassembly overhangs for each proposed alternative codon.
-    #     Each alternative codon contributes four different overhangs based on where the mutated base is positioned.
-
-    #     Args:
-    #         seq (str): The full sequence being analyzed.
-    #         mutation_options (Dict): Dictionary containing mutation sites and alternative codons.
-
-    #     Returns:
-    #         Dict: Dictionary mapping mutation sites to their predicted overhangs.
-    #     """
-    #     def calculate_overhangs(sequence, position, offset, utils):
-    #         mutation_position = position + offset
-            
-    #         # Calculate valid sequence window for 4-base overhangs
-    #         OVERHANG_LENGTH = 4
-    #         start_index = max(0, mutation_position - 3)
-    #         end_index = min(mutation_position, len(sequence) - OVERHANG_LENGTH)
-            
-    #         top_strand_overhangs = []
-    #         btm_strand_overhangs = []
-            
-    #         for i in range(start_index, end_index + 1):
-    #             overhang_top = sequence[i:i + OVERHANG_LENGTH]
-    #             overhang_bottom = utils.reverse_complement(overhang_top)
-    #             top_strand_overhangs.append(overhang_top)
-    #             btm_strand_overhangs.append(overhang_bottom)
-            
-    #         return {
-    #             "+": top_strand_overhangs,
-    #             "-": btm_strand_overhangs
-    #         }
-            
-    #     for _, site_data in mutation_options.items():
-    #         for codon in site_data["codons"]:
-    #             position = codon["position"]
-    #             for alternative in codon["alternative_codons"]:
-    #                 offset = alternative["mutations"].index(1)
-    #                 alternative["overhangs"] = calculate_overhangs(
-    #                     sequence, position, offset, self.utils
-    #                 )              
-        
-    #     return mutation_options
 
     def add_predicted_overhangs(self, sequence: str, mutation_options: Dict) -> Dict:
         """
@@ -204,57 +164,6 @@ class MutationOptimizer(PrimerDesignLogger):
                     alternative["overhangs"] = overhangs
 
         return mutation_options
-
-
-
-
-    # def add_predicted_overhangs(self, sequence: str, mutation_options: Dict) -> Dict:
-    #     """
-    #     Captures four possible BsmBI reassembly overhangs for each proposed alternative codon,
-    #     calculating them on the mutated sequence (where the wild-type codon is replaced by the mutated one).
-
-    #     Args:
-    #         sequence (str): The full wild-type sequence.
-    #         mutation_options (Dict): Dictionary containing mutation sites and alternative codons.
-
-    #     Returns:
-    #         Dict: Dictionary mapping mutation sites to their predicted overhangs.
-    #     """
-    #     def calculate_overhangs(seq: str, position: int, offset: int, utils) -> Dict:
-    #         mutation_position = position + offset
-    #         OVERHANG_LENGTH = 4
-    #         # Define window boundaries for extracting 4-base overhangs.
-    #         start_index = max(0, mutation_position - 3)
-    #         end_index = min(mutation_position, len(seq) - OVERHANG_LENGTH)
-            
-    #         top_strand_overhangs = []
-    #         btm_strand_overhangs = []
-            
-    #         for i in range(start_index, end_index + 1):
-    #             overhang_top = seq[i:i + OVERHANG_LENGTH]
-    #             overhang_bottom = utils.reverse_complement(overhang_top)
-    #             top_strand_overhangs.append(overhang_top)
-    #             btm_strand_overhangs.append(overhang_bottom)
-            
-    #         return {"+": top_strand_overhangs, "-": btm_strand_overhangs}
-
-    #     for site, site_data in mutation_options.items():
-    #         for codon in site_data["codons"]:
-    #             position = codon["position"]
-    #             for alternative in codon["alternative_codons"]:
-    #                 # Use the mutated codon from the 'seq' key
-    #                 mutated_codon = alternative["seq"]
-    #                 # Replace the wild-type codon at 'position' with the mutated codon.
-    #                 mutated_sequence = (
-    #                     sequence[:position] + mutated_codon + sequence[position + len(mutated_codon):]
-    #                 )
-    #                 # Identify the index of the mutated base within the codon
-    #                 offset = alternative["mutations"].index(1)
-    #                 alternative["overhangs"] = calculate_overhangs(
-    #                     mutated_sequence, position, offset, self.utils
-    #                 )
-
-    #     return mutation_options
 
 
     def generate_mutation_sets(self, mutation_options: Dict) -> List[Dict]:
@@ -371,24 +280,15 @@ class MutationOptimizer(PrimerDesignLogger):
                 else:
                     tested_combos.append((combo, self.analyze_incompatibility_reason(combo)))
 
-            # Print random subset of compatibility results for easy verification
-            # if self.verbose:
-            #     self.logger.info(f"\nTotal valid combinations for this mutation set: {all_ones}")
-            #     # sample_size = min(5, len(tested_combos))  # Pick at most 5 samples
-            #     # sampled_results = random.sample(tested_combos, sample_size)
-            
-                # for combo, status in sampled_results:
-                #     self.logger.info(f"{combo} → {status}")
-
             # Append the matrix for this mutation set to the list
             compatibility_matrices.append(compatibility_matrix)
             
         # Debugging: Count how many matrices are composed entirely of zeroes
         zero_matrices_count = sum(1 for matrix in compatibility_matrices if np.all(matrix == 0))
-        self.logger.debug(f"\n ⚠️ {zero_matrices_count} out of {len(compatibility_matrices)} compatibility matrices are all zeroes. ⚠️")
+        logger.debug(f"\n ⚠️ {zero_matrices_count} out of {len(compatibility_matrices)} compatibility matrices are all zeroes. ⚠️")
         
         if zero_matrices_count == len(compatibility_matrices):
-            self.logger.warning("❗ No valid combinatations found.")
+            logger.warning("❗ No valid combinatations found.")
 
 
         return compatibility_matrices
@@ -417,9 +317,9 @@ class MutationOptimizer(PrimerDesignLogger):
         
         if self.verbose:
             if len(indices_to_remove) == 0:
-                self.logger.info(f"All mutation sets have at least 1 valid overhang combinations.")
+                logger.info(f"All mutation sets have at least 1 valid overhang combinations.")
             else:    
-                self.logger.info(f"Removed {len(indices_to_remove)} mutation sets that had no valid overhang combinations.")
+                logger.info(f"Removed {len(indices_to_remove)} mutation sets that had no valid overhang combinations.")
                 
         return mutation_sets
 

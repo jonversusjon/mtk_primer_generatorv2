@@ -1,17 +1,17 @@
+import logging
 from typing import Dict, List, Optional, Tuple, Union
 from Bio.Seq import Seq
 from .utils import GoldenGateUtils
-from .base import PrimerDesignLogger
 from .mutation_optimizer import MutationOptimizer
 from itertools import product
+from config.logging_config import logger
+from services.base import debug_context
 
-
-class MutationAnalyzer(PrimerDesignLogger):
+class MutationAnalyzer:
     """
     Analyzes DNA sequences and generates possible mutations for Golden Gate assembly.
     Focuses on finding and evaluating potential mutation sites.
     """
-
     def __init__(
         self,
         sequence: Union[Seq, str],
@@ -19,7 +19,7 @@ class MutationAnalyzer(PrimerDesignLogger):
         max_mutations: int = 1,
         verbose: bool = False
     ):
-        super().__init__(verbose=verbose)
+        self.logger = logger.getChild("MutationAnalyzer")
         self.utils = GoldenGateUtils()
         self.state = {
             'current_codon': '',
@@ -27,11 +27,13 @@ class MutationAnalyzer(PrimerDesignLogger):
             'mutations_found': []
         }
 
-        self.sequence = str(sequence) if isinstance(
-            sequence, Seq) else sequence
+        self.sequence = str(sequence) if isinstance(sequence, Seq) else sequence
         self.codon_usage_dict = codon_usage_dict
         self.max_mutations = max_mutations
         self.verbose = verbose
+
+        if self.verbose:
+            self.logger.setLevel(logging.DEBUG)
 
     def get_all_mutations(
         self,
@@ -77,12 +79,12 @@ class MutationAnalyzer(PrimerDesignLogger):
                     mutation_options[site_key] = site_mutations
 
                 if self.verbose:
-                    self.logger.info(f"Found {len(mutation_options)} sites with valid mutations")
+                    logger.info(f"Found {len(mutation_options)} sites with valid mutations")
 
                 return mutation_options
 
         except Exception as e:
-            self.logger.error(f"Error in mutation analysis: {str(e)}")
+            logger.error(f"Error in mutation analysis: {str(e)}")
             return mutation_options  # Still return what was processed to avoid silent failure
 
 
@@ -145,7 +147,7 @@ class MutationAnalyzer(PrimerDesignLogger):
             })
 
         if self.verbose:
-            self.logger.debug(
+            logger.debug(
                 f"For input codon '{original_codon}' ({amino_acid}), found these alternative codons: {valid_alternatives}"
             )
 

@@ -1,13 +1,13 @@
 /* --- General Styles --- */
 body {
     width: 95%;
-    max-width: 800px;
     font-family: Arial, sans-serif;
     margin: auto;
     padding: 20px;
     background-color: #f8f9fa;
     color: #000;
     transition: background-color 0.3s ease, color 0.3s ease;
+    margin: 0 36px;
 }
 
 h1 {
@@ -28,6 +28,7 @@ label {
     font-weight: bold;
     display: block;
     margin-top: 6px;
+    font-size: 0.85rem;
 }
 
 textarea,
@@ -38,7 +39,7 @@ select {
     margin-top: 5px;
     border: 1px solid #ccc;
     border-radius: 5px;
-    font-size: 16px;
+    font-size: 0.85rem;
 }
 
 textarea {
@@ -55,4 +56,37 @@ button {
     border: none;
     border-radius: 5px;
     cursor: pointer;
+}
+
+.app-container {
+    display: flex;
+    height: 100vh;
+    /* Full viewport height */
+    overflow: hidden;
+    /* Prevent page scroll */
+    gap: 2rem;
+    padding: 20px;
+}
+
+.form-container {
+    flex: 1;
+    min-width: 300px;
+    position: relative;
+    /* For absolute footer positioning (if needed) */
+}
+
+.results-container {
+    flex: 1;
+    min-width: 300px;
+    overflow-y: auto; /* Separate scroll for results */
+    padding: 20px;
+    border-left: 1px solid #ddd;
+}
+
+.app-container {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    gap: 2rem;
+    padding: 20px;
 }

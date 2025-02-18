@@ -16,6 +16,16 @@
     /* Less space for max mutations */
 }
 
+.wide {
+    flex: 2 1 200px;
+    /* Species and Kozak are wider */
+}
+
+.narrow {
+    flex: 1 1 100px;
+    /* Max mutations is smaller */
+}
+
 /* Animations */
 /* --- Shake animation ---*/
 @keyframes shake {

@@ -15,11 +15,22 @@
 
 
 /* --- Form Styling --- */
+
+
 #primer-form {
-    margin: 20px;
-    border-radius: 12px;
+
     background-color: #f3ffe6;
-    box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.3);
+    /* Consolidated background color */
+    margin: 0px;
+    border-radius: 12px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+    /* Added '0' for consistent box-shadow */
+    overflow-y: auto;
+    height: calc(100vh - 140px);
+    /* Viewport height minus padding and footer */
+    padding: 20px;
+    padding-bottom: 80px;
+    /* Space for footer (consider using margin-bottom on a footer element instead) */
 }
 
 .dynamic-form {
@@ -40,10 +51,9 @@
 /* .form-row Replaced with consolidated version below */
 
 .form-group {
-    margin-bottom: 0 !important;
-    /* Override potential Bootstrap styles */
-    /* New validation styles - Consolidated */
-    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
 }
 
 
@@ -79,11 +89,14 @@
 
 .dropdown-container {
     display: flex;
-    justify-content: space-between;
-    gap: 15px;
-    margin-top: 10px;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top:10px;
 }
 
+#maxMutPerSite {
+    width: 70px;
+}
 
 .dropdown-item {
     display: flex;
@@ -122,23 +135,25 @@
 .form-label {
     margin: 0;
     align-self: center;
-    font-size: 0.9em;
+    font-size: 0.9rem;
 }
 
 .form-select,
 .form-control {
-    font-size: 0.9em;
-    /* Smaller font size */
+    font-size: 0.7rem;
+    height: 2rem;
+}
+
+.form-text-input {
+    height: 1.25rem;
 }
 
 .form-control-small {
     max-width: 80px;
 }
 
-/* --- Template and Domestication --- */
-.template-container,
-.domestication-container {
-    padding: 32px;
+.form-sub-container {
+    padding: 16px;
     border-bottom: 1px solid #ddd;
 }
 

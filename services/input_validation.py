@@ -1,10 +1,15 @@
 # validators.py
 from typing import Dict, Tuple, Any, Optional, List, Union
 from services.utils import GoldenGateUtils
+import logging
+from config.logging_config import logger  # Import the centralized logger
+from services.base import debug_context
 
 class ProtocolValidator:
     def __init__(self):
         self.utils = GoldenGateUtils()
+        self.logger = logger.getChild("ProtocolValidator")
+
         self.required_fields = ["sequences", "species", "max-mut-per-site"]
         self.required_sequence_fields = ["sequence", "mtkPart", "primerName"]
 

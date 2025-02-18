@@ -1,6 +1,5 @@
 # services/protocol.py
 from typing import List, Dict, Optional, Union
-from .base import PrimerDesignLogger
 from .sequence_prep import SequencePreparator
 from .primer_design import PrimerDesigner
 from .primer_select import PrimerSelector
@@ -8,9 +7,15 @@ from .mutation_analyzer import MutationAnalyzer
 from .mutation_optimizer import MutationOptimizer
 from .utils import GoldenGateUtils
 from itertools import product
-from .townsend import generate_GG_protocol
+from config.logging_config import logger
+from .base import debug_context
 
-class GoldenGateProtocol(PrimerDesignLogger):
+class GoldenGateProtocol:
+    """
+    Orchestrates the Golden Gate protocol by managing sequence preparation,
+    primer design, mutation analysis, and optimization.
+    """
+
     def __init__(
         self,
         seq: List[str],
@@ -22,8 +27,9 @@ class GoldenGateProtocol(PrimerDesignLogger):
         template_seq: Optional[str] = None,
         kozak: str = "MTK",
         output_tsv_path: str = "designed_primers.tsv",
-        verbose: bool = False):
-        super().__init__(verbose=verbose)
+        verbose: bool = False
+    ):
+        self.logger = logger.getChild("GoldenGateProtocol")
         self.utils = GoldenGateUtils()
         self.sequence_preparator = SequencePreparator()
         self.primer_designer = PrimerDesigner(
@@ -32,26 +38,40 @@ class GoldenGateProtocol(PrimerDesignLogger):
             kozak=kozak,
             verbose=verbose
         )
-
         self.primer_selector = PrimerSelector()
-        print(f"initialize GoldenGateProtocol - verbose: {verbose}")
-
         self.mutation_optimizer = MutationOptimizer(verbose=verbose)
         self.mutation_analyzer = MutationAnalyzer(
-            sequence=seq, 
+            sequence=seq,
             codon_usage_dict=codon_usage_dict,
-            max_mutations=max_mutations, 
-            verbose=verbose)
+            max_mutations=max_mutations,
+            verbose=verbose
+        )
+
+        """
+        Initialize GoldenGateProtocol with provided sequences and parameters.
         
-        self.seq=seq
-        primer_name=primer_name
-        self.template_seq=template_seq
-        self.verbose=verbose
-        self.codon_usage_dict=codon_usage_dict
-        self.max_mutations=max_mutations
-        self.output_tsv_path=output_tsv_path
-        self.part_num_left=part_num_left
-        
+        Args:
+            seq (List[str]): List of sequences to process.
+            codon_usage_dict (Dict[str, Dict[str, float]]): Codon usage table.
+            part_num_left (List[str]): Left part numbers for assembly.
+            part_num_right (List[str]): Right part numbers for assembly.
+            max_mutations (int): Maximum mutations allowed per site.
+            primer_name (Optional[List[str]]): Names of primers.
+            template_seq (Optional[str]): Template sequence for primer design.
+            kozak (str): Kozak sequence type, default is "MTK".
+            output_tsv_path (str): Path to output TSV file.
+            verbose (bool): If True, provides user-facing logs in production.
+        """
+        self.seq = seq
+        self.primer_name = primer_name
+        self.template_seq = template_seq
+        self.verbose = verbose
+        self.codon_usage_dict = codon_usage_dict
+        self.max_mutations = max_mutations
+        self.output_tsv_path = output_tsv_path
+        self.part_num_left = part_num_left
+        self.part_num_right = part_num_right
+
         self.state = {
             'current_sequence_index': 0,
             'current_step': '',
@@ -59,52 +79,61 @@ class GoldenGateProtocol(PrimerDesignLogger):
             'primers_designed': []
         }
 
-    def create_gg_protocol(
-        self,
-    ) -> List[List[str]]:
+        self.logger.debug(f"GoldenGateProtocol initialized with verbose={verbose}")
+        if self.verbose:
+            self.logger.info("GoldenGateProtocol is running in verbose mode.")
+
+    def create_gg_protocol(self) -> Dict:
         """
         Main function to orchestrate the Golden Gate protocol creation.
         Each step is clearly defined and its output feeds into the next step.
         """
-        self.logger.info("Starting Golden Gate protocol creation...")
-        print("Debug values:")
-        print(f"seq: {self.seq}")
-        # print(f"species_codon_usage: {self.species_codon_usage}")
-        print(f"part_num_left: {self.part_num_left}")
-        # print(f"part_num_right: {self.part_num_right}")
-        print(f"max_mutations: {self.max_mutations}")
-        # print(f"primer_name: {self.primer_name}")
-        print(f"template_seq: {self.template_seq}")
-        # print(f"kozak: {self.kozak}")
-        print(f"verbose: {self.verbose}")
-        
-        # Process each sequence and collect all primer data
-        all_primer_data = []
+        logger.info("Starting Golden Gate protocol creation...")
+        result_data = {
+            'primers': [],
+            'restriction_sites': [],
+            'mutations': [],
+            'sequence_analysis': []
+        }
+
         for i, single_seq in enumerate(self.seq):
-            self.logger.info("Running Townsend primer generator")
-            # protocol = generate_GG_protocol(single_seq, self.part_num_left[0], True)
-            # print(f"intended error: {intended_erro}")
             try:
+                sequence_data = {
+                    'sequence_index': i,
+                    'processed_sequence': None,
+                    'restriction_sites': [],
+                    'mutations': None,
+                    'primers': None
+                }
+
                 # 1. Remove start/stop codons and find restriction sites
                 with self.debug_context("Preprocessing sequence"):
-                    processed_seq = self.sequence_preparator.preprocess_sequence(single_seq)
-                    sites_to_mutate = self.sequence_preparator.find_and_summarize_sites(processed_seq, i)
-                
+                    processed_seq = self.sequence_preparator.preprocess_sequence(
+                        single_seq)
+                    sites_to_mutate = self.sequence_preparator.find_and_summarize_sites(
+                        processed_seq, i)
+                    sequence_data['processed_sequence'] = processed_seq
+                    sequence_data['restriction_sites'] = sites_to_mutate
+
                 if sites_to_mutate:
                     with self.debug_context("Mutation analysis"):
                         # 2. Generate all possible silent mutations using MutationAnalyzer
                         mutation_options = self.mutation_analyzer.get_all_mutations(
                             sites_to_mutate=sites_to_mutate)
-                        
+
                         # 3. Optimize and prioritize mutations if there are valid options
                         if mutation_options:
                             optimized_mutations, compatibility_matrices = self.mutation_optimizer.optimize_mutations(
                                 sequence=processed_seq, mutation_options=mutation_options
                             )
+                            sequence_data['mutations'] = {
+                                'all_mutation_options': optimized_mutations,
+                                'compatibility': compatibility_matrices
+                            }
+                            
                         else:
                             optimized_mutations, compatibility_matrices = None, None
 
-                        
                     with self.debug_context("Primer design"):
                         # 4. Design primers using PrimerDesigner
                         primers = self.primer_designer.design_primers(
@@ -115,29 +144,34 @@ class GoldenGateProtocol(PrimerDesignLogger):
                             template_seq=self.template_seq
                         )
                 else:
-                    
-                    self.logger.info(f"No restriction sites found in sequence {i}")
+
+                    logger.info(
+                        f"No restriction sites found in sequence {i}")
                     primers = self.primer_designer.generate_GG_edge_primers(
-                        processed_seq, i, 
+                        processed_seq, i,
                     )
-                    all_primer_data.extend(primers)
                     continue
-                
-                all_primer_data.extend(primers)
-                
-            except Exception as e:
-                self.logger.error(f"Error processing sequence {i}: {str(e)}")
-                continue
+
+                sequence_data['primers'] = primers
+                result_data['sequence_analysis'].append(sequence_data)
+                result_data['primers'].extend(primers)
             
+            except Exception as e:
+                logger.error(f"Error processing sequence {i}: {str(e)}")
+                sequence_data['error'] = str(e)
+                result_data['sequence_analysis'].append(sequence_data)
+                continue
+
         # Step 3: Save results and return
-        self._save_primers_to_tsv(all_primer_data, self.output_tsv_path)
-        return all_primer_data
-    
+        self._save_primers_to_tsv(result_data['primers'], self.output_tsv_path)
+        
+        return result_data
+
     def _save_primers_to_tsv(self, primer_data: List[List[str]], output_tsv_path: str) -> None:
         """Saves primer data to a TSV file."""
         with self.debug_context("save_primers_to_tsv"):
             if not primer_data:
-                self.logger.warning("No primer data to save.")
+                logger.warning("No primer data to save.")
                 return
 
             try:
@@ -146,5 +180,6 @@ class GoldenGateProtocol(PrimerDesignLogger):
                     for row in primer_data:
                         tsv_file.write("\t".join(map(str, row)) + "\n")
             except IOError as e:
-                self.logger.error(f"Error writing to file {output_tsv_path}: {e}")
+                logger.error(
+                    f"Error writing to file {output_tsv_path}: {e}")
                 raise

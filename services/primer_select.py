@@ -2,17 +2,38 @@
 from Bio.Seq import Seq
 import numpy as np
 from typing import List, Dict, Optional, Union
-from .base import PrimerDesignLogger
+import logging
+from config.logging_config import logger
+from services.base import debug_context
 
 
-class PrimerSelector(PrimerDesignLogger):
+class PrimerSelector:
+    """
+    Selects the best primers based on scoring criteria.
+    """
+
     def __init__(self, verbose: bool = False):
-        super().__init__(verbose=verbose)
+        self.logger = logger.getChild(
+            "PrimerSelector")
+
+        """
+        Initialize the primer selection process.
+        
+        Args:
+            verbose (bool): If True, provide more user-friendly logs in production.
+        """
+        self.verbose = verbose
+
         self.state = {
             'current_operation': '',
             'best_score': float('-inf'),
             'primers_evaluated': 0
         }
+
+        self.logger.debug("PrimerSelector initialized.")
+
+        if self.verbose:
+            self.logger.info("PrimerSelector is running in verbose mode.")
 
     def format_primers_for_output(
         self,
@@ -30,12 +51,12 @@ class PrimerSelector(PrimerDesignLogger):
                             f"Amplicon_{i+1}"
                         ]
                         primer_data.append(primer_entry)
-                        self.logger.debug(f"Formatted primer: {primer_entry[0]}")
-                
+                        logger.debug(f"Formatted primer: {primer_entry[0]}")
+
                 return primer_data
-            
+
             except Exception as e:
-                self.logger.error(f"Error formatting primers: {str(e)}")
+                logger.error(f"Error formatting primers: {str(e)}")
                 raise
 
     def select_best_internal_primers(
@@ -46,7 +67,7 @@ class PrimerSelector(PrimerDesignLogger):
         """Selects optimal internal primers based on multiple criteria."""
         with self.debug_context("select_best_primers"):
             if not primer_sets:
-                self.logger.warning("No primer sets provided!")
+                logger.warning("No primer sets provided!")
                 return None
 
             self.state['best_score'] = float('-inf')
@@ -62,16 +83,16 @@ class PrimerSelector(PrimerDesignLogger):
                     )
 
                 if best_primers:
-                    self.logger.info(
+                    logger.info(
                         f"Selected best primers with score {self.state['best_score']}"
                     )
                     return best_primers
                 else:
-                    self.logger.warning("No valid primers found after selection")
+                    logger.warning("No valid primers found after selection")
                     return None
 
             except Exception as e:
-                self.logger.error(f"Error selecting primers: {str(e)}")
+                logger.error(f"Error selecting primers: {str(e)}")
                 raise
 
     def _evaluate_site_primers(
@@ -83,11 +104,13 @@ class PrimerSelector(PrimerDesignLogger):
         """Evaluates primers for a specific site."""
         for codon_start, primers in codon_start_dict.items():
             for mutation in primers:
-                forward_primers = mutation.get("primers", {}).get("forward", [])
-                reverse_primers = mutation.get("primers", {}).get("reverse", [])
+                forward_primers = mutation.get(
+                    "primers", {}).get("forward", [])
+                reverse_primers = mutation.get(
+                    "primers", {}).get("reverse", [])
 
                 if not forward_primers or not reverse_primers:
-                    self.logger.debug(
+                    logger.debug(
                         f"Skipping mutation at site {site_index}, "
                         f"codon {codon_start}: No primers found"
                     )
@@ -97,7 +120,7 @@ class PrimerSelector(PrimerDesignLogger):
                     forward_primers,
                     reverse_primers
                 )
-                
+
                 if primer_pair:
                     current_best = primer_pair
 
@@ -110,17 +133,17 @@ class PrimerSelector(PrimerDesignLogger):
     ) -> Optional[Dict]:
         """Evaluates and scores primer pairs."""
         best_pair = None
-        
+
         for fwd, rev in zip(forward_primers, reverse_primers):
             self.state['primers_evaluated'] += 1
-            
+
             score = self._calculate_primer_score(fwd, rev)
-            
+
             if score > self.state['best_score']:
                 self.state['best_score'] = score
                 best_pair = {"forward": fwd, "reverse": rev}
-                
-                self.logger.debug(
+
+                logger.debug(
                     f"New best primer pair found with score {score}"
                 )
 
@@ -140,7 +163,7 @@ class PrimerSelector(PrimerDesignLogger):
         # Scoring factors (can be adjusted based on importance)
         tm_score = (tm_fwd + tm_rev) / 2
         gc_score = (gc_fwd + gc_rev) / 2
-        
+
         return tm_score + gc_score
 
     def is_overhang_compatible(
@@ -165,15 +188,17 @@ class PrimerSelector(PrimerDesignLogger):
                 return True
 
             except Exception as e:
-                self.logger.error(f"Error checking overhang compatibility: {str(e)}")
+                logger.error(
+                    f"Error checking overhang compatibility: {str(e)}")
                 raise
 
     def _validate_single_overhang(self, overhang: str) -> bool:
         """Validates a single overhang sequence."""
         # Check GC content
-        gc_content = sum(1 for base in overhang if base in "GC") / len(overhang)
+        gc_content = sum(
+            1 for base in overhang if base in "GC") / len(overhang)
         if gc_content in (0, 1):
-            self.logger.debug(f"Invalid GC content ({gc_content}) for {overhang}")
+            logger.debug(f"Invalid GC content ({gc_content}) for {overhang}")
             return False
         return True
 
@@ -186,7 +211,7 @@ class PrimerSelector(PrimerDesignLogger):
         # Check for three consecutive matching bases
         for k in range(len(overhang1) - 2):
             if overhang1[k:k+3] in overhang2:
-                self.logger.debug(
+                logger.debug(
                     f"Found matching triplet {overhang1[k:k+3]} "
                     f"between {overhang1} and {overhang2}"
                 )
@@ -195,7 +220,7 @@ class PrimerSelector(PrimerDesignLogger):
         # Check for single base difference
         diff_count = sum(1 for a, b in zip(overhang1, overhang2) if a != b)
         if diff_count <= 1:
-            self.logger.debug(
+            logger.debug(
                 f"Overhangs differ by only {diff_count} base: "
                 f"{overhang1} vs {overhang2}"
             )

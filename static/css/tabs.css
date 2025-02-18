@@ -25,33 +25,27 @@
 }
 
 /* Common tab button styles */
-.sequence-tab-btn {
+.sequence-tab-btn, .tab-button {
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 90%;
-    padding: 8px 16px;
+    padding: 6px;
     margin-left: -5px;
-    font-size: 0.85em;
-    font-weight: normal;
+    font-size: 0.7rem;
+    font-weight: 650;
     color: black;
     background-color: #f5f5f5;
     border: 1px solid black;
     border-bottom: none;
-    border-radius: 15px 15px 0 0;
+    border-radius: 8px 8px 0 0;
     cursor: pointer;
     z-index: 0;
     transition: background-color 0.2s;
     min-width: 120px;
+    max-width: 120px;
     width: 150px; /* Fixed width */
     flex: 0 0 150px; /* Prevent flexbox from changing width */
-    white-space: nowrap;
-    top: 1px;
-}
-
-.sequence-tab-btn {
-    min-width: 120px;
     white-space: nowrap;
     top: 1px;
 }
@@ -169,9 +163,4 @@
     flex-direction: column;
     flex: 1;
     min-width: 150px;
-}
-
-.sequence-tab-wrapper .form-control,
-.sequence-tab-wrapper .form-select {
-    font-size: 0.9em;
 }

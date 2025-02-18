@@ -1,9 +1,10 @@
 <!-- sequence_input_tabs.html -->
 <div class="sequence-tabs">
   <div class="sequence-tab-wrapper">
+
     <!-- Tab Navigation -->
     <div class="sequence-tabs-nav">
-      {% for i in range(num_sequences) %}
+      {% for i in range(num_sequences | default(1)) %}
       <button type="button" class="sequence-tab-btn {% if i == 0 %}active{% endif %}" data-tab-index="{{ i }}">
         Sequence {{ i + 1 }}
       </button>
@@ -12,27 +13,28 @@
 
     <!-- Tab Content -->
     <div class="sequence-tabs-content">
-      {% for i in range(num_sequences) %}
+      {% for i in range(num_sequences | default(1)) %}
       <div class="sequence-tab-content {% if i == 0 %}active{% endif %}" data-tab-index="{{ i }}">
         <div class="dropdown-container form-header-container">
-          <!-- Primer Name Input Group -->
+          
+          <!-- Primer Name Input -->
           <div class="dropdown-item form-group col-large">
             <label for="primerName{{ i }}" class="form-label">Primer Name:</label>
             <input type="text" 
                    id="primerName{{ i }}" 
                    name="sequences[{{ i }}][primerName]"
-                   class="form-control input-field" 
+                   class="form-control form-text-input input-field" 
                    placeholder="Enter primer name (optional)"
-                   value="{{ test_primer_name[i] if test_primer_name is defined and test_primer_name|length > i else '' }}"
+                   value="{{ test_primer_name[i] if test_primer_name is defined and i < test_primer_name|length else '' }}"
                    hx-post="{{ url_for('main.validate_field') }}" 
-                   hx-trigger="change, keyup changed delay:500ms"
-                   hx-target="closest div" 
+                   hx-trigger="keyup changed delay:500ms, change"
+                   hx-target="closest div"
                    data-sequence-index="{{ i }}"
-                   hx-vals='{"field": "primerName", "sequenceIndex": {{ i }}}' />
+                   hx-vals='{{ {"field": "primerName", "sequenceIndex": i} | tojson | safe }}' />
             <div class="error-message" data-field="primerName"></div>
           </div>
 
-          <!-- MTK Part Number Input Group -->
+          <!-- MTK Part Number Dropdown -->
           <div class="dropdown-item form-group">
             <label for="mtkPart{{ i }}" class="form-label">MTK Part Number:</label>
             <select id="mtkPart{{ i }}" 
@@ -42,10 +44,11 @@
                     hx-trigger="change" 
                     hx-target="closest div"
                     data-sequence-index="{{ i }}" 
-                    hx-vals='{"field": "mtkPart", "sequenceIndex": {{ i }}}'>
+                    hx-vals='{{ {"field": "mtkPart", "sequenceIndex": i} | tojson | safe }}'>
               {% for val in mtk_part_nums %}
               <option value="{{ val }}" 
-                      {% if test_part_number is defined and test_part_number|length > i and test_part_number[i] == val %}selected{% endif %}>
+                      {% if test_part_number is defined and i < test_part_number|length and test_part_number[i] == val %}
+                      selected {% endif %}>
                 {{ val }}
               </option>
               {% endfor %}
@@ -63,9 +66,9 @@
                     class="form-control dynamic-sequence-input sequence-input input-field" 
                     placeholder="Enter DNA sequence..."
                     hx-post="{{ url_for('main.validate_field') }}" 
-                    hx-trigger="change, keyup changed delay:1000ms"
+                    hx-trigger="keyup changed delay:1000ms, change"
                     hx-target="closest div"
-                    hx-vals='{"field": "sequence", "sequenceIndex": {{ i }}}'>{{ test_sequences[i] if test_sequences is defined and test_sequences|length > i else '' }}</textarea>
+                    hx-vals='{{ {"field": "sequence", "sequenceIndex": i} | tojson | safe }}'>{{ test_sequences[i] if test_sequences is defined and i < test_sequences|length else '' }}</textarea>
           <div class="error-message" data-field="sequence"></div>
           <div class="char-count-label" style="display:none;"></div>
         </div>
