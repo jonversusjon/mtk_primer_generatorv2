@@ -1,13 +1,13 @@
 /* --- General Styles --- */
 body {
-    width: 95%;
+    /* width: 95%; */
     font-family: Arial, sans-serif;
     margin: auto;
     padding: 20px;
     background-color: #f8f9fa;
     color: #000;
     transition: background-color 0.3s ease, color 0.3s ease;
-    margin: 0 36px;
+    margin: 0px;
 }
 
 h1 {
@@ -64,29 +64,30 @@ button {
     /* Full viewport height */
     overflow: hidden;
     /* Prevent page scroll */
-    gap: 2rem;
+    gap: 6px;
     padding: 20px;
 }
 
 .form-container {
     flex: 1;
-    min-width: 300px;
+    min-width: 0;
     position: relative;
+    height: 70vh;
+
     /* For absolute footer positioning (if needed) */
 }
 
 .results-container {
     flex: 1;
-    min-width: 300px;
+    min-width: 0;
+    min-height: 200px;
     overflow-y: auto; /* Separate scroll for results */
     padding: 20px;
     border-left: 1px solid #ddd;
+    height: 70vh;
+
 }
 
-.app-container {
-    display: flex;
-    height: 100vh;
-    overflow: hidden;
-    gap: 2rem;
-    padding: 20px;
+.app-title {
+    text-align: center;
 }

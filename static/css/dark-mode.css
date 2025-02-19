@@ -103,3 +103,73 @@
 .dark-mode .sequence-input {
     color: #b0b3b8;
 }
+
+/* Dark Mode Styles */
+.dark-mode .restriction-site-summary-table-container {
+    background-color: #121212;
+    color: #e0e0e0;
+    border: none;
+  }
+  
+  .dark-mode .restriction-site-summary-table-container thead {
+    background-color: #292929;
+    color: #ffffff;
+  }
+  
+  .dark-mode .restriction-site-summary-table-container th {
+    border: 1px solid #444;
+  }
+  
+  .dark-mode .restriction-site-summary-table-container td {
+    border: 1px solid #444;
+  }
+  
+  /* Alternate Row Coloring for Dark Mode */
+  .dark-mode .restriction-site-summary-table-container tbody tr:nth-child(even) {
+    background-color: #252525;
+  }
+  
+  .dark-mode .restriction-site-summary-table-container tbody tr:nth-child(odd) {
+    background-color: #1e1e1e;
+  }
+  
+  /* Hover Effect */
+  .dark-mode .restriction-site-summary-table-container tbody tr:hover {
+    background-color: #333333;
+  }
+
+  
+/* Floating Settings Card */
+.dark-mode #settings-card {
+    background-color: #1f2937;
+    border: 1px solid #374151;
+    box-shadow: 0px 4px 12px rgba(255, 255, 255, 0.1);
+    color: #e5e7eb;
+  }
+  
+  .dark-mode #settings-card .form-group label {
+    color: #e5e7eb;
+  }
+  
+  .dark-mode #settings-card .form-group select {
+    background-color: #374151;
+    border: 1px solid #555;
+    color: #e5e7eb;
+  }
+  
+  .dark-mode #close-settings {
+    background-color: #9b2c2c;
+  }
+  
+  .dark-mode #close-settings:hover {
+    background-color: #7b1c1c;
+  }
+  
+  .dark-mode #toggle-settings {
+    background-color: #e5e7eb;
+    color: #333;
+  }
+  
+  .dark-mode #toggle-settings:hover {
+    background-color: #d1d5db;
+  }

@@ -53,7 +53,7 @@ class MutationOptimizer:
         Returns:
             List[Dict]: A list of optimized mutation sets.
         """
-        with self.debug_context("mutation_optimization"):
+        with debug_context("mutation_optimization"):
             logger.info("Step 1: Predicting BsmBI reassembly overhangs for each mutation option...")
             mutation_options_with_overhangs = self.add_predicted_overhangs(sequence, mutation_options)
             

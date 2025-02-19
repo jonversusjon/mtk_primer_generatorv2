@@ -107,7 +107,7 @@ class GoldenGateProtocol:
                 }
 
                 # 1. Remove start/stop codons and find restriction sites
-                with self.debug_context("Preprocessing sequence"):
+                with debug_context("Preprocessing sequence"):
                     processed_seq = self.sequence_preparator.preprocess_sequence(
                         single_seq)
                     sites_to_mutate = self.sequence_preparator.find_and_summarize_sites(
@@ -116,7 +116,7 @@ class GoldenGateProtocol:
                     sequence_data['restriction_sites'] = sites_to_mutate
 
                 if sites_to_mutate:
-                    with self.debug_context("Mutation analysis"):
+                    with debug_context("Mutation analysis"):
                         # 2. Generate all possible silent mutations using MutationAnalyzer
                         mutation_options = self.mutation_analyzer.get_all_mutations(
                             sites_to_mutate=sites_to_mutate)
@@ -134,7 +134,7 @@ class GoldenGateProtocol:
                         else:
                             optimized_mutations, compatibility_matrices = None, None
 
-                    with self.debug_context("Primer design"):
+                    with debug_context("Primer design"):
                         # 4. Design primers using PrimerDesigner
                         primers = self.primer_designer.design_primers(
                             sequence=processed_seq,
@@ -169,7 +169,7 @@ class GoldenGateProtocol:
 
     def _save_primers_to_tsv(self, primer_data: List[List[str]], output_tsv_path: str) -> None:
         """Saves primer data to a TSV file."""
-        with self.debug_context("save_primers_to_tsv"):
+        with debug_context("save_primers_to_tsv"):
             if not primer_data:
                 logger.warning("No primer data to save.")
                 return
@@ -183,3 +183,6 @@ class GoldenGateProtocol:
                 logger.error(
                     f"Error writing to file {output_tsv_path}: {e}")
                 raise
+            
+    def generate_GG_edge_primers(self, processed_seq: str, i: int,):
+        return []

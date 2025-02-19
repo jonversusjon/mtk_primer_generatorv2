@@ -52,6 +52,22 @@
 
 /* Tablet styles */
 @media (max-width: 768px) {
+
+    /* Stacked Layout for Small Screens */
+    .app-container {
+        flex-direction: column;
+        /* Stack form and results */
+        height: auto;
+        /* Allow natural height expansion */
+    }
+
+    .results-container {
+        border-left: none;
+        /* Remove left border in stacked view */
+        border-top: 1px solid #ddd;
+        /* Add a top border for separation */
+    }
+
     .sequence-tabs-nav {
         height: auto;
         flex-wrap: nowrap;
@@ -75,10 +91,6 @@
 
     .sequence-tab-wrapper .input-group {
         width: 100%;
-    }
-
-    .dropdown-container {
-        flex-direction: column;
     }
 
     .dropdown-item {

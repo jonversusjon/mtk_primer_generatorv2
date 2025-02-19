@@ -1,0 +1,33 @@
+<div class="protocol-results">
+    <h2>Golden Gate Protocol Results</h2>
+
+    {% if restriction_sites %}
+        <h3 class="restriction-site-summary-table-title">Restriction Site Summary</h3>
+        <div class="restriction-site-summary-table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Site Type</th>
+                        <th>Number of Instances</th>
+                        <th>Position(s)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for site in restriction_sites %}
+                    <tr>
+                        <td>{{ site.enzyme }} Restriction Site</td>
+                        <td>{{ site.count }}</td>
+                        <td>{{ site.positions | join(", ") }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" style="color: red;">No restriction sites available.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p style="color: red;">No restriction sites found. Check input sequences and enzyme selection.</p>
+    {% endif %}
+</div>

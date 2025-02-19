@@ -209,3 +209,9 @@
 .sequence-pane .form-row-top .form-select {
     flex: 0.75;
 }
+
+.validation-message {
+    font-size: 0.7rem;
+    margin: 5px;
+    line-height: 0.9rem;
+}

@@ -28,7 +28,7 @@
                    value="{{ test_primer_name[i] if test_primer_name is defined and i < test_primer_name|length else '' }}"
                    hx-post="{{ url_for('main.validate_field') }}" 
                    hx-trigger="keyup changed delay:500ms, change"
-                   hx-target="closest div"
+                   hx-target=".error-message"
                    data-sequence-index="{{ i }}"
                    hx-vals='{{ {"field": "primerName", "sequenceIndex": i} | tojson | safe }}' />
             <div class="error-message" data-field="primerName"></div>
@@ -42,7 +42,7 @@
                     class="form-select input-field"
                     hx-post="{{ url_for('main.validate_field') }}" 
                     hx-trigger="change" 
-                    hx-target="closest div"
+                    hx-target=".error-message"
                     data-sequence-index="{{ i }}" 
                     hx-vals='{{ {"field": "mtkPart", "sequenceIndex": i} | tojson | safe }}'>
               {% for val in mtk_part_nums %}
@@ -66,8 +66,8 @@
                     class="form-control dynamic-sequence-input sequence-input input-field" 
                     placeholder="Enter DNA sequence..."
                     hx-post="{{ url_for('main.validate_field') }}" 
-                    hx-trigger="keyup changed delay:1000ms, change"
-                    hx-target="closest div"
+                    hx-trigger="keyup changed delay:200ms, change"
+                    hx-target=".error-message"
                     hx-vals='{{ {"field": "sequence", "sequenceIndex": i} | tojson | safe }}'>{{ test_sequences[i] if test_sequences is defined and i < test_sequences|length else '' }}</textarea>
           <div class="error-message" data-field="sequence"></div>
           <div class="char-count-label" style="display:none;"></div>

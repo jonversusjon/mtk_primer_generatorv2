@@ -47,7 +47,7 @@ class MutationAnalyzer:
         """
         try:
             mutation_options = {}
-            with self.debug_context("mutation_analysis"):
+            with debug_context("mutation_analysis"):
 
                 for site in sites_to_mutate:
                     frame = site["frame"]

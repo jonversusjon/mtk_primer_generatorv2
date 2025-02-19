@@ -1,207 +1,333 @@
 /* --- Base Variables --- */
 :root {
-    --primary-color: #007bff;
-    --primary-hover: #0056b3;
-    --warning-color: #ff9800;
-    --warning-hover: #e68900;
-    --error-color: #ef4444;
-    --success-color: #10b981;
-    --border-color: #e2e8f0;
-    --text-dark: #222;
-    --text-muted: #666;
-  }
-  
-  /* --- Common Utilities --- */
-  .hidden {
-    display: none;
-  }
-  
-  /* --- Buttons --- */
-  .btn {
-    padding: 8px 12px;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  
-  .btn-primary {
-    background-color: var(--primary-color);
-    color: white;
-  }
-  
-  .btn-primary:hover {
-    background-color: var(--primary-hover);
-  }
-  
-  .btn-warning {
-    background-color: var(--warning-color);
-    color: white;
-  }
-  
-  .btn-warning:hover {
-    background-color: var(--warning-hover);
-  }
-  
-  /* --- Form Elements --- */
-  .input-field {
-    transition: all 0.3s ease;
-    border: 2px solid var(--border-color);
-  }
-  
-  .input-field.valid {
-    border-color: var(--success-color);
-  }
-  
-  .input-field.invalid {
-    border-color: var(--error-color) !important;
-    background-color: rgba(255, 0, 0, 0.1);
-    animation: shake 0.3s ease-in-out;
-  }
-  
-  .error-message {
-    position: absolute;
-    bottom: -1.25rem;
-    left: 0;
-    font-size: 0.75rem;
-    color: var(--error-color);
-    display: none;
-  }
-  
-  .error-message.visible {
-    display: block;
-  }
-  
-  /* --- Tooltips --- */
-  .info-icon-container {
-    display: inline-block;
-    position: relative;
-    overflow: visible;
-  }
-  
-  .info-tooltip {
-    position: absolute;
-    bottom: 125%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(255, 255, 255, 0.95);
-    color: var(--text-dark);
-    padding: 10px;
-    border-radius: 6px;
-    font-size: 14px;
-    width: 250px;
-    text-align: center;
-    display: none;
-    z-index: 10;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-    white-space: normal;
-    pointer-events: none;
-  }
-  
-  .info-tooltip::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    margin-left: -5px;
-    border: 5px solid transparent;
-    border-top-color: rgba(255, 255, 255, 0.95);
-  }
-  
-  .info-icon-container:hover .info-tooltip,
-  .info-icon-container:focus-within .info-tooltip {
-    display: block;
-    animation: fadeIn 0.2s ease-out;
-  }
-  
-  /* --- Dark Mode Toggle --- */
-  .dark-mode-toggle {
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    z-index: 100;
-  }
-  
-  .dark-mode-btn {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 14px;
-    padding: 8px 12px;
-    opacity: 0.8;
-    transition: opacity 0.3s ease;
-    white-space: nowrap;
-    background: none;
-    color: inherit;
-  }
-  
-  .dark-mode-btn:hover {
-    opacity: 1;
-  }
-  
-  /* --- Sequence Section --- */
-  .sequence-content {
-    max-width: 800px;
-    margin: 10px auto;
-    background: #f9f9f9;
-    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-  }
-  
-  .sequence-content label {
-    font-size: 0.9em;
-  }
-  
-  .sequence-input {
-    min-width: 100%;
-    overflow-wrap: break-word;
-    font-size: 0.8em;
-    color: var(--text-muted);
-  }
-  
-  .dynamic-sequence-input {
-    min-height: 80px;
-    width: 100%;
-    resize: vertical;
-    margin-top: 0.5rem;
-  }
-  
-  #templateSequence {
-    width: 98%;
-    height: 100px;
-    resize: vertical;
-  }
-  
-  #numSequences {
-    width: 40px;
-    padding: 6px;
-  }
-  
-  #upload {
-    width: 75%;
-  }
-  
-  /* --- Results Section --- */
-  #results {
-    background-color: white;
-    padding: 15px;
-    border-radius: 5px;
-    border: 1px solid #ddd;
-    margin-top: 20px;
-  }
-  
-  /* --- Utility Classes --- */
-  .char-count-label {
-    font-size: 0.8em;
-    color: #333;
-    margin: 4px 0 0 12px;
-  }
-  
-  #verbose_mode_container {
-    margin-left: 0;
-    transform: scale(0.6);
-  }
-  
-  #verbose_mode {
-    width: 30px;
-    margin-left: 12px;
-  }
+  --primary-color: #007bff;
+  --primary-hover: #0056b3;
+  --warning-color: #ff9800;
+  --warning-hover: #e68900;
+  --error-color: #ef4444;
+  --success-color: #10b981;
+  --border-color: #e2e8f0;
+  --text-dark: #222;
+  --text-muted: #666;
+}
+
+/* --- Common Utilities --- */
+.hidden {
+  display: none;
+}
+
+/* --- Buttons --- */
+.btn {
+  padding: 8px 12px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+}
+
+.btn-warning {
+  background-color: var(--warning-color);
+  color: white;
+}
+
+.btn-warning:hover {
+  background-color: var(--warning-hover);
+}
+
+/* --- Form Elements --- */
+.input-field {
+  transition: all 0.3s ease;
+  border: 2px solid var(--border-color);
+}
+
+.input-field.valid {
+  border-color: var(--success-color);
+}
+
+.input-field.invalid {
+  border-color: var(--error-color) !important;
+  background-color: rgba(255, 0, 0, 0.1);
+  animation: shake 0.3s ease-in-out;
+}
+
+.error-message {
+  position: absolute;
+  bottom: -1.25rem;
+  left: 0;
+  font-size: 0.75rem;
+  color: var(--error-color);
+  display: none;
+}
+
+.error-message.visible {
+  display: block;
+}
+
+/* --- Tooltips --- */
+.info-icon-container {
+  display: inline-block;
+  position: relative;
+  overflow: visible;
+}
+
+.info-tooltip {
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--text-dark);
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 250px;
+  text-align: center;
+  display: none;
+  z-index: 10;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  white-space: normal;
+  pointer-events: none;
+}
+
+.info-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-top-color: rgba(255, 255, 255, 0.95);
+}
+
+.info-icon-container:hover .info-tooltip,
+.info-icon-container:focus-within .info-tooltip {
+  display: block;
+  animation: fadeIn 0.2s ease-out;
+}
+
+
+.dark-mode-btn {
+  /* display: flex; */
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  padding: 8px 12px;
+  /* opacity: 0.8; */
+  /* transition: opacity 0.3s ease; */
+  white-space: nowrap;
+  background: none;
+  color: inherit;
+}
+
+/* .dark-mode-btn:hover { */
+  /* opacity: 1; */
+/* } */
+
+/* --- Sequence Section --- */
+.sequence-content {
+  max-width: 800px;
+  margin: 10px auto;
+  background: #f9f9f9;
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.sequence-content label {
+  font-size: 0.9em;
+}
+
+.sequence-input {
+  min-width: 100%;
+  overflow-wrap: break-word;
+  font-size: 0.8em;
+  color: var(--text-muted);
+}
+
+.dynamic-sequence-input {
+  min-height: 80px;
+  width: 100%;
+  resize: vertical;
+  margin-top: 0.5rem;
+}
+
+#templateSequence {
+  width: 98%;
+  height: 100px;
+  resize: vertical;
+}
+
+#numSequences {
+  width: 40px;
+  padding: 6px;
+}
+
+#upload {
+  width: 75%;
+}
+
+/* --- Results Section --- */
+#results {
+  background-color: white;
+  padding: 15px;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+  margin-top: 20px;
+}
+
+/* --- Utility Classes --- */
+.char-count-label {
+  font-size: 0.8em;
+  color: #333;
+  margin: 4px 0 0 12px;
+}
+
+#verbose_mode_container {
+  margin-left: 0;
+  transform: scale(0.6);
+}
+
+#verbose_mode {
+  width: 30px;
+  margin-left: 12px;
+}
+
+/* Default Light Mode Table */
+
+.restriction-site-summary-table-container {
+  width: 100%;
+  margin: 20px 0;
+  font-size: 12px;
+  text-align: left;
+  background-color: #ffffff;
+  color: #333;
+}
+
+.restriction-site-summary-table-title {
+  font-size: 16px;
+  margin: 12px;
+}
+
+.restriction-site-summary-table-container table {
+  margin-left: 20px;
+  border-collapse: collapse;
+
+}
+
+/* Table Header */
+.restriction-site-summary-table-container thead {
+  background-color: #f1f1f1;
+  color: #333;
+  font-weight: bold;
+}
+
+/* Table Header Cells */
+.restriction-site-summary-table-container th {
+  padding: 12px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+/* Table Body Cells */
+.restriction-site-summary-table-container td {
+  padding: 10px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+/* Alternate Row Coloring */
+.restriction-site-summary-table-container tbody tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+.restriction-site-summary-table-container tbody tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+
+/* Hover Effect */
+.restriction-site-summary-table-container tbody tr:hover {
+  background-color: #e0e0e0;
+}
+
+/* Default Light Mode Styles */
+#settings-card {
+  position: fixed;
+  top: 60px;
+  right: 20px;
+  width: 320px;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  z-index: 100;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Form Layout */
+#settings-card .form-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+#settings-card .form-group label {
+  width: 40%;
+  font-weight: 500;
+  color: #333;
+}
+
+#settings-card .form-group select {
+  width: 60%;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+  background-color: #f8f9fa;
+}
+
+/* Close Button */
+#close-settings {
+  display: block;
+  width: 100%;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px;
+  font-size: 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 12px;
+  text-align: center;
+}
+
+#close-settings:hover {
+  background-color: #c82333;
+}
+
+/* Toggle Button */
+#toggle-settings {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background-color: #333;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 5px;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  border: none;
+  max-width: 120px;
+}
+
+#toggle-settings:hover {
+  background-color: #444;
+}
+

@@ -41,7 +41,7 @@ class SequencePreparator:
         seq: Union[str, Seq],
     ) -> Seq:
         """Adjusts sequence to be in frame and removes start/stop codons."""
-        with self.debug_context("adjust_sequence_for_frame_and_codons"):
+        with debug_context("adjust_sequence_for_frame_and_codons"):
             if isinstance(seq, str):
                 seq = Seq(seq)
             
@@ -96,7 +96,7 @@ class SequencePreparator:
         
         seq = str(sequence)  # Ensure seq is a string for consistent indexing
 
-        with self.debug_context("find_bsmbi_bsai_sites"):
+        with debug_context("find_bsmbi_bsai_sites"):
             recognition_sequences = {
                 'BsmBI': 'CGTCTC',
                 'BsaI': 'GGTCTC'
@@ -129,7 +129,7 @@ class SequencePreparator:
         Returns:
             List of tuples (codon_sequence, codon_position, amino_acid)
         """
-        with self.debug_context("find_codons"):
+        with debug_context("find_codons"):
             codons = []
             translation_table = CodonTable.unambiguous_dna_by_id[1]  # Standard genetic code
 
@@ -202,7 +202,7 @@ class SequencePreparator:
 
     def summarize_bsmbi_bsai_sites(self, site_details):
         """Creates a formatted summary of restriction sites."""
-        with self.debug_context("summarize_restriction_sites"):
+        with debug_context("summarize_restriction_sites"):
             site_type_descriptions = {
                 'BsmBI': 'BsmBI Restriction Site',
                 'BsaI': 'BsaI Restriction Site',
@@ -240,13 +240,13 @@ class SequencePreparator:
 
     def preprocess_sequence(self, sequence: str) -> Seq:
         """Converts sequence to uppercase and adjusts for frame and codons."""
-        with self.debug_context("preprocess_sequence"):
+        with debug_context("preprocess_sequence"):
             sequence = Seq(sequence.upper())
             return self.adjust_sequence_for_frame_and_codons(sequence)
         
     def find_and_summarize_sites(self, sequence: Seq, index: int) -> List[Dict]:
         """Finds and summarizes restriction sites needing mutation."""
-        with self.debug_context("find_and_summarize_sites"):
+        with debug_context("find_and_summarize_sites"):
             sites_to_mutate = self.find_bsmbi_bsai_sites(sequence, self.verbose)
             if sites_to_mutate:
                 self.summarize_bsmbi_bsai_sites(sites_to_mutate)

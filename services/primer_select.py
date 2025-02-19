@@ -40,7 +40,7 @@ class PrimerSelector:
         primer_sets: List[List[Seq]]
     ) -> List[List[str]]:
         """Formats primer sets for output in the final protocol."""
-        with self.debug_context("format_primers"):
+        with debug_context("format_primers"):
             primer_data = []
             try:
                 for i, primers in enumerate(primer_sets):
@@ -65,7 +65,7 @@ class PrimerSelector:
         template_seq: Optional[str] = None
     ) -> Optional[Dict]:
         """Selects optimal internal primers based on multiple criteria."""
-        with self.debug_context("select_best_primers"):
+        with debug_context("select_best_primers"):
             if not primer_sets:
                 logger.warning("No primer sets provided!")
                 return None
@@ -171,7 +171,7 @@ class PrimerSelector:
         overhangs: List[str]
     ) -> bool:
         """Checks compatibility between overhang sequences."""
-        with self.debug_context("check_overhang_compatibility"):
+        with debug_context("check_overhang_compatibility"):
             try:
                 for i, overhang_i in enumerate(overhangs):
                     if not self._validate_single_overhang(overhang_i):

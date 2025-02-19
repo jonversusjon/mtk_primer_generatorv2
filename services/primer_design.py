@@ -19,7 +19,7 @@ class PrimerDesigner:
         part_num_left: List[str],
         part_num_right: List[str],
         kozak: str = "MTK",
-        verbose: bool = False
+        verbose: bool = False,
     ):
         self.logger = logger.getChild("PrimerDesigner")
         self.utils = GoldenGateUtils()
@@ -44,6 +44,7 @@ class PrimerDesigner:
         self.part_num_left = part_num_left
         self.part_num_right = part_num_right
         self.kozak = kozak
+        self.part_end_dict = self.utils.get_mtk_partend_sequences()
         
         # Default parameters for primer design
         self.default_params = {
@@ -77,7 +78,7 @@ class PrimerDesigner:
         """
         Main orchestrator function for primer design.
         """
-        with self.debug_context("design_primers"):
+        with debug_context("design_primers"):
             results = {}
             
             # 1. Design mutation primers if mutations are provided
@@ -118,7 +119,7 @@ class PrimerDesigner:
         """
         Design primers for mutation sets based on compatibility matrices.
         """
-        with self.debug_context("design_mutation_primers"):
+        with debug_context("design_mutation_primers"):
             for set_index, mutation_set in enumerate(mutation_sets):
                 self.state['current_mutation'] = set_index
                 
@@ -147,7 +148,7 @@ class PrimerDesigner:
 
     def _apply_mutations(self, target_seq: str, mutation_set: Dict) -> str:
         """Apply a set of mutations to the target sequence."""
-        with self.debug_context("apply_mutations"):
+        with debug_context("apply_mutations"):
             mutated_seq = list(target_seq)
             
             for mut in mutation_set.values():
@@ -171,7 +172,7 @@ class PrimerDesigner:
         annealing_length: int = 18
     ) -> Optional[Dict[str, Dict[str, str]]]:
         """Construct primers for a mutation set using selected coordinates."""
-        with self.debug_context("construct_mutation_primers"):
+        with debug_context("construct_mutation_primers"):
             primers = {}
             
             for mut in mutation_set.values():
@@ -247,7 +248,7 @@ class PrimerDesigner:
 
     def _validate_all_primers(self, primers: Dict[str, Dict[str, Union[str, Dict]]]) -> bool:
         """Validate all primers in a set."""
-        with self.debug_context("validate_primers"):
+        with debug_context("validate_primers"):
             for site_primers in primers.values():
                 if not self._validate_primer_pair(site_primers["forward"], site_primers["reverse"]):
                     return False
@@ -276,13 +277,12 @@ class PrimerDesigner:
         primer_name: Optional[str] = None
     ) -> Dict[str, Tuple[str, str]]:
         """Generate edge primers for assembly."""
-        with self.debug_context("generate_edge_primers"):
+        with debug_context("generate_edge_primers"):
             primers = {}
             
             # Forward primer
             forward_name, forward_seq = self._construct_edge_primer(
                 sequence,
-                part_end_dict,
                 self.part_num_left[seq_index],
                 "forward",
                 primer_name
@@ -291,7 +291,6 @@ class PrimerDesigner:
             # Reverse primer
             reverse_name, reverse_seq = self._construct_edge_primer(
                 sequence,
-                part_end_dict,
                 self.part_num_right[seq_index],
                 "reverse",
                 primer_name
@@ -309,7 +308,7 @@ class PrimerDesigner:
         template_seq: str
     ) -> None:
         """Perform off-target analysis for all primers."""
-        with self.debug_context("analyze_off_targets"):
+        with debug_context("analyze_off_targets"):
             try:
                 for primer_type, primers in primer_results.items():
                     if primer_type == 'mutation_primers':
@@ -347,3 +346,19 @@ class PrimerDesigner:
             new_base = mutated_seq[i] if i < len(mutated_seq) else "N/A"
             if old_base != new_base:
                 logger.info(f"Mutated base at position {i+1}: {old_base} -> {new_base}")
+                
+    def _construct_edge_primer(
+        self,
+        sequence: str,
+        part_num: str,
+        forward_or_reverse: str,
+        primer_name: str):
+        part_end_dict = self.part_end_dict
+        
+        name = f"{primer_name}_{forward_or_reverse}"
+        seq = f"{primer_name} placeholder primer sequence"
+        
+        return name, seq
+    
+    def _find_off_targets(self, binding_seq: str, template_seq: str):
+        return []

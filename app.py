@@ -20,8 +20,8 @@ def create_app():
 
     app = Flask(__name__)
     app.config.from_object(config_class)
-    print(f"TESTING mode: {app.config['TESTING']}")  # ✅ Debugging
-    print(f"TEST_SEQ available: {'TEST_SEQ' in app.config}")  # ✅ Debugging
+    print(f"TESTING mode: {app.config['TESTING']}")
+    print(f"TEST_SEQ available: {'TEST_SEQ' in app.config}")
     print(f"TEST_TEMPLATE_SEQ available: {'TEST_TEMPLATE_SEQ' in app.config}")
     
     logger.info(f"Starting Flask app with config: {config_class.__name__}")
