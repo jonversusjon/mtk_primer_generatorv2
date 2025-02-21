@@ -7,6 +7,7 @@ console.log("✅ dom.js loaded! APP_STATE:", window.APP_STATE);
 
 class SequenceHandler {
   constructor() {
+    this.currentCount = 1; /* this is the input_sequences counter */
     this.setupCharacterCounters();
     this.initializeState();
   }
@@ -21,7 +22,10 @@ class SequenceHandler {
   initializeState() {
     if (APP_STATE.testingMode) {
       this.setTestDefaults();
-      this.updateSequenceInputs(APP_STATE.testSeq || "1", true);
+      const numTestSeq = APP_STATE.testSeq.length > 0 ? APP_STATE.testSeq.length : 1;
+      console.log("✅ Test mode detected. Setting sequence count to", numTestSeq);
+
+      this.updateSequenceInputs(numTestSeq, true);
     } else {
       this.updateSequenceInputs("1", false);
     }
@@ -37,10 +41,6 @@ class SequenceHandler {
 
 
   updateSequenceInputs(numSequences, isTesting) {
-    console.log("🔄 Sending request to Flask:");
-    console.log(" - numSequences:", numSequences);
-    console.log(" - testingMode:", isTesting);
-    console.log(" - testSeq:", isTesting ? APP_STATE.testSeq : "");
 
     htmx.ajax("GET", "/get_sequence_inputs", {
       target: "#sequence-inputs-container",
@@ -64,6 +64,18 @@ class SequenceHandler {
     label.style.display = element.value.length ? "block" : "none";
     label.textContent = `Length: ${element.value.length} bp`;
   }
+
+  changeSequenceCount(delta) {
+    const newCount = this.currentCount + delta;
+    console.log("Attempting to change sequence count from", this.currentCount, "to", newCount);
+    if (newCount < 1 || newCount > 10) {
+      console.log("New count out of bounds, ignoring.");
+      return;
+    }
+    this.currentCount = newCount;
+    this.updateSequenceInputs(this.currentCount, APP_STATE.testingMode);
+  }
+
 }
 
 /**
@@ -78,8 +90,13 @@ class FormHandler {
   }
 
   clearForm() {
-    document.querySelectorAll("#fileUpload, #numSequences").forEach(input => input.value = input.id === "numSequences" ? "1" : "");
-    htmx.trigger(document.getElementById("numSequences"), "change");
+    // Clear file upload fields
+    document.querySelectorAll("#fileUpload").forEach(input => input.value = "");
+    // Reset the sequence count (if our SequenceHandler instance exists)
+    if (window.sequenceHandlerInstance) {
+      window.sequenceHandlerInstance.currentCount = 1;
+      window.sequenceHandlerInstance.updateSequenceInputs(1, APP_STATE.testingMode);
+    }
     const resultsElement = document.getElementById("results");
     if (resultsElement) {
       resultsElement.innerHTML = "";
@@ -145,28 +162,48 @@ function initializeTabs() {
 
 // Initialize everything when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
-  htmx.ajax("GET", "/get_sequence_inputs", {
-    target: "#sequence-inputs-container",
-    swap: "innerHTML",
-    values: { numSequences: 1, testingMode: APP_STATE.testingMode }
-  }).then(() => {
-    initializeTabs();
-
-    new SequenceHandler();
-    new FormHandler();
-    new TooltipManager();
-  });
+  // Instantiate the SequenceHandler and store it globally for access (e.g., from the clearForm method or button events)
+  window.sequenceHandlerInstance = new SequenceHandler();
+  new FormHandler();
+  new TooltipManager();
 
   // Ensure character counters update after form fields are pre-filled
   setTimeout(() => {
     document.querySelectorAll(".dynamic-sequence-input, #templateSequence").forEach(input => {
       if (input.value) {
-        updateCharCount(input);
+        window.sequenceHandlerInstance.updateCharCount(input);
       }
     });
   }, 50);
-  
+
   if (APP_STATE.testingMode) {
     document.getElementById("verbose_mode").checked = true;
+  }
+
+  const numInput = document.getElementById("numSequencesInput");
+  const numDisplay = document.getElementById("numDisplay");
+  const incrementBtn = document.getElementById("incrementBtn");
+  const decrementBtn = document.getElementById("decrementBtn");
+
+  if (numInput && numDisplay && incrementBtn && decrementBtn) {
+    function updateSequenceCount(delta) {
+      let currentValue = parseInt(numInput.value, 10) || 0;
+      let newValue = currentValue + delta;
+      if (newValue < 1) newValue = 1;
+      if (newValue > 10) newValue = 10;
+      numInput.value = newValue;
+      numDisplay.textContent = newValue;
+
+      if (window.sequenceHandlerInstance) {
+        window.sequenceHandlerInstance.updateSequenceInputs(newValue, APP_STATE.testingMode);
+      } else {
+        console.log("can't update number of sequence inputs without a sequenceHandlerInstance.")
+      }
+    }
+
+    incrementBtn.addEventListener("click", () => updateSequenceCount(1));
+    decrementBtn.addEventListener("click", () => updateSequenceCount(-1));
+  } else {
+    console.warn("Sequence input or buttons not found in the DOM.");
   }
 });

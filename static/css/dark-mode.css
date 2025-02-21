@@ -1,175 +1,193 @@
-/* --- Dark Mode --- */
 .dark-mode {
-    background-color: #121212;
-    color: #fff;
-}
+    /* Override the same custom properties used in light mode, but give them dark-friendly values */
+    --background-color: #100E1B; /* Rich black for overall bg */
+    --foreground-color: #F9F6F0; /* Eggshell text on dark bg */
+    --primary-color: #D90368;    /* Dogwood rose as primary accent */
+    --primary-hover: #b80258;    /* Slightly darker dogwood rose on hover */
+    --warning-color: #FFD400;    /* Gold for warnings */
+    --warning-hover: #e6bf00;    /* Darker gold for hover */
+    --error-color: #D90368;      /* Reuse dogwood rose for errors (or pick another) */
+    --success-color: #541388;    /* Indigo for success */
+    --border-color: #BFAFDE;     /* A lighter purple-ish border, adjust to taste */
+    --text-dark: #F1E9DA;        /* Your main text color in dark mode */
+    --text-muted: #d8d2c8;       /* A slightly lighter version for muted text, if desired */
+  
+    /* Set background + text at the container level */
+    background-color: var(--background-color);
+    color: var(--foreground-color);
+  }
 
-.dark-mode h1,
-.dark-mode h2,
-.dark-mode h3,
-.dark-mode h4,
-.dark-mode h5,
-.dark-mode h6 {
-    color: #fff;
-}
-
-.dark-mode label {
-    color: #fff;
-}
-
-.dark-mode select,
-.dark-mode input,
-.dark-mode textarea,
-.dark-mode button {
-    background-color: #222;
-    color: white;
-    border: 1px solid #555;
-}
-
-.dark-mode button:hover {
-    background-color: #444;
-}
-
-.dark-mode .btn-primary {
-    background-color: #48A9FF;
-}
-
-.dark-mode .btn-warning {
-    background-color: #FFB84D;
-}
-
-/* Dark Mode Support */
-.dark-mode .sequence-tab-btn.active {
-    background-color: #2E6F40 !important;
-    color: white;
-}
-
-.dark-mode .sequence-tabs-content {
-    background: #1a1a1a;
-    border-color: #4a4a4a;
-}
-
-/* Dark Mode Tooltip Arrow */
-.dark-mode .info-tooltip::after {
-    border-color: rgba(50, 50, 50, 0.95) transparent transparent transparent;
-    /* Match dark background */
-}
-
-/* Dark Mode Tooltip */
-.dark-mode .info-tooltip {
-    background: rgba(50, 50, 50, 0.95);
-    color: #f8f8f8;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+  /* === Dark Mode Styles === */
+.dark-mode {
+    /* (See variables defined above) */
+    background-color: var(--background-color);
+    color: var(--foreground-color);
+  }
+  
+  /* Headings, labels, etc. */
+  .dark-mode h1,
+  .dark-mode h2,
+  .dark-mode h3,
+  .dark-mode h4,
+  .dark-mode h5,
+  .dark-mode h6,
+  .dark-mode label,
+  .dark-mode .instruction-text {
+    color: var(--foreground-color);
+  }
+  
+  /* Form elements, inputs, selects, textareas, buttons */
+  .dark-mode select,
+  .dark-mode input,
+  .dark-mode textarea,
+  .dark-mode button {
+    background-color: rgba(255, 255, 255, 0.05); /* Slightly lighter overlay on space-cadet */
+    color: var(--foreground-color);
+    border: 1px solid var(--border-color);
+  }
+  
+  /* Hover effect for generic buttons */
+  .dark-mode button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Dark-mode primary & warning buttons */
+  .dark-mode .btn-primary {
+    background-color: var(--primary-color);
+    color: var(--foreground-color);
+  }
+  .dark-mode .btn-primary:hover {
+    background-color: var(--primary-hover);
+  }
+  
+  .dark-mode .btn-warning {
+    background-color: var(--warning-color);
+    color: #3c4752; /*var(--background-color);*/
+  }
+  .dark-mode .btn-warning:hover {
+    background-color: var(--warning-hover);
+  }
+  
+  /* Active tab color or “accent” background */
+  .dark-mode .sequence-tab-btn.active,
+  .dark-mode .tab-button.active,
+  .dark-mode .sequence-tab.active {
+    background-color: var(--primary-color) !important;
+    color: var(--foreground-color);
+  }
+  
+  /* Slightly darker container for tab content or sections */
+  .dark-mode .tab-content,
+  .dark-mode .sequence-tabs-content,
+  .dark-mode .sequence-content {
+    border-color: var(--border-color);
+    color: var(--foreground-color);
+    background-color: #1F1C35;
+  }
+  
+  /* Tooltips: arrow & background */
+  .dark-mode .info-tooltip::after {
+    border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+  }
+  
+  .dark-mode .info-tooltip {
+    background: rgba(0, 0, 0, 0.8);
+    color: var(--foreground-color);
+    border: 1px solid var(--border-color);
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
-}
-
-.dark-mode .input-field.invalid,
-.dark-mode .validation-fail {
-    border-color: #ff4d4d !important;
-    background-color: rgba(255, 77, 77, 0.2);
-}
-
-.dark-mode .dynamic-sequence-input {
-    background: #2c2c2c;
-    color: #ffffff;
-    border: 1px solid #555;
-}
-
-.dark-mode .sequence-content {
-    background: #1e1e1e;
-    color: #f1f1f1;
-    box-shadow: 2px 2px 10px rgba(255, 255, 255, 0.1);
-}
-
-.dark-mode .char-count-label {
-    color: #888;
-}
-
-.dark-mode .tab-button.active,
-.dark-mode .sequence-tab.active {
-    background-color: #2E6F40 !important;
-    color: white;
-}
-
-.dark-mode #primer-form {
-    background-color: #181818;
-    box-shadow: 5px 5px 10px rgba(255, 255, 255, 0.1);
-}
-
-.dark-mode .instruction-text {
-    color: #b0b3b8;
-}
-
-.dark-mode .sequence-input {
-    color: #b0b3b8;
-}
-
-/* Dark Mode Styles */
-.dark-mode .restriction-site-summary-table-container {
-    background-color: #121212;
-    color: #e0e0e0;
+  }
+  
+  /* Invalid / error field highlight */
+  .dark-mode .input-field.invalid,
+  .dark-mode .validation-fail {
+    border-color: var(--error-color) !important;
+    background-color: rgba(217, 3, 104, 0.2); /* Semi-transparent dogwood rose */
+  }
+  
+  /* Another example for a deeper input area */
+  .dark-mode .dynamic-sequence-input {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--foreground-color);
+    border: 1px solid var(--border-color);
+  }
+  
+  /* Character count or small text */
+  .dark-mode .char-count-label {
+    color: var(--text-muted);
+  }
+  
+  /* Dark mode table containers */
+  .dark-mode .restriction-site-summary-table-container {
+    background-color: var(--background-color);
+    color: var(--foreground-color);
     border: none;
   }
   
   .dark-mode .restriction-site-summary-table-container thead {
-    background-color: #292929;
-    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--foreground-color);
   }
   
-  .dark-mode .restriction-site-summary-table-container th {
-    border: 1px solid #444;
-  }
-  
+  .dark-mode .restriction-site-summary-table-container th,
   .dark-mode .restriction-site-summary-table-container td {
-    border: 1px solid #444;
+    border: 1px solid var(--border-color);
   }
   
-  /* Alternate Row Coloring for Dark Mode */
+  /* Alternate Row Coloring */
   .dark-mode .restriction-site-summary-table-container tbody tr:nth-child(even) {
-    background-color: #252525;
+    background-color: rgba(255, 255, 255, 0.05);
   }
-  
   .dark-mode .restriction-site-summary-table-container tbody tr:nth-child(odd) {
-    background-color: #1e1e1e;
+    background-color: transparent;
   }
-  
-  /* Hover Effect */
   .dark-mode .restriction-site-summary-table-container tbody tr:hover {
-    background-color: #333333;
+    background-color: rgba(255, 255, 255, 0.1);
   }
-
   
-/* Floating Settings Card */
-.dark-mode #settings-card {
-    background-color: #1f2937;
-    border: 1px solid #374151;
-    box-shadow: 0px 4px 12px rgba(255, 255, 255, 0.1);
-    color: #e5e7eb;
+  /* Floating Settings Card in dark mode */
+  .dark-mode #settings-card {
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
+    color: var(--foreground-color);
   }
   
   .dark-mode #settings-card .form-group label {
-    color: #e5e7eb;
+    color: var(--foreground-color);
   }
-  
   .dark-mode #settings-card .form-group select {
-    background-color: #374151;
-    border: 1px solid #555;
-    color: #e5e7eb;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: var(--foreground-color);
   }
   
+  /* Close & toggle buttons in settings card */
   .dark-mode #close-settings {
-    background-color: #9b2c2c;
+    background-color: var(--error-color);
+    color: var(--foreground-color);
   }
-  
   .dark-mode #close-settings:hover {
-    background-color: #7b1c1c;
+    background-color: #b80258; /* darker dogwood rose */
   }
   
   .dark-mode #toggle-settings {
-    background-color: #e5e7eb;
-    color: #333;
+    background-color: var(--foreground-color);
+    color: var(--background-color);
+  }
+  .dark-mode #toggle-settings:hover {
+    background-color: #e5dbc9; /* lighten eggshell a bit */
   }
   
-  .dark-mode #toggle-settings:hover {
-    background-color: #d1d5db;
+  /* Example spinner buttons */
+  .dark-mode #sequence-control-buttons button {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: var(--foreground-color);
   }
+  .dark-mode #sequence-control-buttons button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  .dark-mode #sequence-control-buttons button:active {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+  

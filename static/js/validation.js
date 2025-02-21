@@ -108,16 +108,16 @@ document.addEventListener("DOMContentLoaded", function () {
         return true;
     }
 
-    // Validate the number of sequences input.
-    function validateNumSequences() {
-        const numSequences = parseInt(numSequencesInput.value) || 0;
-        if (numSequences < 1 || numSequences > 10) {
-            displayValidationMessage(numSequencesInput, "Number of sequences must be between 1 and 10.");
-            return false;
-        }
-        displayValidationMessage(numSequencesInput, "");
-        return true;
-    }
+    // // Validate the number of sequences input.
+    // function validateNumSequences() {
+    //     const numSequences = parseInt(numSequencesInput.value) || 0;
+    //     if (numSequences < 1 || numSequences > 10) {
+    //         displayValidationMessage(numSequencesInput, "Number of sequences must be between 1 and 10.");
+    //         return false;
+    //     }
+    //     displayValidationMessage(numSequencesInput, "");
+    //     return true;
+    // }
 
     // Listen for input events and validate only the changed field (and any dependents).
     form.addEventListener("input", function (event) {
@@ -137,7 +137,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // Run initial validations (and initialize fieldValidity) on page load.
-    validateNumSequences();
+    // validateNumSequences();
     validateTemplateSequence();
     form.querySelectorAll(".dynamic-sequence-input").forEach(validateDynamicSequence);
     form.querySelectorAll("[id^='mtkPart']").forEach(validateMtkPart);

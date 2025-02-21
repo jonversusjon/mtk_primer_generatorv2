@@ -40,6 +40,7 @@ class GoldenGateProtocol:
         )
         self.primer_selector = PrimerSelector()
         self.mutation_optimizer = MutationOptimizer(verbose=verbose)
+        print(f"GoldenGateProtocol initialized with codon_usage_dict: {codon_usage_dict}")
         self.mutation_analyzer = MutationAnalyzer(
             sequence=seq,
             codon_usage_dict=codon_usage_dict,

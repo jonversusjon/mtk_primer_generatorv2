@@ -213,7 +213,7 @@ class PrimerDesigner:
     def _construct_primer(
         self,
         sequence: str,
-        position: int,
+        position: int,  # mutation start position (0-indexed)
         mut: Dict,
         selected_coord: int,
         annealing_length: int,
@@ -221,30 +221,38 @@ class PrimerDesigner:
         primer_name: Optional[str] = None
     ) -> Optional[str]:
         """Construct a single primer with proper components."""
-        # Get binding sequence
+        mutation_length = len(mut["original_sequence"])
+        
         if is_reverse:
-            start_pos = position - annealing_length + 1
-            if start_pos < 0:
+            # For the reverse primer, anneal immediately downstream of the mutation.
+            start_pos = position + mutation_length
+            end_pos = start_pos + annealing_length
+            if end_pos > len(sequence):
                 return None
-            binding = sequence[start_pos:position + 1]
+            binding = sequence[start_pos:end_pos]
             binding = str(Seq(binding).reverse_complement())
             # Use bottom extended sequence for reverse primer
             extended_seq = str(mut['overhangs']['bottom_extended_sequences'][selected_coord])
         else:
-            if position + annealing_length > len(sequence):
+            # For the forward primer, anneal immediately upstream of the mutation.
+            end_pos = position
+            start_pos = end_pos - annealing_length
+            if start_pos < 0:
                 return None
-            binding = sequence[position:position + annealing_length]
+            binding = sequence[start_pos:end_pos]
             # Use top extended sequence for forward primer
             extended_seq = str(mut['overhangs']['top_extended_sequences'][selected_coord])
-
-        # Construct complete primer
+        
+        # Construct the complete primer: spacer + BsmbI site + extended (overhang) + binding region
         primer_seq = self.spacer + self.bsmbi_site + extended_seq + binding
         print(f"primer_seq: {primer_seq}")
-        # Add primer name if provided
+        
         if primer_name:
             suffix = "_RV" if is_reverse else "_FW"
             return (f"{primer_name}{suffix}", primer_seq)
+        
         return primer_seq
+
 
     def _validate_all_primers(self, primers: Dict[str, Dict[str, Union[str, Dict]]]) -> bool:
         """Validate all primers in a set."""

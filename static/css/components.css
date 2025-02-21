@@ -1,14 +1,29 @@
-/* --- Base Variables --- */
+/* --- Base Variables & Palette --- */
 :root {
-  --primary-color: #007bff;
-  --primary-hover: #0056b3;
-  --warning-color: #ff9800;
-  --warning-hover: #e68900;
-  --error-color: #ef4444;
-  --success-color: #10b981;
-  --border-color: #e2e8f0;
-  --text-dark: #222;
-  --text-muted: #666;
+  --color-indigo: #541388;
+  --color-dogwood-rose: #D90368;
+  --color-eggshell: #F9F6F0;
+  --color-space-cadet: #2E294E;
+  --color-gold: #FFD400;
+
+  --primary-color: var(--color-dogwood-rose);
+  --primary-hover: #b80258;
+  --warning-color: var(--color-gold);
+  --warning-hover: #e6bf00;
+  --error-color: var(--color-dogwood-rose);
+  --success-color: var(--color-indigo);
+  --border-color: var(--color-space-cadet);
+  --text-dark: black;
+  --text-muted:  #414d5a;/* or lighten/darken one of the palette colors */
+}
+
+/* Optional global body style */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  background-color: var(--color-eggshell);
+  color: var(--text-dark);
 }
 
 /* --- Common Utilities --- */
@@ -26,7 +41,7 @@
 
 .btn-primary {
   background-color: var(--primary-color);
-  color: white;
+  color: #fff;
 }
 
 .btn-primary:hover {
@@ -35,7 +50,7 @@
 
 .btn-warning {
   background-color: var(--warning-color);
-  color: white;
+  color: #fff;
 }
 
 .btn-warning:hover {
@@ -114,29 +129,22 @@
   animation: fadeIn 0.2s ease-out;
 }
 
-
+/* Dark mode toggle button (example) */
 .dark-mode-btn {
-  /* display: flex; */
   align-items: center;
   gap: 5px;
   font-size: 14px;
   padding: 8px 12px;
-  /* opacity: 0.8; */
-  /* transition: opacity 0.3s ease; */
-  white-space: nowrap;
   background: none;
   color: inherit;
 }
-
-/* .dark-mode-btn:hover { */
-  /* opacity: 1; */
-/* } */
 
 /* --- Sequence Section --- */
 .sequence-content {
   max-width: 800px;
   margin: 10px auto;
-  background: #f9f9f9;
+  /* Use eggshell or a very light tone for the background */
+  background: var(--color-eggshell);
   box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
 }
 
@@ -175,17 +183,17 @@
 
 /* --- Results Section --- */
 #results {
-  background-color: white;
+  background-color: #fff;
   padding: 15px;
   border-radius: 5px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color);
   margin-top: 20px;
 }
 
 /* --- Utility Classes --- */
 .char-count-label {
   font-size: 0.8em;
-  color: #333;
+  color: var(--text-dark);
   margin: 4px 0 0 12px;
 }
 
@@ -199,15 +207,14 @@
   margin-left: 12px;
 }
 
-/* Default Light Mode Table */
-
+/* --- Table Section --- */
 .restriction-site-summary-table-container {
   width: 100%;
   margin: 20px 0;
   font-size: 12px;
   text-align: left;
-  background-color: #ffffff;
-  color: #333;
+  background-color: #fff;
+  color: var(--text-dark);
 }
 
 .restriction-site-summary-table-title {
@@ -218,52 +225,51 @@
 .restriction-site-summary-table-container table {
   margin-left: 20px;
   border-collapse: collapse;
-
 }
 
 /* Table Header */
 .restriction-site-summary-table-container thead {
-  background-color: #f1f1f1;
-  color: #333;
+  background-color: var(--color-eggshell);
+  color: var(--text-dark);
   font-weight: bold;
 }
 
 /* Table Header Cells */
 .restriction-site-summary-table-container th {
   padding: 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color);
   text-align: center;
 }
 
 /* Table Body Cells */
 .restriction-site-summary-table-container td {
   padding: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color);
   text-align: center;
 }
 
 /* Alternate Row Coloring */
 .restriction-site-summary-table-container tbody tr:nth-child(even) {
-  background-color: #f8f9fa;
+  background-color: var(--color-eggshell);
 }
 
 .restriction-site-summary-table-container tbody tr:nth-child(odd) {
-  background-color: #ffffff;
+  background-color: #fff;
 }
 
 /* Hover Effect */
 .restriction-site-summary-table-container tbody tr:hover {
-  background-color: #e0e0e0;
+  background-color: #e0e0e0; /* Optionally replace with a lighter var(--color-eggshell) if desired */
 }
 
-/* Default Light Mode Styles */
+/* --- Settings Card --- */
 #settings-card {
   position: fixed;
   top: 60px;
   right: 20px;
   width: 320px;
-  background-color: #ffffff;
-  border: 1px solid #ddd;
+  background-color: #fff;
+  border: 1px solid var(--border-color);
   border-radius: 10px;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
   padding: 16px;
@@ -281,24 +287,24 @@
 #settings-card .form-group label {
   width: 40%;
   font-weight: 500;
-  color: #333;
+  color: var(--text-dark);
 }
 
 #settings-card .form-group select {
   width: 60%;
   padding: 6px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-color);
   border-radius: 5px;
   font-size: 14px;
-  background-color: #f8f9fa;
+  background-color: var(--color-eggshell);
 }
 
 /* Close Button */
 #close-settings {
   display: block;
   width: 100%;
-  background-color: #dc3545;
-  color: white;
+  background-color: var(--error-color);
+  color: #fff;
   border: none;
   padding: 8px;
   font-size: 14px;
@@ -306,10 +312,11 @@
   cursor: pointer;
   margin-top: 12px;
   text-align: center;
+  transition: background-color 0.3s ease;
 }
 
 #close-settings:hover {
-  background-color: #c82333;
+  background-color: #a50147; /* A darker shade of dogwood rose */
 }
 
 /* Toggle Button */
@@ -317,17 +324,17 @@
   position: fixed;
   top: 10px;
   right: 10px;
-  background-color: #333;
-  color: white;
+  background-color: var(--text-dark);
+  color: #fff;
   padding: 8px 12px;
   border-radius: 5px;
   box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.15);
   cursor: pointer;
   border: none;
   max-width: 120px;
+  transition: background-color 0.3s ease;
 }
 
 #toggle-settings:hover {
-  background-color: #444;
+  background-color: #1e1b38; /* Slightly darker than space cadet */
 }
-

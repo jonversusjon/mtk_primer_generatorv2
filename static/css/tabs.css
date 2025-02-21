@@ -35,7 +35,7 @@
     font-size: 0.7rem;
     font-weight: 650;
     color: black;
-    background-color: #f5f5f5;
+    background-color: #ecdbfa;
     border: 1px solid black;
     border-bottom: none;
     border-radius: 8px 8px 0 0;
@@ -61,7 +61,8 @@
 .tab-button.active,
 .sequence-tab.active,
 .sequence-tab-btn.active {
-    background-color: lightgreen !important;
+    color: white;
+    background-color: #541388 !important;
     z-index: 2;
 }
 
@@ -124,8 +125,7 @@
 .sequence-content,
 .sequence-tabs-content {
     position: relative;
-    margin: 0 26px;
-    padding: 20px;
+    padding: 12px;
     border: 1px solid #ccc;
     border-radius: 12px;
     z-index: 1;

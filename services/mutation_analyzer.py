@@ -137,7 +137,6 @@ class MutationAnalyzer:
 
             # Determine mutation tuple (0,1,0) format indicating changed bases.
             mutation_tuple = tuple(1 if candidate[i] != original_codon[i] else 0 for i in range(3))
-
             usage = self.utils.get_codon_usage(str(candidate), amino_acid, self.codon_usage_dict)
             
             valid_alternatives.append({

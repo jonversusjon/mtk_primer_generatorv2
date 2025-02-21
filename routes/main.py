@@ -21,9 +21,9 @@ def home():
     """Render the homepage with default input values from config."""
     testing_mode = current_app.config.get("TESTING", False)
     test_template_seq = current_app.config.get("TEST_TEMPLATE_SEQ", "")
-    print(f"main route => test_template_seq length: {len(test_template_seq)}")
     test_seq = current_app.config.get("TEST_SEQ", [""])
-
+    available_species = utils.get_available_species()
+    print(f"loading home page with species: {available_species}")
     return render_template(
         "index.html",
         title="Home Page",
@@ -31,7 +31,30 @@ def home():
         mtk_part_nums=MTK_PART_NUMS,
         test_template_seq=test_template_seq if testing_mode else "",
         testing_mode=testing_mode,
+        available_species=available_species,
     )
+
+
+
+@main.route("/update_sequence_count", methods=["GET"])
+def update_sequence_count():
+    num_sequences_raw = request.args.get("numSequences", "1")
+    try:
+        current_count = int(num_sequences_raw)
+    except ValueError:
+        current_count = 1
+
+    delta_raw = request.args.get("delta", "0")
+    try:
+        delta = int(delta_raw)
+    except ValueError:
+        delta = 0
+
+    new_count = max(1, min(10, current_count + delta))
+
+    # Return an out-of-band update for the hidden input.
+    # Ensure your template includes the hx-swap-oob attribute.
+    return f'<input type="hidden" id="numSequencesInput" name="numSequences" value="{new_count}" hx-swap-oob="true">'
 
 
 @main.route("/get_sequence_inputs", methods=["GET"])
@@ -42,13 +65,11 @@ def get_sequence_inputs():
 
     num_sequences_raw = request.args.get("numSequences", "1")
     try:
-        num_sequences = int(num_sequences_raw)
+        num_sequences  = int(num_sequences_raw)
     except ValueError:
         return f"Invalid numSequences value: {num_sequences_raw}", 400
 
     is_testing = request.args.get("testingMode", "false").lower() == "true"
-
-    # Get test sequences from Flask config, defaulting to an empty list if not set
     test_seq_list = current_app.config.get("TEST_SEQ", [])
 
     # Ensure the correct number of test sequences are preloaded
@@ -78,11 +99,14 @@ def get_species():
     try:
         species = utils.get_available_species()
         options_html = "".join(
-            f'<option value="{s}">{s}</option>' for s in species)
+            f'<option value="{s}" {"selected" if i == 0 else ""}>{s}</option>'
+            for i, s in enumerate(species)
+        )
         return options_html
     except Exception as e:
         logger.error(f"Error fetching species: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to fetch species'}), 500
+
 
 
 @main.route("/validate_field", methods=["POST"])
@@ -148,16 +172,21 @@ def convert_non_serializable(obj):
 def generate_protocol():
     try:
         logger.info("Starting protocol generation")
-
         packaged_data, error_message = utils.package_form_data(request)
+        print(f"packaged_data: {packaged_data}")
+
         if error_message or packaged_data is None:
             return jsonify({'error': error_message or 'No data received'}), 400
 
-        # Generate the protocol
+        species = packaged_data.get("species", "");
+        print(f"generate_protocol received species: {species}")
+        codon_usage_dict = utils.get_codon_usage_dict(species)
+        print(f"generate_protocol codon_usage_dict: {codon_usage_dict}")
+        
         protocol_maker = GoldenGateProtocol(
             seq=[str(entry.get("sequence", "").strip()) or "TEST_SEQUENCE"
                  for entry in packaged_data.get("sequences", [])],
-            codon_usage_dict=utils.get_codon_usage_dict(packaged_data.get("species", "Homo sapiens")),
+            codon_usage_dict=codon_usage_dict,
             part_num_left=[entry.get("mtkPart", "").strip() or "6" for entry in packaged_data.get("sequences", [])],
             part_num_right=["" for _ in packaged_data.get("sequences", [])],  # Placeholder
             max_mutations=int(packaged_data.get("max-mut-per-site", 3)),

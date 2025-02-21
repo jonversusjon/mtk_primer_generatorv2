@@ -1,217 +1,260 @@
-/* --- Consolidated .form-row ---*/
-.form-row,
-.form-row-top {
+/* ===================================== */
+/* 1) Define Palette & Light-Mode Defaults */
+/* ===================================== */
+:root {
+    /* --- Core Palette --- */
+    --color-indigo: #541388;      /* Indigo */
+    --color-dogwood-rose: #D90368;/* Dogwood rose */
+    --color-eggshell: #F1E9DA;    /* Eggshell */
+    --color-space-cadet: #2E294E; /* Space cadet */
+    --color-gold: #FFD400;        /* Gold */
+  
+    /* --- Light Mode Defaults --- */
+    --background-color: var(--color-eggshell); /* Main background for large panels/forms */
+    --text-color: var(--color-space-cadet);    /* Dark text (Space cadet) */
+    --text-muted: #666;                        /* Muted text color */
+    --border-color: #ccc;                      /* Neutral border (feel free to use a tinted color) */
+    --sub-box-bg: #fff;                        /* Sub-box backgrounds */
+    --shadow-color: rgba(0, 0, 0, 0.3);        /* Box shadow */
+    --btn-bg-color: #f0f0f0;                   /* Button background */
+    --btn-hover-color: #e0e0e0;                /* Button hover background */
+    --btn-active-color: #d0d0d0;               /* Button active background */
+  }
+  
+  /* ===================================== */
+  /* 2) Updated CSS Using the New Variables */
+  /* ===================================== */
+  
+  /* --- Consolidated .form-row --- */
+  .form-row,
+  .form-row-top {
     display: flex;
     width: 100%;
     margin-bottom: 10px;
-    gap: 1rem;
-    /*Consistent gap*/
-}
-
-.form-row .input-group {
+    gap: 1rem; /* Consistent gap */
+  }
+  
+  .form-row .input-group {
     flex: 1;
     position: relative;
-}
-
-
-/* --- Form Styling --- */
-
-
-#primer-form {
-
-    background-color: #f3ffe6;
-    /* Consolidated background color */
+  }
+  
+  /* --- Form Styling --- */
+  #primer-form {
+    background-color: var(--background-color);
     margin: 0px;
     border-radius: 12px;
-    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
-    /* Added '0' for consistent box-shadow */
+    box-shadow: 0 5px 10px var(--shadow-color);
     overflow-y: auto;
-    height: calc(100vh - 140px);
-    /* Viewport height minus padding and footer */
+    height: calc(100vh - 140px); /* Viewport height minus padding and footer */
     padding: 20px;
-    padding-bottom: 80px;
-    /* Space for footer (consider using margin-bottom on a footer element instead) */
-}
-
-.dynamic-form {
+    padding-bottom: 80px; /* Space for footer */
+  }
+  
+  .dynamic-form {
     margin: 12px 12px 0px 12px;
-}
-
-.instruction-text-container {
+  }
+  
+  .instruction-text-container {
     padding: 15px 15px 15px 0px;
-}
-
-.instruction-text {
+  }
+  
+  .instruction-text {
     font-size: 0.8em;
-    color: #666;
+    color: var(--text-muted);
     margin: 1em;
     line-height: 1.25em;
-}
-
-/* .form-row Replaced with consolidated version below */
-
-.form-group {
+  }
+  
+  .form-group {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-}
-
-
-.sub-box {
+  }
+  
+  .sub-box {
     padding: 10px;
-    border: 1px solid #ced4da;
+    border: 1px solid var(--border-color);
     border-radius: 0.25rem;
-}
-
-/* --- Form Element Alignment --- */
-.left-buttons {
+    background-color: var(--sub-box-bg);
+  }
+  
+  /* --- Form Element Alignment --- */
+  .left-buttons {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
     margin: 0px 12px;
-}
-
-#clearForm {
+  }
+  
+  #clearForm {
     align-self: flex-start;
     width: 250px;
-}
-
-/* --- Header (Static Inputs) --- */
-.header-container {
+  }
+  
+  /* --- Header (Static Inputs) --- */
+  .header-container {
     padding: 15px;
-    border-bottom: 1px solid #ddd;
-}
-
-.form-header-container {
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .form-header-container {
     margin-bottom: 15px;
-}
-
-.dropdown-container {
+  }
+  
+  .dropdown-container {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    margin-top:10px;
-}
-
-#maxMutPerSite {
+    margin-top: 10px;
+  }
+  
+  #maxMutPerSite {
     width: 70px;
-}
-
-.dropdown-item {
+  }
+  
+  .dropdown-item {
     display: flex;
     gap: 8px;
     align-items: center;
-}
-
-.dropdown-container.form-header-container {
+  }
+  
+  .dropdown-container.form-header-container {
     display: flex;
     flex-wrap: wrap;
     gap: 15px;
     margin-bottom: 15px;
-}
-
-
-.dropdown-item label {
-    margin: 0;
-    /* Remove default label margins */
-}
-
-.button-container {
+  }
+  
+  .dropdown-item label {
+    margin: 0; /* Remove default label margins */
+  }
+  
+  .button-container {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     width: 100%;
     margin-top: 20px;
-}
-
-.num-sequences-container {
+  }
+  
+  .num-sequences-container {
     display: flex;
     align-items: center;
     gap: 10px;
-}
-
-/* --- Smaller Font Size for Some Inputs --- */
-.form-label {
+  }
+  
+  /* --- Smaller Font Size for Some Inputs --- */
+  .form-label {
     margin: 0;
     align-self: center;
     font-size: 0.9rem;
-}
-
-.form-select,
-.form-control {
+  }
+  
+  .form-select,
+  .form-control {
     font-size: 0.7rem;
     height: 2rem;
-}
-
-.form-text-input {
+  }
+  
+  .form-text-input {
     height: 1.25rem;
-}
-
-.form-control-small {
+  }
+  
+  .form-control-small {
     max-width: 80px;
-}
-
-.form-sub-container {
-    padding: 16px;
-    border-bottom: 1px solid #ddd;
-}
-
-.flex-container {
+  }
+  
+  .flex-container {
     display: flex;
     align-items: center;
     justify-content: flex-start;
     width: 250px;
     gap: 4px;
-}
-
-.flex-container input[type="checkbox"] {
+  }
+  
+  .flex-container input[type="checkbox"] {
     margin-top: 8px;
-}
-
-/* .sequence-pane .form-row replaced with consolidated version */
-
-.sequence-pane label {
+  }
+  
+  /* --- Sequence Pane --- */
+  .sequence-pane label {
     margin-right: 10px;
     margin-bottom: 0;
-}
-
-/* Consolidated .sequence-pane form control and select styles */
-.sequence-pane .form-control,
-.sequence-pane .form-select {
-    font-size: 0.9em;
-    /*Ensure consistency*/
-}
-
-/* Consolidated .sequence-pane .form-row styles with media query */
-.sequence-pane .form-row-top {
+  }
+  
+  /* Consolidated .sequence-pane form control and select styles */
+  .sequence-pane .form-control,
+  .sequence-pane .form-select {
+    font-size: 0.9em; /* Ensure consistency */
+  }
+  
+  /* Consolidated .sequence-pane .form-row-top styles */
+  .sequence-pane .form-row-top {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
     gap: 10px;
     width: 100%;
     align-items: center;
-    /* Added for consistent vertical alignment */
     margin-bottom: 10px;
-}
-
-.sequence-pane .form-row-top .input-group {
+  }
+  
+  .sequence-pane .form-row-top .input-group {
     display: flex;
     flex-direction: column;
     flex: 1;
     min-width: 150px;
-}
-
-.sequence-pane .form-row-top .form-control {
+  }
+  
+  .sequence-pane .form-row-top .form-control {
     flex: 2;
-}
-
-.sequence-pane .form-row-top .form-select {
+  }
+  
+  .sequence-pane .form-row-top .form-select {
     flex: 0.75;
-}
-
-.validation-message {
+  }
+  
+  .validation-message {
     font-size: 0.7rem;
     margin: 5px;
     line-height: 0.9rem;
-}
+  }
+  
+  .form-sub-container-title {
+    margin: 12px 0px;
+  }
+  
+  /* Container for the control buttons */
+  #sequence-control-buttons {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+  }
+  
+  /* Style for both buttons */
+  #sequence-control-buttons button {
+    width: 15px;
+    height: 15px;
+    font-size: 12px;
+    line-height: 15px;
+    text-align: center;
+    background-color: var(--btn-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    cursor: pointer;
+    outline: none;
+    padding: 0;
+  }
+  
+  /* Hover state */
+  #sequence-control-buttons button:hover {
+    background-color: var(--btn-hover-color);
+  }
+  
+  /* Active state */
+  #sequence-control-buttons button:active {
+    background-color: var(--btn-active-color);
+  }
+  

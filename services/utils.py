@@ -172,10 +172,11 @@ class GoldenGateUtils:
     def package_form_data(self, request: Any) -> tuple:
         """Parses and restructures form data from HTMX."""
         with debug_context("package_form_data"):
+            print(f"Got request data: {request}")
+
             try:
                 # Determine data format and get data
                 data = self._get_request_data(request)
-                logger.debug(f"Got request data: {data}")
 
                 if data is None:
                     return None, "No data received"
@@ -212,13 +213,7 @@ class GoldenGateUtils:
     def _get_request_data(self, request: Any) -> dict:
         """Get data from request object, handling different content types."""
         try:
-            # Log request details for debugging
-            logger.debug(f"Request Content-Type: {request.content_type}")
-            logger.debug(f"Request Headers: {dict(request.headers)}")
-            
-            # Try to get raw data first
             raw_data = request.get_data()
-            logger.debug(f"Raw request data: {raw_data}")
 
             if request.is_json:
                 # Handle JSON data
