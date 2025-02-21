@@ -115,7 +115,7 @@
 /* Tab Content Areas */
 .tab-content,
 .sequence-tabs-content {
-    background-color: var(--sub-box-bg);
+    background-color: #dcdcdc;
     border: 1px solid var(--border-color);
     border-radius: 0.75rem;
     padding: 1.5rem;
@@ -175,7 +175,6 @@
     padding: 0.5rem;
     border: 1px solid var(--border-color);
     border-radius: 0.375rem;
-    background-color: var(--sub-box-bg);
 }
 
 .sequence-tab-content textarea {

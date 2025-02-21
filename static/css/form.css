@@ -99,18 +99,7 @@
     max-width: 80px;
 }
 
-/* Text Areas */
-.sequence-input {
-    width: 100%;
-    min-height: 8rem;
-    font-family: monospace;
-    font-size: 0.875rem;
-    padding: 0.75rem;
-    border: 1px solid var(--border-color);
-    border-radius: 0.375rem;
-    background-color: var(--sub-box-bg);
-    resize: vertical;
-}
+
 
 /* Character Counter */
 .char-count-label {
