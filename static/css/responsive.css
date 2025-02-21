@@ -53,14 +53,6 @@
 /* Tablet styles */
 @media (max-width: 768px) {
 
-    /* Stacked Layout for Small Screens */
-    .app-container {
-        flex-direction: column;
-        /* Stack form and results */
-        height: auto;
-        /* Allow natural height expansion */
-    }
-
     .results-container {
         border-left: none;
         /* Remove left border in stacked view */
@@ -76,6 +68,7 @@
 
     .sequence-tab-btn {
         min-width: 100px;
+        max-width: 135px;
         padding: 10px 15px;
         font-size: 0.8em;
     }
@@ -101,6 +94,35 @@
     .col-medium,
     .col-small {
         flex: 1;
+    }
+}
+
+/* --- General Styles --- */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+    color: #000;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    /* Centers the app container horizontally */
+}
+
+/* Add this media query for responsive layout */
+@media (max-width: 860px) {
+    .app-container {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .form-container,
+    .results-container {
+        width: 100%;
+        height: auto;
+        max-height: 80vh;
+        /* Limit height on mobile */
     }
 }
 

@@ -1,260 +1,203 @@
-/* ===================================== */
-/* 1) Define Palette & Light-Mode Defaults */
-/* ===================================== */
-:root {
-    /* --- Core Palette --- */
-    --color-indigo: #541388;      /* Indigo */
-    --color-dogwood-rose: #D90368;/* Dogwood rose */
-    --color-eggshell: #F1E9DA;    /* Eggshell */
-    --color-space-cadet: #2E294E; /* Space cadet */
-    --color-gold: #FFD400;        /* Gold */
-  
-    /* --- Light Mode Defaults --- */
-    --background-color: var(--color-eggshell); /* Main background for large panels/forms */
-    --text-color: var(--color-space-cadet);    /* Dark text (Space cadet) */
-    --text-muted: #666;                        /* Muted text color */
-    --border-color: #ccc;                      /* Neutral border (feel free to use a tinted color) */
-    --sub-box-bg: #fff;                        /* Sub-box backgrounds */
-    --shadow-color: rgba(0, 0, 0, 0.3);        /* Box shadow */
-    --btn-bg-color: #f0f0f0;                   /* Button background */
-    --btn-hover-color: #e0e0e0;                /* Button hover background */
-    --btn-active-color: #d0d0d0;               /* Button active background */
-  }
-  
-  /* ===================================== */
-  /* 2) Updated CSS Using the New Variables */
-  /* ===================================== */
-  
-  /* --- Consolidated .form-row --- */
-  .form-row,
-  .form-row-top {
-    display: flex;
-    width: 100%;
-    margin-bottom: 10px;
-    gap: 1rem; /* Consistent gap */
-  }
-  
-  .form-row .input-group {
-    flex: 1;
-    position: relative;
-  }
-  
-  /* --- Form Styling --- */
-  #primer-form {
+/* Base Form Layout */
+#primer-form {
     background-color: var(--background-color);
-    margin: 0px;
-    border-radius: 12px;
+    margin: 0;
+    border-radius: 0.75rem;
     box-shadow: 0 5px 10px var(--shadow-color);
     overflow-y: auto;
-    height: calc(100vh - 140px); /* Viewport height minus padding and footer */
-    padding: 20px;
-    padding-bottom: 80px; /* Space for footer */
-  }
-  
-  .dynamic-form {
-    margin: 12px 12px 0px 12px;
-  }
-  
-  .instruction-text-container {
-    padding: 15px 15px 15px 0px;
-  }
-  
-  .instruction-text {
-    font-size: 0.8em;
-    color: var(--text-muted);
-    margin: 1em;
-    line-height: 1.25em;
-  }
-  
-  .form-group {
+    overflow-x: hidden;
+    height: calc(100vh - 140px);
+    /* padding: 1.25rem; */
+    /* padding-bottom: 2rem; */
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+#primer-form::-webkit-scrollbar {
+    width: 6px;
+}
+
+#primer-form::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#primer-form::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+}
+
+#primer-form::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Form Sections */
+.form-sub-container {
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.form-sub-container-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0 0 1rem;
+}
+
+/* Input Groups */
+.form-group {
     display: flex;
     flex-direction: column;
-    flex-grow: 1;
-  }
-  
-  .sub-box {
-    padding: 10px;
-    border: 1px solid var(--border-color);
-    border-radius: 0.25rem;
-    background-color: var(--sub-box-bg);
-  }
-  
-  /* --- Form Element Alignment --- */
-  .left-buttons {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-    margin: 0px 12px;
-  }
-  
-  #clearForm {
-    align-self: flex-start;
-    width: 250px;
-  }
-  
-  /* --- Header (Static Inputs) --- */
-  .header-container {
-    padding: 15px;
-    border-bottom: 1px solid var(--border-color);
-  }
-  
-  .form-header-container {
-    margin-bottom: 15px;
-  }
-  
-  .dropdown-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 10px;
-  }
-  
-  #maxMutPerSite {
-    width: 70px;
-  }
-  
-  .dropdown-item {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-  
-  .dropdown-container.form-header-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin-bottom: 15px;
-  }
-  
-  .dropdown-item label {
-    margin: 0; /* Remove default label margins */
-  }
-  
-  .button-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    width: 100%;
-    margin-top: 20px;
-  }
-  
-  .num-sequences-container {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  
-  /* --- Smaller Font Size for Some Inputs --- */
-  .form-label {
-    margin: 0;
-    align-self: center;
-    font-size: 0.9rem;
-  }
-  
-  .form-select,
-  .form-control {
-    font-size: 0.7rem;
-    height: 2rem;
-  }
-  
-  .form-text-input {
-    height: 1.25rem;
-  }
-  
-  .form-control-small {
-    max-width: 80px;
-  }
-  
-  .flex-container {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    width: 250px;
-    gap: 4px;
-  }
-  
-  .flex-container input[type="checkbox"] {
-    margin-top: 8px;
-  }
-  
-  /* --- Sequence Pane --- */
-  .sequence-pane label {
-    margin-right: 10px;
-    margin-bottom: 0;
-  }
-  
-  /* Consolidated .sequence-pane form control and select styles */
-  .sequence-pane .form-control,
-  .sequence-pane .form-select {
-    font-size: 0.9em; /* Ensure consistency */
-  }
-  
-  /* Consolidated .sequence-pane .form-row-top styles */
-  .sequence-pane .form-row-top {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 10px;
-    width: 100%;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-  
-  .sequence-pane .form-row-top .input-group {
-    display: flex;
-    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.input-group {
     flex: 1;
-    min-width: 150px;
-  }
-  
-  .sequence-pane .form-row-top .form-control {
-    flex: 2;
-  }
-  
-  .sequence-pane .form-row-top .form-select {
-    flex: 0.75;
-  }
-  
-  .validation-message {
-    font-size: 0.7rem;
-    margin: 5px;
-    line-height: 0.9rem;
-  }
-  
-  .form-sub-container-title {
-    margin: 12px 0px;
-  }
-  
-  /* Container for the control buttons */
-  #sequence-control-buttons {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-  }
-  
-  /* Style for both buttons */
-  #sequence-control-buttons button {
-    width: 15px;
-    height: 15px;
-    font-size: 12px;
-    line-height: 15px;
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* Form Rows */
+.form-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    width: 100%;
+}
+
+/* Labels */
+.form-label {
+    font-size: 0.9rem;
+    color: var(--text-color);
+    margin: 0;
+}
+
+/* Inputs */
+.form-control,
+.form-select {
+    font-size: 0.875rem;
+    height: 2.5rem;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+    background-color: var(--sub-box-bg);
+    color: var(--text-color);
+    transition: border-color 0.15s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+    outline: none;
+    border-color: var(--color-indigo);
+    box-shadow: 0 0 0 2px rgba(84, 19, 136, 0.1);
+}
+
+/* Specific Controls */
+.form-control-small {
+    max-width: 80px;
+}
+
+/* Text Areas */
+.sequence-input {
+    width: 100%;
+    min-height: 8rem;
+    font-family: monospace;
+    font-size: 0.875rem;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+    background-color: var(--sub-box-bg);
+    resize: vertical;
+}
+
+/* Character Counter */
+.char-count-label {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+}
+
+/* Error Messages */
+.error-message,
+.validation-message {
+    font-size: 0.75rem;
+    color: #dc2626;
+    margin-top: 0.25rem;
+}
+
+/* Button Container */
+.button-container {
+    background-color: var(--background-color);
+    padding: 1rem 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 2rem;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Buttons */
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.btn-primary {
+    background-color: var(--color-indigo);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #4a1177;
+}
+
+.btn-warning {
+    background-color: var(--color-gold);
+    color: var(--text-color);
+}
+
+.btn-warning:hover {
+    background-color: #e6bf00;
+}
+
+/* Sequence Control Buttons */
+#sequence-control-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+#sequence-control-buttons button {
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background-color: var(--btn-bg-color);
     border: 1px solid var(--border-color);
-    border-radius: 3px;
+    border-radius: 0.25rem;
     cursor: pointer;
-    outline: none;
-    padding: 0;
-  }
-  
-  /* Hover state */
-  #sequence-control-buttons button:hover {
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+#sequence-control-buttons button:hover {
     background-color: var(--btn-hover-color);
-  }
-  
-  /* Active state */
-  #sequence-control-buttons button:active {
+}
+
+#sequence-control-buttons button:active {
     background-color: var(--btn-active-color);
-  }
-  
+}
+
+/* Section Headers */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}

@@ -26,7 +26,6 @@
       testTemplateSeq: JSON.parse(document.getElementById("test-template-seq-data").textContent || "\"\""),
       testingMode: JSON.parse(document.getElementById("testing-mode-data").textContent || "false")
     };
-
     console.log("APP_STATE initialized:", APP_STATE);
   </script>
 
@@ -40,87 +39,98 @@
 
 <body>
   <!-- Settings Toggle Button -->
-  <button id="toggle-settings" class="fixed top-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-md">
+  <button id="toggle-settings" class="settings-toggle">
     ⚙️ Settings
   </button>
-  <!-- Parent container to hold form and results side by side -->
-  <h1 class="app-title">Mammalian Toolkit Domestication Primer Design</h1>
 
-  <div class="app-container" style="display: flex; gap: 6px; height: 100vh; padding: 20px;">
+  <!-- Floating Settings Card -->
+  <div id="settings-card" class="settings-card hidden">
+    <h4 class="settings-title">Settings</h4>
 
-    <!-- Header -->
-    <div class="form-container">
-      <form id="primer-form" hx-post="{{ url_for('main.generate_protocol') }}" hx-trigger="submit"
-        hx-target="#results-container" hx-swap="innerHTML" hx-ext="json-enc">
-        <!-- Floating Settings Card -->
-        <div id="settings-card"
-          class="fixed top-16 right-4 bg-white dark:bg-gray-900 shadow-lg rounded-lg p-4 w-96 hidden border border-gray-300 dark:border-gray-700">
-          <h4 class="text-lg font-semibold mb-2">Settings</h4>
-          <!-- Dark Mode Toggle -->
-          <div class="dark-mode-toggle form-group-narrow">
-            <button id="darkModeToggle" class="dark-mode-btn">
-              <span class="moon-icon">🌙</span>
-              <span class="button-text">Dark Mode</span>
-            </button>
-            <div class="form-group wide">
-              <label for="species">Species:</label>
-              <select id="species" name="species" class="form-select input-field">
-                <option value="">Select species...</option>
-                {% for s in available_species %}
-                <option value="{{ s }}" {% if loop.first %}selected{% endif %}>{{ s }}</option>
-                {% endfor %}
-              </select>
-            </div>
+    <!-- Settings Content -->
+    <div class="settings-content">
+      <!-- Dark Mode Toggle -->
+      <button id="darkModeToggle" class="dark-mode-btn">
+        <span class="moon-icon">🌙</span>
+        <span class="button-text">Dark Mode</span>
+      </button>
 
+      <!-- Species Selection -->
+      <div class="form-group">
+        <label for="species">Species:</label>
+        <select id="species" name="species" class="form-select">
+          <option value="">Select species...</option>
+          {% for s in available_species %}
+          <option value="{{ s }}" {% if loop.first %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
 
-            <div class="form-group wide">
-              <label for="kozak">Kozak:</label>
-              <select id="kozak" name="kozak" class="form-select input-field" hx-trigger="change">
-                <option value="MTK" selected>MTK</option>
-                <option value="Canonical">Canonical</option>
-              </select>
-            </div>
+      <!-- Kozak Selection -->
+      <div class="form-group">
+        <label for="kozak">Kozak:</label>
+        <select id="kozak" name="kozak" class="form-select" hx-trigger="change">
+          <option value="MTK" selected>MTK</option>
+          <option value="Canonical">Canonical</option>
+        </select>
+      </div>
 
-            <div class="form-group narrow">
-              <label for="maxMutPerSite">Max mutations per site:</label>
-              <select id="maxMutPerSite" name="max_mut_per_site" class="form-select input-field" hx-trigger="change">
-                <option value="1" selected>1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-              </select>
-            </div>
-            <div class="form-group narrow">
-              <input type="checkbox" id="verbose_mode" name="verbose_mode">
-              <label for="verbose_mode">Verbose</label>
-            </div>
+      <!-- Mutations Setting -->
+      <div class="form-group">
+        <label for="maxMutPerSite">Max mutations per site:</label>
+        <select id="maxMutPerSite" name="max_mut_per_site" class="form-select" hx-trigger="change">
+          <option value="1" selected>1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+        </select>
+      </div>
 
-            <!-- Close Button -->
-            <button id="close-settings" class="mt-4 bg-red-500 text-white px-3 py-1 rounded-md w-full">
-              Close Settings
-            </button>
-          </div>
-        </div>
-        <div class="">
+      <!-- Verbose Mode Toggle -->
+      <div class="form-group checkbox">
+        <input type="checkbox" id="verbose_mode" name="verbose_mode">
+        <label for="verbose_mode">Verbose</label>
+      </div>
+
+      <!-- Close Button -->
+      <button id="close-settings" class="close-settings-btn">
+        Close Settings
+      </button>
+    </div>
+  </div>
+
+  <div class="main-wrapper">
+    <h1 class="app-title">Mammalian Toolkit Domestication Primer Design</h1>
+
+    <div class="app-container">
+      <!-- Form Container -->
+      <div class="form-container">
+        <form id="primer-form" hx-post="{{ url_for('main.generate_protocol') }}" hx-trigger="submit"
+          hx-target="#results-container" hx-swap="innerHTML" hx-ext="json-enc">
+
           <!-- Template Sequence Section -->
           <div class="form-sub-container">
-            <h4 class="form-sub-container-title">Template Sequence (optional)</h4>
+            <h2 class="form-sub-container-title">Template Sequence (optional)</h2>
 
             <div class="tab-buttons">
-              <button type="button" class="tab-button active" onclick="openTab('paste');">Paste Sequence</button>
-              <button type="button" class="tab-button" onclick="openTab('upload');">Upload File</button>
+              <button type="button" class="tab-button active" data-tab="paste">
+                Paste Sequence
+              </button>
+              <button type="button" class="tab-button" data-tab="upload">
+                Upload File
+              </button>
             </div>
 
             <div class="tab-content">
               <div class="tab-pane active" id="paste">
                 <label for="templateSequence">Paste Template Sequence:</label>
-                <textarea id="templateSequence" name="templateSequence" class="form-control sequence-input input-field"
+                <textarea id="templateSequence" name="templateSequence" class="sequence-input"
                   placeholder="Enter DNA sequence here..." hx-post="{{ url_for('main.validate_field') }}"
                   hx-trigger="keyup changed delay:1000ms" hx-target=".error-message"
                   value="{{ test_template_seq if testing_mode else '' }}"></textarea>
-                <span class="char-count-label" style="display: none;">Length: 0 bp</span>
-
+                <span class="char-count-label">Length: 0 bp</span>
                 <div class="error-message" data-field="templateSequence"></div>
               </div>
+
               <div class="tab-pane" id="upload">
                 <label for="fileUpload">Upload DNA File:</label>
                 <input type="file" id="fileUpload" name="fileUpload" class="form-control">
@@ -128,54 +138,55 @@
             </div>
           </div>
 
+          <!-- Sequences to Domesticate Section -->
           <div class="form-sub-container">
-            <h4 class="form-sub-container-title">Sequences to Domesticate</h4>
-
-            <div id="sequence-container" style="position: relative;">
-              <!-- Control Buttons -->
+            <div class="section-header">
+              <h2 class="form-sub-container-title">Sequences to Domesticate</h2>
               <div id="sequence-control-buttons">
-                <button type="button" id="decrementBtn">–</button>
-                <button type="button" id="incrementBtn">+</button>
+                <button type="button" id="decrementBtn" class="sequence-control-btn">–</button>
+                <button type="button" id="incrementBtn" class="sequence-control-btn">+</button>
               </div>
+            </div>
 
-              <!-- Hidden input to store the current sequence count -->
-              <input type="hidden" id="numSequencesInput" name="numSequences" value="{{ num_sequences }}">
+            <!-- Hidden input for sequence count -->
+            <input type="hidden" id="numSequencesInput" name="numSequences" value="{{ num_sequences }}">
 
-              <!-- Display the value (optional) -->
-              <span id="numDisplay">{{ num_sequences }}</span>
+            <!-- Single Tab Container with Scroll Buttons -->
+            <div id="sequence-tabs-container" class="tabs-container">
+              <div id="sequence-inputs-container" hx-target="#sequence-inputs-container" hx-swap="innerHTML">
+                <!-- Navigation and content will be loaded here via HTMX -->
+              </div>
             </div>
           </div>
 
-
-          <!-- Sequence Input Tabs -->
-          <div id="sequence-inputs-container" hx-target="#sequence-inputs-container" hx-swap="innerHTML">
-            <!-- This will be replaced dynamically -->
+          <!-- Action Buttons -->
+          <div class="button-container">
+            <button type="submit" class="btn btn-primary" id="runDesignPrimerBtn">
+              Generate Protocol
+            </button>
+            <button type="button" class="btn btn-warning" id="clearForm">
+              Clear Form
+            </button>
           </div>
-        </div>
+        </form>
+      </div>
 
-        <!-- Buttons -->
-        <div class="button-container">
-          <button type="submit" class="btn btn-primary" id="runDesignPrimerBtn">Generate Protocol</button>
-          <button type="button" id="clearForm" class="btn btn-warning" onclick="clearForm()">Clear Form</button>
-        </div>
-      </form>
-    </div>
-    <!-- Results Section -->
-    <div id="validation-results"></div>
+      <!-- Results Sections -->
+      <div id="validation-results"></div>
 
-    <!-- Main Results Section -->
-    <div id="results-container" class="results-container">
-      {% if results %}
-      {% include 'results_partial.html' %}
-      {% endif %}
-    </div>
+      <div id="results-container" class="results-container">
+        {% if results %}
+        {% include 'results_partial.html' %}
+        {% endif %}
+      </div>
 
-    <!-- Primer Anatomy Section -->
-    <!-- CHANGE DISPLAY STYLE TO MAKE IT APPEAR -->
-    <div class="primer-anatomy-container" style="display: none;">
-      {% include 'primer_anatomy.html' %}
+      <!-- Primer Anatomy Section -->
+      <div class="primer-anatomy-container" style="display: none;">
+        {% include 'primer_anatomy.html' %}
+      </div>
     </div>
   </div>
+
   <!-- HTMX-Based Toggle -->
   <script>
     document.getElementById("toggle-settings").addEventListener("click", function () {
@@ -186,8 +197,6 @@
       document.getElementById("settings-card").classList.add("hidden");
     });
   </script>
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

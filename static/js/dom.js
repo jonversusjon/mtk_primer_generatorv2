@@ -41,7 +41,6 @@ class SequenceHandler {
 
 
   updateSequenceInputs(numSequences, isTesting) {
-
     htmx.ajax("GET", "/get_sequence_inputs", {
       target: "#sequence-inputs-container",
       swap: "innerHTML",
@@ -52,8 +51,17 @@ class SequenceHandler {
       }
     }).then(() => {
       console.log("✅ Flask response received, updating UI");
-      initializeTabs();
+      initializeTabs();  // This will now handle both tab initialization and scroll buttons
       this.setupCharacterCounters();
+
+      // Ensure first tab is active by default
+      const firstTab = document.querySelector('.sequence-tab-btn');
+      const firstContent = document.querySelector('.sequence-tab-content');
+      if (firstTab) firstTab.classList.add('active');
+      if (firstContent) {
+        firstContent.classList.add('active');
+        firstContent.style.opacity = "1";
+      }
     });
   }
 
@@ -145,19 +153,93 @@ class TooltipManager {
   }
 }
 
-/**
- * Initializes tab functionality for sequence inputs
- */
 function initializeTabs() {
   document.querySelectorAll(".sequence-tab-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const tabIndex = btn.getAttribute("data-tab-index");
 
-      document.querySelectorAll(".sequence-tab-btn, .sequence-tab-content").forEach(el => el.classList.remove("active"));
+      // Update tab buttons
+      document.querySelectorAll(".sequence-tab-btn").forEach(el => {
+        el.classList.remove("active");
+      });
       btn.classList.add("active");
-      document.querySelector(`.sequence-tab-content[data-tab-index="${tabIndex}"]`)?.classList.add("active");
+
+      // Update content panes
+      document.querySelectorAll(".sequence-tab-content").forEach(el => {
+        el.classList.remove("active");
+        el.style.opacity = "0";
+      });
+
+      const activeContent = document.querySelector(`.sequence-tab-content[data-tab-index="${tabIndex}"]`);
+      if (activeContent) {
+        activeContent.classList.add("active");
+        // Small delay to ensure opacity transition works
+        setTimeout(() => {
+          activeContent.style.opacity = "1";
+        }, 50);
+      }
     });
   });
+
+  // Initialize TabScroller for the sequence tabs
+  new TabScroller("sequence-tabs-container");
+}
+
+class TabScroller {
+  constructor(containerId) {
+    this.container = document.getElementById(containerId);
+    if (!this.container) return;
+
+    this.tabList = this.container.querySelector('.sequence-tabs-nav');
+    this.setupScrollButtons();
+    this.checkScrollButtons();
+
+    // Event listeners
+    window.addEventListener('resize', () => this.checkScrollButtons());
+    this.tabList.addEventListener('scroll', () => this.checkScrollButtons());
+  }
+
+  setupScrollButtons() {
+    // Create scroll buttons
+    const leftButton = document.createElement('button');
+    leftButton.className = 'tab-scroll-button left';
+    leftButton.innerHTML = '‹';
+    leftButton.addEventListener('click', () => this.scroll('left'));
+
+    const rightButton = document.createElement('button');
+    rightButton.className = 'tab-scroll-button right';
+    rightButton.innerHTML = '›';
+    rightButton.addEventListener('click', () => this.scroll('right'));
+
+    // Add buttons to container
+    this.container.insertBefore(leftButton, this.tabList);
+    this.container.appendChild(rightButton);
+
+    this.leftButton = leftButton;
+    this.rightButton = rightButton;
+  }
+
+  checkScrollButtons() {
+    const { scrollLeft, scrollWidth, clientWidth } = this.tabList;
+
+    // Show/hide left button
+    this.leftButton.style.display = scrollLeft > 0 ? 'flex' : 'none';
+
+    // Show/hide right button
+    this.rightButton.style.display =
+      scrollLeft < (scrollWidth - clientWidth - 1) ? 'flex' : 'none';
+  }
+
+  scroll(direction) {
+    const scrollAmount = this.tabList.clientWidth * 0.5;
+    const newScrollPosition = this.tabList.scrollLeft +
+      (direction === 'left' ? -scrollAmount : scrollAmount);
+
+    this.tabList.scrollTo({
+      left: newScrollPosition,
+      behavior: 'smooth'
+    });
+  }
 }
 
 // Initialize everything when DOM is ready

@@ -155,8 +155,9 @@ body {
 .sequence-input {
   min-width: 100%;
   overflow-wrap: break-word;
-  font-size: 0.8em;
+  font-size: 0.6em;
   color: var(--text-muted);
+  font-family: "Fira Code", Consolas, Monaco, monospace;
 }
 
 .dynamic-sequence-input {
