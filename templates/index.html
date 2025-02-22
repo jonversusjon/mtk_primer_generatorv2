@@ -18,11 +18,13 @@
   <!-- Pass server data to JS -->
   <script type="application/json" id="testing-mode-data">{{ testing_mode | tojson }}</script>
   <script type="application/json" id="test-template-seq-data">{{ test_template_seq | tojson }}</script>
+  <script type="application/json" id="test-seq-data">{{ test_seq | tojson }}</script>
+
 
   <!-- Initialize APP_STATE -->
   <script>
     const APP_STATE = {
-      testSeq: [],  // Test sequences handled dynamically
+      testSeq: JSON.parse(document.getElementById("test-seq-data").textContent || "[]"),
       testTemplateSeq: JSON.parse(document.getElementById("test-template-seq-data").textContent || "\"\""),
       testingMode: JSON.parse(document.getElementById("testing-mode-data").textContent || "false")
     };
@@ -112,10 +114,11 @@
             <h2 class="form-sub-container-title">Template Sequence (optional)</h2>
 
             <div class="tab-buttons">
-              <button type="button" class="tab-button active" data-tab="paste">
+              <button id="template-paste-btn" type="button" class="tab-button active" data-tab="paste">
                 Paste Sequence
               </button>
-              <button type="button" class="tab-button" data-tab="upload">
+              <button id="template-upload-btn" type="button" class="tab-button" data-tab="upload"
+                style="display: none;">
                 Upload File
               </button>
             </div>
@@ -149,12 +152,43 @@
             </div>
 
             <!-- Hidden input for sequence count -->
-            <input type="hidden" id="numSequencesInput" name="numSequences" value="{{ num_sequences }}">
+            <input type="text" id="numSequencesInput" name="numSequences" value="{{ num_sequences }}">
+            <!-- Sequence Tabs Container -->
+            <div id="sequence-inputs-container" class="tabs-container">
+              <!-- Navigation Buttons -->
+              <div class="sequence-tabs-nav">
+                {% for i in range(1, 11) %}
+                <button type="button"
+                  class="sequence-tab-btn{% if i == 1 %} active{% endif %}{% if i > num_sequences %} hidden{% endif %}"
+                  data-tab-index="{{ i }}">
+                  {{ i }}
+                </button>
 
-            <!-- Single Tab Container with Scroll Buttons -->
-            <div id="sequence-tabs-container" class="tabs-container">
-              <div id="sequence-inputs-container" hx-target="#sequence-inputs-container" hx-swap="innerHTML">
-                <!-- Navigation and content will be loaded here via HTMX -->
+                {% endfor %}
+              </div>
+              <!-- Tab Contents -->
+              <div class="sequence-tabs-content">
+                {% for i in range(1, 11) %}
+                <div class="sequence-tab-content{% if i == 1 %} active{% else %} hidden{% endif %}"
+                  data-tab-index="{{ i }}">
+                  <label for="sequenceInput{{ i }}">Sequence {{ i }}:</label>
+                  <textarea id="sequenceInput{{ i }}" name="sequenceInput{{ i }}" class="dynamic-sequence-input"
+                    placeholder="Enter DNA sequence..."></textarea>
+                  <span class="char-count-label">Length: 0 bp</span>
+                  <div class="error-message" data-field="sequenceInput{{ i }}"></div>
+
+                  <label for="primerName{{ i }}">Primer Name:</label>
+                  <input type="text" id="primerName{{ i }}" name="primerName{{ i }}" placeholder="Default Primer Name"
+                    class="primer-name-input">
+
+                  <label for="mtkPartNum{{ i }}">MTK Part Number:</label>
+                  <select id="mtkPartNum{{ i }}" name="mtkPartNum{{ i }}" class="mtk-part-select">
+                    {% for part in mtk_part_nums %}
+                    <option value="{{ part }}">{{ part }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                {% endfor %}
               </div>
             </div>
           </div>

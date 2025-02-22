@@ -7,13 +7,15 @@ console.log("✅ dom.js loaded! APP_STATE:", window.APP_STATE);
 
 class SequenceHandler {
   constructor() {
-    this.currentCount = 1; /* this is the input_sequences counter */
+    const initialCount = parseInt(document.getElementById("numSequencesInput").value, 10) || 1;
+    this.currentCount = initialCount;
     this.setupCharacterCounters();
     this.initializeState();
   }
 
   setupCharacterCounters() {
-    document.querySelectorAll(".dynamic-sequence-input, #templateSequence").forEach(input => {
+    // Use single class for all sequence textareas
+    document.querySelectorAll(".dynamic-sequence-input").forEach(input => {
       input.addEventListener("input", () => this.updateCharCount(input));
       if (input.value) this.updateCharCount(input);
     });
@@ -22,12 +24,11 @@ class SequenceHandler {
   initializeState() {
     if (APP_STATE.testingMode) {
       this.setTestDefaults();
-      const numTestSeq = APP_STATE.testSeq.length > 0 ? APP_STATE.testSeq.length : 1;
+      const numTestSeq = (APP_STATE.testSeq && APP_STATE.testSeq.length) ? APP_STATE.testSeq.length : 1;
       console.log("✅ Test mode detected. Setting sequence count to", numTestSeq);
-
       this.updateSequenceInputs(numTestSeq, true);
     } else {
-      this.updateSequenceInputs("1", false);
+      this.updateSequenceInputs(1, false);
     }
   }
 
@@ -37,53 +38,135 @@ class SequenceHandler {
       templateSequence.value = APP_STATE.testTemplateSeq;
       this.updateCharCount(templateSequence);
     }
+
+    if (APP_STATE.testSeq && Array.isArray(APP_STATE.testSeq)) {
+      APP_STATE.testSeq.forEach((testObj, index) => {
+        const seqIndex = index + 1;
+        const seqTextarea = document.getElementById(`sequenceInput${seqIndex}`);
+        const primerInput = document.getElementById(`primerName${seqIndex}`);
+        const mtkSelect = document.getElementById(`mtkPartNum${seqIndex}`);
+
+        let sequenceValue = "";
+        if (typeof testObj === "string") {
+          sequenceValue = testObj;
+        } else if (typeof testObj === "object" && testObj.sequence) {
+          sequenceValue = testObj.sequence;
+        }
+
+        if (seqTextarea) {
+          seqTextarea.value = sequenceValue;
+          this.updateCharCount(seqTextarea);
+        }
+
+        if (primerInput) {
+          if (typeof testObj === "object" && testObj.primerName) {
+            primerInput.value = testObj.primerName;
+          } else {
+            primerInput.value = `Primer ${seqIndex}`;
+          }
+        }
+
+        if (mtkSelect) {
+          if (typeof testObj === "object" && testObj.mtkPartNum) {
+            mtkSelect.value = testObj.mtkPartNum;
+          } else {
+            mtkSelect.selectedIndex = 0;
+          }
+        }
+      });
+    }
   }
 
-
-  updateSequenceInputs(numSequences, isTesting) {
-    htmx.ajax("GET", "/get_sequence_inputs", {
-      target: "#sequence-inputs-container",
-      swap: "innerHTML",
-      values: {
-        numSequences: numSequences,
-        testingMode: isTesting,
-        testSeq: isTesting ? APP_STATE.testSeq : "",
-      }
-    }).then(() => {
-      console.log("✅ Flask response received, updating UI");
-      initializeTabs();  // This will now handle both tab initialization and scroll buttons
-      this.setupCharacterCounters();
-
-      // Ensure first tab is active by default
-      const firstTab = document.querySelector('.sequence-tab-btn');
-      const firstContent = document.querySelector('.sequence-tab-content');
-      if (firstTab) firstTab.classList.add('active');
-      if (firstContent) {
-        firstContent.classList.add('active');
-        firstContent.style.opacity = "1";
+  updateVisibleTabs(newCount) {
+    document.querySelectorAll(".sequence-tab-btn").forEach(btn => {
+      const idx = parseInt(btn.getAttribute("data-tab-index"), 10);
+      if (idx <= newCount) {
+        btn.classList.remove("hidden");
+      } else {
+        btn.classList.add("hidden");
       }
     });
+
+    document.querySelectorAll(".sequence-tab-content").forEach(content => {
+      const idx = parseInt(content.getAttribute("data-tab-index"), 10);
+      if (idx <= newCount) {
+        content.classList.remove("hidden");
+      } else {
+        content.classList.add("hidden");
+      }
+    });
+
+    const numInput = document.getElementById("numSequencesInput");
+    if (numInput) numInput.value = newCount;
+  }
+
+  updateSequenceInputs(newCount, isTesting) {
+    this.currentCount = parseInt(newCount, 10);
+    this.updateVisibleTabs(this.currentCount);
+
+    const activeBtn = document.querySelector(".sequence-tab-btn.active");
+    if (!activeBtn) {
+      const firstVisibleBtn = document.querySelector(".sequence-tab-btn:not(.hidden)");
+      if (firstVisibleBtn) {
+        firstVisibleBtn.classList.add("active");
+        firstVisibleBtn.click();
+      }
+    }
   }
 
   updateCharCount(element) {
     const label = element.nextElementSibling;
-    if (!label?.classList.contains("char-count-label")) return;
-
+    if (!label || !label.classList.contains("char-count-label")) return;
     label.style.display = element.value.length ? "block" : "none";
     label.textContent = `Length: ${element.value.length} bp`;
   }
 
-  changeSequenceCount(delta) {
-    const newCount = this.currentCount + delta;
-    console.log("Attempting to change sequence count from", this.currentCount, "to", newCount);
-    if (newCount < 1 || newCount > 10) {
-      console.log("New count out of bounds, ignoring.");
-      return;
+  incrementSequenceCount() {
+    if (this.currentCount < 10) {
+      this.currentCount++;
+      this.updateVisibleTabs(this.currentCount);
+      const newTabButton = document.querySelector(`.sequence-tab-btn[data-tab-index="${this.currentCount}"]`);
+      if (newTabButton) {
+        newTabButton.click();
+      }
     }
-    this.currentCount = newCount;
-    this.updateSequenceInputs(this.currentCount, APP_STATE.testingMode);
   }
 
+  decrementSequenceCount() {
+    if (this.currentCount > 1) {
+      this.clearTabData(this.currentCount);
+      this.currentCount--;
+      this.updateVisibleTabs(this.currentCount);
+      const newTabButton = document.querySelector(`.sequence-tab-btn[data-tab-index="${this.currentCount}"]`);
+      if (newTabButton) {
+        newTabButton.click();
+      }
+    }
+  }
+
+  clearTabData(tabIndex) {
+    const tabContainer = document.querySelector(`.sequence-tab-content[data-tab-index="${tabIndex}"]`);
+    if (tabContainer) {
+      tabContainer.querySelectorAll(".error-message").forEach(el => {
+        el.innerHTML = "";
+      });
+    }
+
+    const seqTextarea = document.getElementById(`sequenceInput${tabIndex}`);
+    const primerInput = document.getElementById(`primerName${tabIndex}`);
+    const mtkSelect = document.getElementById(`mtkPartNum${tabIndex}`);
+
+    if (seqTextarea) {
+      seqTextarea.value = "";
+      this.updateCharCount(seqTextarea);
+    }
+    if (primerInput) {
+      primerInput.value = "";
+    }
+    if (mtkSelect) {
+      mtkSelect.selectedIndex = 0;
+    }
+  }
 }
 
 /**
@@ -91,16 +174,14 @@ class SequenceHandler {
  */
 class FormHandler {
   constructor() {
-    this.clearFormButton = document.getElementById("clear-form");
+    this.clearFormButton = document.getElementById("clearForm");
     if (this.clearFormButton) {
       this.clearFormButton.addEventListener("click", () => this.clearForm());
     }
   }
 
   clearForm() {
-    // Clear file upload fields
     document.querySelectorAll("#fileUpload").forEach(input => input.value = "");
-    // Reset the sequence count (if our SequenceHandler instance exists)
     if (window.sequenceHandlerInstance) {
       window.sequenceHandlerInstance.currentCount = 1;
       window.sequenceHandlerInstance.updateSequenceInputs(1, APP_STATE.testingMode);
@@ -158,22 +239,20 @@ function initializeTabs() {
     btn.addEventListener("click", () => {
       const tabIndex = btn.getAttribute("data-tab-index");
 
-      // Update tab buttons
-      document.querySelectorAll(".sequence-tab-btn").forEach(el => {
-        el.classList.remove("active");
-      });
+      // Deactivate all nav buttons, then activate the clicked one.
+      document.querySelectorAll(".sequence-tab-btn").forEach(el => el.classList.remove("active"));
       btn.classList.add("active");
 
-      // Update content panes
+      // Hide all tab contents.
       document.querySelectorAll(".sequence-tab-content").forEach(el => {
         el.classList.remove("active");
         el.style.opacity = "0";
       });
 
+      // Activate the content pane matching the clicked nav button.
       const activeContent = document.querySelector(`.sequence-tab-content[data-tab-index="${tabIndex}"]`);
       if (activeContent) {
         activeContent.classList.add("active");
-        // Small delay to ensure opacity transition works
         setTimeout(() => {
           activeContent.style.opacity = "1";
         }, 50);
@@ -181,7 +260,7 @@ function initializeTabs() {
     });
   });
 
-  // Initialize TabScroller for the sequence tabs
+  // Initialize TabScroller for horizontal scrolling, if needed.
   new TabScroller("sequence-tabs-container");
 }
 
@@ -194,13 +273,11 @@ class TabScroller {
     this.setupScrollButtons();
     this.checkScrollButtons();
 
-    // Event listeners
     window.addEventListener('resize', () => this.checkScrollButtons());
     this.tabList.addEventListener('scroll', () => this.checkScrollButtons());
   }
 
   setupScrollButtons() {
-    // Create scroll buttons
     const leftButton = document.createElement('button');
     leftButton.className = 'tab-scroll-button left';
     leftButton.innerHTML = '‹';
@@ -211,7 +288,6 @@ class TabScroller {
     rightButton.innerHTML = '›';
     rightButton.addEventListener('click', () => this.scroll('right'));
 
-    // Add buttons to container
     this.container.insertBefore(leftButton, this.tabList);
     this.container.appendChild(rightButton);
 
@@ -221,13 +297,8 @@ class TabScroller {
 
   checkScrollButtons() {
     const { scrollLeft, scrollWidth, clientWidth } = this.tabList;
-
-    // Show/hide left button
     this.leftButton.style.display = scrollLeft > 0 ? 'flex' : 'none';
-
-    // Show/hide right button
-    this.rightButton.style.display =
-      scrollLeft < (scrollWidth - clientWidth - 1) ? 'flex' : 'none';
+    this.rightButton.style.display = scrollLeft < (scrollWidth - clientWidth - 1) ? 'flex' : 'none';
   }
 
   scroll(direction) {
@@ -244,14 +315,15 @@ class TabScroller {
 
 // Initialize everything when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
-  // Instantiate the SequenceHandler and store it globally for access (e.g., from the clearForm method or button events)
-  window.sequenceHandlerInstance = new SequenceHandler();
+  const sequenceHandlerInstance = new SequenceHandler();
+  window.sequenceHandlerInstance = sequenceHandlerInstance;
+
   new FormHandler();
   new TooltipManager();
 
   // Ensure character counters update after form fields are pre-filled
   setTimeout(() => {
-    document.querySelectorAll(".dynamic-sequence-input, #templateSequence").forEach(input => {
+    document.querySelectorAll(".dynamic-sequence-input").forEach(input => {
       if (input.value) {
         window.sequenceHandlerInstance.updateCharCount(input);
       }
@@ -262,30 +334,26 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("verbose_mode").checked = true;
   }
 
-  const numInput = document.getElementById("numSequencesInput");
+  initializeTabs();
+
   const numDisplay = document.getElementById("numDisplay");
   const incrementBtn = document.getElementById("incrementBtn");
   const decrementBtn = document.getElementById("decrementBtn");
 
-  if (numInput && numDisplay && incrementBtn && decrementBtn) {
-    function updateSequenceCount(delta) {
-      let currentValue = parseInt(numInput.value, 10) || 0;
-      let newValue = currentValue + delta;
-      if (newValue < 1) newValue = 1;
-      if (newValue > 10) newValue = 10;
-      numInput.value = newValue;
-      numDisplay.textContent = newValue;
-
-      if (window.sequenceHandlerInstance) {
-        window.sequenceHandlerInstance.updateSequenceInputs(newValue, APP_STATE.testingMode);
-      } else {
-        console.log("can't update number of sequence inputs without a sequenceHandlerInstance.")
+  if (incrementBtn) {
+    incrementBtn.addEventListener("click", () => {
+      sequenceHandlerInstance.incrementSequenceCount();
+      if (numDisplay) {
+        numDisplay.textContent = sequenceHandlerInstance.currentCount;
       }
-    }
-
-    incrementBtn.addEventListener("click", () => updateSequenceCount(1));
-    decrementBtn.addEventListener("click", () => updateSequenceCount(-1));
-  } else {
-    console.warn("Sequence input or buttons not found in the DOM.");
+    });
+  }
+  if (decrementBtn) {
+    decrementBtn.addEventListener("click", () => {
+      sequenceHandlerInstance.decrementSequenceCount();
+      if (numDisplay) {
+        numDisplay.textContent = sequenceHandlerInstance.currentCount;
+      }
+    });
   }
 });

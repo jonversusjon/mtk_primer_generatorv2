@@ -83,7 +83,8 @@
   background-color: var(--warning-hover);
 }
 
-.dark-mode .sequence-input {
+.dark-mode .sequence-input,
+.dark-mode .dynamic-sequence-input {
   color: #b9bbbc !important;
 }
 
@@ -155,6 +156,7 @@
 
 /* Form Elements in Dark Mode */
 .dark-mode .sequence-input,
+.dark-mode .dynamic-sequence-input,
 .dark-mode .form-control,
 .dark-mode .form-select {
   background-color: rgba(255, 255, 255, 0.05);
@@ -277,4 +279,22 @@
 
 .dark-mode #sequence-control-buttons button:active {
   background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Base Form Layout */
+.dark-mode #primer-form {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: white;
+}
+
+.dark-mode #primer-form .sequence-input,
+.dark-mode #primer-form .dynamic-sequence-input {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+#primer-form::-webkit-scrollbar {
+  width: 6px;
 }

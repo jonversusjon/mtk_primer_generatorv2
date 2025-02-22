@@ -152,32 +152,20 @@ body {
   font-size: 0.9em;
 }
 
-.sequence-input {
+.sequence-input,
+.dynamic-sequence-input {
   min-width: 100%;
   overflow-wrap: break-word;
   color: var(--text-muted);
   font-family: "Fira Code", Consolas, Monaco, monospace;
   width: 100%;
-  min-height: 8rem;
+  min-height: 8rem; /* Equivalent to 80px */
   font-size: 0.6rem;
-  padding: 0.75rem;
   border: 1px solid var(--border-color);
   border-radius: 0.375rem;
   background-color: white;
   resize: vertical;
-}
-
-.dynamic-sequence-input {
-  min-height: 80px;
-  width: 100%;
-  resize: vertical;
-  margin-top: 0.5rem;
-}
-
-#templateSequence {
-  width: 98%;
-  height: 100px;
-  resize: vertical;
+  margin-top: 0.5rem; /* added from dynamic-sequence-input */
 }
 
 #numSequences {

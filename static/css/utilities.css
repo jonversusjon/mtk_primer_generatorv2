@@ -1,5 +1,13 @@
 /* Utility classes */
 
+.hidden {
+    display: none;
+}
+
+.show {
+    display: block;
+}
+
 /* Width control classes */
 .col-large {
     flex: 2;

@@ -21,40 +21,36 @@ def home():
     """Render the homepage with default input values from config."""
     testing_mode = current_app.config.get("TESTING", False)
     test_template_seq = current_app.config.get("TEST_TEMPLATE_SEQ", "")
-    test_seq = current_app.config.get("TEST_SEQ", [""])
+    test_seq = current_app.config.get("TEST_SEQ", [])
     available_species = utils.get_available_species()
-    print(f"loading home page with species: {available_species}")
+    
+    # When testing, show as many tabs as there are test sequences; otherwise default to 1.
+    num_sequences = len(test_seq) if testing_mode and test_seq else 1
+
     return render_template(
         "index.html",
         title="Home Page",
-        num_sequences=len(test_seq) if testing_mode else 1,
+        num_sequences=num_sequences,
         mtk_part_nums=MTK_PART_NUMS,
         test_template_seq=test_template_seq if testing_mode else "",
         testing_mode=testing_mode,
+        test_seq=test_seq,
         available_species=available_species,
     )
 
 
 
-@main.route("/update_sequence_count", methods=["GET"])
+@main.route('/update-sequence-count', methods=['POST'])
 def update_sequence_count():
-    num_sequences_raw = request.args.get("numSequences", "1")
-    try:
-        current_count = int(num_sequences_raw)
-    except ValueError:
-        current_count = 1
-
-    delta_raw = request.args.get("delta", "0")
-    try:
-        delta = int(delta_raw)
-    except ValueError:
-        delta = 0
-
-    new_count = max(1, min(10, current_count + delta))
-
-    # Return an out-of-band update for the hidden input.
-    # Ensure your template includes the hx-swap-oob attribute.
-    return f'<input type="hidden" id="numSequencesInput" name="numSequences" value="{new_count}" hx-swap-oob="true">'
+    direction = request.form.get('direction')
+    current = int(request.form.get('current', 1))
+    
+    if direction == 'increase' and current < 10:
+        return str(current + 1)
+    elif direction == 'decrease' and current > 1:
+        return str(current - 1)
+    
+    return str(current)
 
 
 @main.route("/get_sequence_inputs", methods=["GET"])

@@ -66,7 +66,8 @@
 .sequence-tab-btn,
 .tab-button {
     position: relative;
-    padding: 0.75rem 1rem; /* Added horizontal padding */
+    padding: 0.75rem 1rem;
+    /* Added horizontal padding */
     font-size: 0.875rem;
     font-weight: 500;
     color: var(--text-muted);
@@ -75,9 +76,12 @@
     cursor: pointer;
     transition: all 0.2s ease;
     white-space: nowrap;
-    width: min-content; /* Changed from min-width: fit-content */
-    min-width: 80px;    /* Added minimum width */
-    max-width: 200px;   /* Kept maximum width */
+    width: min-content;
+    /* Changed from min-width: fit-content */
+    min-width: 80px;
+    /* Added minimum width */
+    max-width: 200px;
+    /* Kept maximum width */
 }
 
 /* Hover state */
@@ -119,6 +123,7 @@
     border: 1px solid var(--border-color);
     border-radius: 0.75rem;
     padding: 1.5rem;
+    overflow-x: hidden;
 }
 
 /* Tab Panes */
@@ -175,6 +180,7 @@
     padding: 0.5rem;
     border: 1px solid var(--border-color);
     border-radius: 0.375rem;
+    background: white;
 }
 
 .sequence-tab-content textarea {
@@ -271,4 +277,19 @@
 /* Ensure proper spacing for the tabs container */
 #sequence-tabs-container {
     margin-top: 1rem;
+}
+
+.sequence-tabs-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    /* Optional: adds space between buttons */
+}
+
+.sequence-tab-btn {
+    flex: 1 1 auto;
+    /* Let buttons grow/shrink */
+    min-width: 40px;
+    /* Adjust as needed */
+    padding: 0.5rem 1rem;
 }
