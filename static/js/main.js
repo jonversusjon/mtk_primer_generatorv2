@@ -22,8 +22,8 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("Frontend reporting for business!");
 
     // Initialize core components
-    const sequenceTabsManagerInstance = new SequenceTabsManager();
-    window.sequenceTabsManagerInstance = sequenceTabsManagerInstance;
+    const sequenceTabsManager = new SequenceTabsManager();
+    window.sequenceTabsManagerInstance = sequenceTabsManager;
 
     new FormSubmissionHandler();
     new FormResetHandler();
@@ -32,43 +32,36 @@ document.addEventListener("DOMContentLoaded", () => {
     new TooltipManager();
     new DarkModeManager();
 
-    // Ensure character counters update after form fields are pre-filled
+    // Update character counters for pre-filled fields
     setTimeout(() => {
         document.querySelectorAll(".dynamic-sequence-input").forEach(input => {
-            if (input.value && sequenceTabsManagerInstance.updateCharCount) {
-                sequenceTabsManagerInstance.updateCharCount(input);
+            if (input.value) {
+                sequenceTabsManager.updateCharCount?.(input);
             }
         });
     }, 50);
-    
 
-    // Enable verbose mode if testing
-    if (typeof APP_STATE !== "undefined" && APP_STATE.testingMode) {
-        const verboseModeCheckbox = document.getElementById("verbose_mode");
-        if (verboseModeCheckbox) {
-            verboseModeCheckbox.checked = true;
-        }
+    const verboseModeCheckbox = document.getElementById("verbose_mode");
+    if (verboseModeCheckbox) {
+        verboseModeCheckbox.checked = true;
     }
+
 
     // Sequence count display and controls
     const numDisplay = document.getElementById("numDisplay");
-    const incrementBtn = document.getElementById("incrementBtn");
-    const decrementBtn = document.getElementById("decrementBtn");
+    const updateNumDisplay = () => {
+        if (numDisplay) {
+            numDisplay.textContent = sequenceTabsManager.currentCount;
+        }
+    };
 
-    if (incrementBtn) {
-        incrementBtn.addEventListener("click", () => {
-            sequenceTabsManagerInstance.incrementSequenceCount();
-            if (numDisplay) {
-                numDisplay.textContent = sequenceTabsManagerInstance.currentCount;
-            }
-        });
-    }
-    if (decrementBtn) {
-        decrementBtn.addEventListener("click", () => {
-            sequenceTabsManagerInstance.decrementSequenceCount();
-            if (numDisplay) {
-                numDisplay.textContent = sequenceTabsManagerInstance.currentCount;
-            }
-        });
-    }
+    document.getElementById("incrementBtn")?.addEventListener("click", () => {
+        sequenceTabsManager.incrementSequenceCount();
+        updateNumDisplay();
+    });
+
+    document.getElementById("decrementBtn")?.addEventListener("click", () => {
+        sequenceTabsManager.decrementSequenceCount();
+        updateNumDisplay();
+    });
 });

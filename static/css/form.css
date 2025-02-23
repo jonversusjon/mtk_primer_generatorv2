@@ -194,3 +194,24 @@
     align-items: center;
     margin-bottom: 1rem;
 }
+
+.template-sequence-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.template-sequence-header h2,
+.template-sequence-header h4 {
+    margin: 0;
+    padding-right: 5px;
+    /* optional spacing between headings */
+}
+
+.template-sequence-header h4 {
+    font-weight: 400;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    color: var(--text-muted);
+    font-style: italic;
+}

@@ -41,8 +41,3 @@ export default class CharacterCountManager {
     }
     
 }
-
-// Initialize after DOM is loaded
-document.addEventListener("DOMContentLoaded", () => {
-    new CharacterCountManager();
-});

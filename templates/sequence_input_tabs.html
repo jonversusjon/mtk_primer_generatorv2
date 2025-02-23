@@ -9,6 +9,8 @@
 
 <div class="sequence-tabs-content">
     {% for i in range(num_sequences | default(1)) %}
+
+
     <div class="sequence-tab-content {% if i == 0 %}active{% endif %}" data-tab-index="{{ i }}">
 
         <div class="form-row">

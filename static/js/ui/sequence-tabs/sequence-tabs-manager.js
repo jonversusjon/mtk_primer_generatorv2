@@ -5,6 +5,7 @@ import SequenceTabsScroller from "./sequence-tabs-scroller.js";
  */
 export default class SequenceTabsManager {
     constructor() {
+        console.log("Initializing SequenceTabsManager...");
         const numSequencesInput = document.getElementById("numSequencesInput");
         this.currentCount = numSequencesInput ? parseInt(numSequencesInput.value, 10) || 1 : 1;
 
@@ -17,7 +18,12 @@ export default class SequenceTabsManager {
      * Initializes the application state based on whether testing mode is enabled.
      */
     initializeState() {
+        console.log("Initializing sequence tabs state...");
+        console.log("Current sequence count:", this.currentCount);
+        console.log("Testing mode:", typeof APP_STATE !== "undefined" && APP_STATE.testingMode);
+
         if (typeof APP_STATE !== "undefined" && APP_STATE.testingMode) {
+            console.log("✅ Test mode detected. Setting default values for sequences.");
             this.setTestDefaults();
             const numTestSeq = APP_STATE.testSeq?.length || 1;
             console.log("✅ Test mode detected. Setting sequence count to", numTestSeq);
@@ -54,32 +60,70 @@ export default class SequenceTabsManager {
     }
 
     /**
-     * Populates form fields with test data if test mode is enabled.
+     * Sets default values for sequence inputs based on APP_STATE
      */
     setTestDefaults() {
+        this.setTemplateSequence();
+        this.setTestSequences();
+    }
+
+    /**
+     * Sets the template sequence if available
+     * @private
+     */
+    setTemplateSequence() {
         const templateSequence = document.getElementById("templateSequence");
-        if (templateSequence && APP_STATE.testTemplateSeq) {
-            templateSequence.value = APP_STATE.testTemplateSeq;
-            this.updateCharCount(templateSequence);
+
+        if (!templateSequence || !APP_STATE.testTemplateSeq) {
+            return;
         }
 
-        if (Array.isArray(APP_STATE.testSeq)) {
-            APP_STATE.testSeq.forEach((testObj, index) => {
-                const seqIndex = index + 1;
-                const { sequence = "", primerName = `Primer ${seqIndex}`, mtkPartNum = "" } = testObj || {};
+        templateSequence.value = APP_STATE.testTemplateSeq;
+        this.updateCharCount(templateSequence);
+    }
 
-                const seqTextarea = document.getElementById(`sequenceInput${seqIndex}`);
-                const primerInput = document.getElementById(`primerName${seqIndex}`);
-                const mtkSelect = document.getElementById(`mtkPartNum${seqIndex}`);
-
-                if (seqTextarea) {
-                    seqTextarea.value = sequence;
-                    this.updateCharCount(seqTextarea);
-                }
-                if (primerInput) primerInput.value = primerName;
-                if (mtkSelect) mtkSelect.value = mtkPartNum || mtkSelect.selectedIndex;
-            });
+    /**
+     * Sets values for all test sequences
+     * @private
+     */
+    setTestSequences() {
+        if (!Array.isArray(APP_STATE.testSeq)) {
+            return;
         }
+
+        APP_STATE.testSeq.forEach((sequenceString, index) => {
+            if (!sequenceString) return;
+
+            const sequenceNum = index + 1;
+
+            // Get DOM elements
+            const elements = {
+                sequence: document.getElementById(`sequenceInput${sequenceNum}`),
+                primer: document.getElementById(`primerName${sequenceNum}`),
+                mtk: document.getElementById(`mtkPartNum${sequenceNum}`)
+            };
+
+            console.log(`Found elements for sequence ${sequenceNum}:`, elements);
+
+            // Set sequence value and update character count
+            if (elements.sequence) {
+                console.log(`Setting sequence ${sequenceNum} value:`, sequenceString);
+                elements.sequence.value = sequenceString;
+                this.updateCharCount(elements.sequence);
+            } else {
+                console.log(`Could not find sequence textarea ${sequenceNum}`);
+            }
+
+            // Set default primer name
+            if (elements.primer) {
+                elements.primer.value = `Primer ${sequenceNum}`;
+            }
+
+            // Set default MTK part number if available
+            if (elements.mtk && elements.mtk.options.length) {
+                elements.mtk.selectedIndex = 0;
+            }
+        });
     }
 
     /**
@@ -121,10 +165,10 @@ export default class SequenceTabsManager {
     }
 
     /**
- * Increments the sequence count up to a maximum of 10.
- * - Makes the next tab’s nav button visible.
- * - Activates the newly added tab.
- */
+     * Increments the sequence count up to a maximum of 10.
+     * - Makes the next tab's nav button visible.
+     * - Activates the newly added tab.
+     */
     incrementSequenceCount() {
         if (this.currentCount < 10) {
             this.currentCount++;
@@ -141,7 +185,7 @@ export default class SequenceTabsManager {
     /**
      * Decrements the sequence count down to a minimum of 1.
      * - Clears all input data on the current (nth) tab.
-     * - Hides the current tab’s nav button.
+     * - Hides the current tab's nav button.
      * - Activates the previous tab.
      */
     decrementSequenceCount() {
@@ -176,8 +220,4 @@ export default class SequenceTabsManager {
             }
         }
     }
-
 }
-
-// Initialize the sequence handler when the DOM is loaded
-document.addEventListener("DOMContentLoaded", () => new SequenceTabsManager());
