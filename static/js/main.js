@@ -1,46 +1,71 @@
-// static/js/main.js
+// Import application state
+import "./utils/app-state.js";
 
-// Initialize everything when DOM is ready
+// Import form handlers
+import "./handlers/form-reset-handler.js";
+import "./handlers/form-submission-handler.js";
+
+// Import UI components
+import "./ui/dark-mode.js";
+import "./ui/character-count.js";
+import "./ui/sequence-tabs.js";
+import "./ui/tooltip.js";
+
+// Import utilities
+import "./utils/utils.js";
+import "./utils/validation.js";
+
+import { initializeTabs } from "./ui/sequence-tabs.js";
+
 document.addEventListener("DOMContentLoaded", () => {
-  const sequenceHandlerInstance = new SequenceHandler();
-  window.sequenceHandlerInstance = sequenceHandlerInstance;
+    console.log("✅ Main script loaded!");
 
-  new FormHandler();
-  new TooltipManager();
+    // Initialize core components
+    const sequenceHandlerInstance = new SequenceHandler();
+    window.sequenceHandlerInstance = sequenceHandlerInstance;
 
-  // Ensure character counters update after form fields are pre-filled
-  setTimeout(() => {
-    document.querySelectorAll(".dynamic-sequence-input").forEach(input => {
-      if (input.value) {
-        window.sequenceHandlerInstance.updateCharCount(input);
-      }
-    });
-  }, 50);
+    new FormSubmissionHandler();
+    new TooltipManager();
 
-  if (APP_STATE.testingMode) {
-    document.getElementById("verbose_mode").checked = true;
-  }
+    // Ensure character counters update after form fields are pre-filled
+    setTimeout(() => {
+        document.querySelectorAll(".dynamic-sequence-input").forEach(input => {
+            if (input.value) {
+                sequenceHandlerInstance.updateCharCount(input);
+            }
+        });
+    }, 50);
 
-  initializeTabs();
+    // Enable verbose mode if testing
+    if (typeof APP_STATE !== "undefined" && APP_STATE.testingMode) {
+        const verboseModeCheckbox = document.getElementById("verbose_mode");
+        if (verboseModeCheckbox) {
+            verboseModeCheckbox.checked = true;
+        }
+    }
 
-  const numDisplay = document.getElementById("numDisplay");
-  const incrementBtn = document.getElementById("incrementBtn");
-  const decrementBtn = document.getElementById("decrementBtn");
+    // Initialize tab functionality
+    initializeTabs();
 
-  if (incrementBtn) {
-    incrementBtn.addEventListener("click", () => {
-      sequenceHandlerInstance.incrementSequenceCount();
-      if (numDisplay) {
-        numDisplay.textContent = sequenceHandlerInstance.currentCount;
-      }
-    });
-  }
-  if (decrementBtn) {
-    decrementBtn.addEventListener("click", () => {
-      sequenceHandlerInstance.decrementSequenceCount();
-      if (numDisplay) {
-        numDisplay.textContent = sequenceHandlerInstance.currentCount;
-      }
-    });
-  }
+    // Sequence count display and controls
+    const numDisplay = document.getElementById("numDisplay");
+    const incrementBtn = document.getElementById("incrementBtn");
+    const decrementBtn = document.getElementById("decrementBtn");
+
+    if (incrementBtn) {
+        incrementBtn.addEventListener("click", () => {
+            sequenceHandlerInstance.incrementSequenceCount();
+            if (numDisplay) {
+                numDisplay.textContent = sequenceHandlerInstance.currentCount;
+            }
+        });
+    }
+    if (decrementBtn) {
+        decrementBtn.addEventListener("click", () => {
+            sequenceHandlerInstance.decrementSequenceCount();
+            if (numDisplay) {
+                numDisplay.textContent = sequenceHandlerInstance.currentCount;
+            }
+        });
+    }
 });

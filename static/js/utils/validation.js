@@ -1,60 +1,66 @@
+// static/js/utils/validation.js
+
 document.addEventListener("DOMContentLoaded", function () {
     const form = document.getElementById("primer-form");
+    if (!form) return; // Prevent execution if form is missing
+
     const runDesignPrimerBtn = document.getElementById("runDesignPrimerBtn");
-    const numSequencesInput = document.getElementById("numSequences");
     const templateSeqEl = document.getElementById("templateSequence");
 
-    // Store field validity state.
-    // We’ll use each field’s id (or name if no id) as the key.
+    // Store field validity state
     let fieldValidity = {};
 
-    // Helper: Get a unique key for an element (id if available, otherwise name)
+    /**
+     * Gets a unique key for a form element (uses ID if available, otherwise name)
+     */
     function getFieldKey(element) {
         return element.id || element.name;
     }
 
-    // Update the submit button so that it is disabled if any tracked field is invalid.
+    /**
+     * Updates the submit button state based on field validity.
+     */
     function updateSubmitButtonState() {
-        let allValid = true;
-        for (const key in fieldValidity) {
-            if (!fieldValidity[key]) {
-                allValid = false;
-                break;
-            }
-        }
-        runDesignPrimerBtn.disabled = !allValid;
+        runDesignPrimerBtn.disabled = Object.values(fieldValidity).some(isValid => !isValid);
     }
 
-    // Show (or hide) the validation message for an element and update its validity.
+    /**
+     * Displays or removes a validation message for an element.
+     * @param {HTMLElement} element - The form field.
+     * @param {string} message - The validation message (empty string removes message).
+     */
     function displayValidationMessage(element, message) {
-        let validationMessage = element.nextElementSibling;
-        if (!validationMessage || !validationMessage.classList.contains("validation-message")) {
-            validationMessage = document.createElement("div");
-            validationMessage.classList.add("validation-message");
-            validationMessage.style.color = "red";
-            element.parentNode.insertBefore(validationMessage, element.nextSibling);
-        }
-        validationMessage.textContent = message;
-        validationMessage.style.display = message ? "block" : "none";
+        if (!element || !element.parentNode) return;
 
-        // Use a stable key to record this field’s validity.
-        const key = getFieldKey(element);
-        if (key) {
-            if (message) {
-                element.classList.add("validation-fail");
-                fieldValidity[key] = false;
-            } else {
-                element.classList.remove("validation-fail");
-                fieldValidity[key] = true;
+        let validationMessage = element.parentNode.querySelector(".validation-message");
+
+        if (message) {
+            if (!validationMessage) {
+                validationMessage = document.createElement("div");
+                validationMessage.classList.add("validation-message", "invalid-feedback");
+                element.parentNode.insertBefore(validationMessage, element.nextSibling);
             }
+            validationMessage.textContent = message;
+            element.classList.add("validation-fail");
+            fieldValidity[getFieldKey(element)] = false;
+        } else {
+            if (validationMessage) validationMessage.remove();
+            element.classList.remove("validation-fail");
+            fieldValidity[getFieldKey(element)] = true;
         }
+
         updateSubmitButtonState();
     }
 
-    // Validate the template sequence (an optional field).
+    /**
+     * Validates the template sequence (optional field).
+     */
     function validateTemplateSequence() {
+        if (!templateSeqEl) return true;
+
         const value = templateSeqEl.value.trim();
         const allowedRegex = /^[ATGCWSMKRYBDHVN]*$/i;
+
         if (value !== "" && !allowedRegex.test(value)) {
             displayValidationMessage(
                 templateSeqEl,
@@ -62,43 +68,48 @@ document.addEventListener("DOMContentLoaded", function () {
             );
             return false;
         }
+
         displayValidationMessage(templateSeqEl, "");
         return true;
     }
 
-    // Validate a dynamic (amplicon) sequence.
+    /**
+     * Validates a dynamic sequence input field.
+     * @param {HTMLElement} element - The input field.
+     */
     function validateDynamicSequence(element) {
         const value = element.value.trim();
-        console.log("Validating dynamic sequence:", value);
         const allowedRegex = /^[ATGCWSMKRYBDHVN]+$/i;
-      
+
         if (value === "") {
-          displayValidationMessage(element, "Sequence cannot be empty.");
-          return false;
+            displayValidationMessage(element, "Sequence cannot be empty.");
+            return false;
         }
         if (!allowedRegex.test(value)) {
-          console.log("Invalid sequence detected:", value);
-          displayValidationMessage(element, "Only valid DNA bases allowed (A, T, G, C, W, S, M, K, R, Y, B, D, H, V, N).");
-          return false;
+            console.warn("Invalid sequence detected:", value);
+            displayValidationMessage(element, "Only valid DNA bases allowed (A, T, G, C, W, S, M, K, R, Y, B, D, H, V, N).");
+            return false;
         }
         if (value.length < 80) {
-          displayValidationMessage(element, "Amplicon sequence must be at least 80 bp.");
-          return false;
+            displayValidationMessage(element, "Amplicon sequence must be at least 80 bp.");
+            return false;
         }
-      
-        // Check against template sequence
-        const templateValue = templateSeqEl.value.trim();
-        if (templateValue !== "" && (value.length > templateValue.length || !templateValue.includes(value))) {
-          displayValidationMessage(element, "Amplicon sequence must be within the template.");
-          return false;
+
+        // Ensure amplicon sequence fits within template sequence
+        const templateValue = templateSeqEl?.value.trim();
+        if (templateValue && (value.length > templateValue.length || !templateValue.includes(value))) {
+            displayValidationMessage(element, "Amplicon sequence must be within the template.");
+            return false;
         }
-      
+
         displayValidationMessage(element, "");
         return true;
-      }
-      
+    }
 
-    // Validate the MTK Part selection.
+    /**
+     * Validates the MTK Part selection field.
+     * @param {HTMLElement} element - The select dropdown.
+     */
     function validateMtkPart(element) {
         if (element.value.trim() === "") {
             displayValidationMessage(element, "MTK Part number is required.");
@@ -108,36 +119,26 @@ document.addEventListener("DOMContentLoaded", function () {
         return true;
     }
 
-    // // Validate the number of sequences input.
-    // function validateNumSequences() {
-    //     const numSequences = parseInt(numSequencesInput.value) || 0;
-    //     if (numSequences < 1 || numSequences > 10) {
-    //         displayValidationMessage(numSequencesInput, "Number of sequences must be between 1 and 10.");
-    //         return false;
-    //     }
-    //     displayValidationMessage(numSequencesInput, "");
-    //     return true;
-    // }
-
-    // Listen for input events and validate only the changed field (and any dependents).
+    /**
+     * Handles real-time validation on user input.
+     */
     form.addEventListener("input", function (event) {
-        console.log("Input event on:", event.target.id, "value:", event.target.value);
         const target = event.target;
+        console.debug("Validating input:", target.id, "value:", target.value);
+
         if (target.id === "templateSequence") {
             validateTemplateSequence();
-            // Revalidate all dynamic sequence inputs as the template affects them.
             form.querySelectorAll(".dynamic-sequence-input").forEach(validateDynamicSequence);
         } else if (target.classList.contains("dynamic-sequence-input")) {
             validateDynamicSequence(target);
         } else if (target.id.startsWith("mtkPart")) {
             validateMtkPart(target);
-        } else if (target.id === "numSequences") {
-            validateNumSequences();
         }
     });
 
-    // Run initial validations (and initialize fieldValidity) on page load.
-    // validateNumSequences();
+    /**
+     * Runs initial validations on page load.
+     */
     validateTemplateSequence();
     form.querySelectorAll(".dynamic-sequence-input").forEach(validateDynamicSequence);
     form.querySelectorAll("[id^='mtkPart']").forEach(validateMtkPart);

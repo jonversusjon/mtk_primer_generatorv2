@@ -1,32 +1,35 @@
-// dark-mode.js
+// static/js/ui/dark-mode.js
 
-// Helper function to apply dark mode based on stored preference.
-function applyDarkModeFromStorage() {
-  if (localStorage.getItem("dark-mode") === "enabled") {
-    document.body.classList.add("dark-mode");
-  } else {
-    document.body.classList.remove("dark-mode");
-  }
-}
+/**
+ * Applies dark mode based on the user's stored preference.
+ */
+const applyDarkModeFromStorage = () => {
+  const isDarkModeEnabled = localStorage.getItem("dark-mode") === "enabled";
+  document.body.classList.toggle("dark-mode", isDarkModeEnabled);
+};
 
-//  function to toggle dark mode and update local storage.
-function toggleDarkMode() {
-  document.body.classList.toggle("dark-mode");
-  const isDarkMode = document.body.classList.contains("dark-mode");
-  localStorage.setItem("dark-mode", isDarkMode ? "enabled" : "disabled");
-}
+/**
+ * Toggles dark mode and updates the preference in local storage.
+ */
+const toggleDarkMode = () => {
+  const isDarkModeNowEnabled = document.body.classList.toggle("dark-mode");
+  localStorage.setItem("dark-mode", isDarkModeNowEnabled ? "enabled" : "disabled");
+  console.log(`Dark mode ${isDarkModeNowEnabled ? "enabled" : "disabled"}.`);
+};
 
-// Initialize dark mode functionality:
-// - Apply stored preference
-// - Attach event listener to the dark mode toggle button (if it exists)
-function initDarkMode() {
+/**
+ * Initializes dark mode functionality:
+ * - Applies the stored preference on page load
+ * - Attaches event listener to the dark mode toggle button (if present)
+ */
+const initDarkMode = () => {
   applyDarkModeFromStorage();
 
   const darkModeButton = document.getElementById("darkModeToggle");
   if (darkModeButton) {
     darkModeButton.addEventListener("click", toggleDarkMode);
   }
-}
+};
 
-// Run the initialization once the DOM content has loaded.
+// Initialize after DOM is fully loaded
 document.addEventListener("DOMContentLoaded", initDarkMode);
