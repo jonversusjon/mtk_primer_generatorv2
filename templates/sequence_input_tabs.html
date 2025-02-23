@@ -54,7 +54,7 @@
                 hx-vals='{{ {"field": "sequence", "sequenceIndex": i} | tojson | safe }}'>{{ test_seq[i] if test_seq is defined and i < test_seq|length else '' }}</textarea>
 
             <div class="error-message" data-field="sequence"></div>
-            <span class="char-count-label" style="display:none;">Length: 0 bp</span>
+            <span id="charCount{{ i }}" class="char-count-label" style="display:none;">Length: 0 bp</span>
         </div>
     </div>
     {% endfor %}

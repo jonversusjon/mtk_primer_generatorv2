@@ -3,7 +3,7 @@
 /**
  * Manages form clearing and reset functionality
  */
-class FormResetHandler {
+export default class FormResetHandler {
   constructor() {
       this.clearFormButton = document.getElementById("clearForm");
 

@@ -3,7 +3,7 @@
 /**
  * Manages passing form data to the Flask backend using HTMX
  */
-class FormSubmissionHandler {
+export default class FormSubmissionHandler {
     constructor() {
         this.form = document.getElementById("primer-form");
         this.submitButton = document.getElementById("runDesignPrimerBtn");

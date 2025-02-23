@@ -1,40 +1,46 @@
+// static/js/main.js
+
 // Import application state
 import "./utils/app-state.js";
 
 // Import form handlers
-import "./handlers/form-reset-handler.js";
-import "./handlers/form-submission-handler.js";
+import FormResetHandler from "./handlers/form-reset-handler.js";
+import FormSubmissionHandler from "./handlers/form-submission-handler.js";
 
 // Import UI components
-import "./ui/dark-mode.js";
-import "./ui/character-count.js";
-import "./ui/sequence-tabs.js";
-import "./ui/tooltip.js";
+import DarkModeManager from "./ui/dark-mode-manager.js";
+import CharacterCountManager from "./ui/character-count-manager.js";
+import TabScroller from "./ui/sequence-tabs/sequence-tabs-scroller.js";
+import SequenceTabsManager from "./ui/sequence-tabs/sequence-tabs-manager.js";
+import TooltipManager from "./ui/tooltip-manager.js";
 
 // Import utilities
 import "./utils/utils.js";
 import "./utils/validation.js";
 
-import { initializeTabs } from "./ui/sequence-tabs.js";
-
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("✅ Main script loaded!");
+    console.log("Frontend reporting for business!");
 
     // Initialize core components
-    const sequenceHandlerInstance = new SequenceHandler();
-    window.sequenceHandlerInstance = sequenceHandlerInstance;
+    const sequenceTabsManagerInstance = new SequenceTabsManager();
+    window.sequenceTabsManagerInstance = sequenceTabsManagerInstance;
 
     new FormSubmissionHandler();
+    new FormResetHandler();
+    new TabScroller("sequence-tabs-container");
+    new CharacterCountManager();
     new TooltipManager();
+    new DarkModeManager();
 
     // Ensure character counters update after form fields are pre-filled
     setTimeout(() => {
         document.querySelectorAll(".dynamic-sequence-input").forEach(input => {
-            if (input.value) {
-                sequenceHandlerInstance.updateCharCount(input);
+            if (input.value && sequenceTabsManagerInstance.updateCharCount) {
+                sequenceTabsManagerInstance.updateCharCount(input);
             }
         });
     }, 50);
+    
 
     // Enable verbose mode if testing
     if (typeof APP_STATE !== "undefined" && APP_STATE.testingMode) {
@@ -44,9 +50,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Initialize tab functionality
-    initializeTabs();
-
     // Sequence count display and controls
     const numDisplay = document.getElementById("numDisplay");
     const incrementBtn = document.getElementById("incrementBtn");
@@ -54,17 +57,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (incrementBtn) {
         incrementBtn.addEventListener("click", () => {
-            sequenceHandlerInstance.incrementSequenceCount();
+            sequenceTabsManagerInstance.incrementSequenceCount();
             if (numDisplay) {
-                numDisplay.textContent = sequenceHandlerInstance.currentCount;
+                numDisplay.textContent = sequenceTabsManagerInstance.currentCount;
             }
         });
     }
     if (decrementBtn) {
         decrementBtn.addEventListener("click", () => {
-            sequenceHandlerInstance.decrementSequenceCount();
+            sequenceTabsManagerInstance.decrementSequenceCount();
             if (numDisplay) {
-                numDisplay.textContent = sequenceHandlerInstance.currentCount;
+                numDisplay.textContent = sequenceTabsManagerInstance.currentCount;
             }
         });
     }

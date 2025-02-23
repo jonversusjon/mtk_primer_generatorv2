@@ -1,7 +1,7 @@
 /**
  * Manages tooltip functionality
  */
-class TooltipManager {
+export default class TooltipManager {
   constructor() {
       this.setupTooltips();
   }
