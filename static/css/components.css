@@ -266,6 +266,7 @@ body {
   padding: 16px;
   z-index: 1000;
   transition: all 0.3s ease-in-out;
+  transform: scale(0.8);
 }
 
 /* Form Layout */
@@ -339,6 +340,7 @@ body {
   max-width: 120px;
   transition: background-color 0.3s ease;
   z-index: 1000;
+  transform: scale(0.8)
 }
 
 #toggle-settings:hover {
