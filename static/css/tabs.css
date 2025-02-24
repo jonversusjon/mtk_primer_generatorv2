@@ -46,7 +46,7 @@
 .sequence-tabs-nav {
     display: flex;
     gap: 2rem;
-    padding: 0.5rem 1rem;
+    padding: 0.2rem 1rem;
     margin-bottom: 0.5rem;
     overflow-x: auto;
     scrollbar-width: none;
@@ -55,6 +55,7 @@
     /* IE and Edge */
     scroll-behavior: smooth;
     position: relative;
+    max-width: 500px;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
@@ -121,6 +122,8 @@
     overflow-x: hidden;
     margin-right: 1rem;
     margin-bottom: 2rem;
+    width: 100%;
+    max-width: 500px;
 }
 
 /* Tab Panes */

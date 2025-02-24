@@ -91,6 +91,7 @@
   background-color: var(--background-color);
   color: var(--foreground-color);
   box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .dark-mode .sequence-input,

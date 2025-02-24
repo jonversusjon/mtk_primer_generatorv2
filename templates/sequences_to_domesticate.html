@@ -29,23 +29,26 @@
                     <label for="sequence{{ i }}" class="form-label">Sequence {{ i + 1 }}:</label>
                     <span id="charCount{{ i }}" class="char-count-label" style="display:none;">Length: 0 bp</span>
                 </div>
-                <textarea id="sequence{{ i }}" name="sequences[{{ i }}][sequence]" class="dynamic-sequence-input"
-                    placeholder="Enter DNA sequence..." hx-post="{{ url_for('main.validate_field') }}"
-                    hx-trigger="keyup changed delay:100ms, change" hx-target=".error-message"
+                <textarea required id="sequence{{ i }}" name="sequences[{{ i }}][sequence]"
+                    class="dynamic-sequence-input" placeholder="Paste DNA sequence..."
+                    hx-post="{{ url_for('main.validate_field') }}" hx-trigger="keyup changed delay:100ms, change"
+                    hx-target=".error-message"
                     hx-vals='{{ {"field": "sequence", "sequenceIndex": i} | tojson | safe }}'>{{ test_seq[i] if test_seq is defined and i < test_seq|length else '' }}</textarea>
                 <div class="error-message" data-field="sequence"></div>
-                <label for="primerName{{ i }}">Primer Name:</label>
-                <input type="text" id="primerName{{ i }}" name="sequences[{{ i }}][primerName]"
-                    placeholder="Default Primer Name" class="primer-name-input">
-                <label for="mtkPart{{ i }}">MTK Part Number:</label>
-                <select id="mtkPart{{ i }}" name="sequences[{{ i }}][mtkPart]" class="mtk-part-select"
-                    hx-post="{{ url_for('main.validate_field') }}" hx-trigger="change" hx-target=".error-message"
-                    hx-vals='{{ {"field": "mtkPart", "sequenceIndex": i} | tojson | safe }}'>
-                    {% for part in mtk_part_nums %}
-                    <option value="{{ part }}" {% if test_part_number is defined and i < test_part_number|length and
-                        test_part_number[i]==part %} selected {% endif %}>{{ part }}</option>
-                    {% endfor %}
-                </select>
+                <div class="form-group">
+                    <label for="primerName{{ i }}">Primer Name:</label>
+                    <input required type="text" id="primerName{{ i }}" name="sequences[{{ i }}][primerName]"
+                        placeholder="Default Primer Name" class="primer-name-input">
+                    <label for="mtkPart{{ i }}">MTK Part Number:</label>
+                    <select required id="mtkPart{{ i }}" name="sequences[{{ i }}][mtkPart]" class="mtk-part-select"
+                        hx-post="{{ url_for('main.validate_field') }}" hx-trigger="change" hx-target=".error-message"
+                        hx-vals='{{ {"field": "mtkPart", "sequenceIndex": i} | tojson | safe }}'>
+                        {% for part in mtk_part_nums %}
+                        <option value="{{ part }}" {% if test_part_number is defined and i < test_part_number|length and
+                            test_part_number[i]==part %} selected {% endif %}>{{ part }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
             {% endfor %}
         </div>
