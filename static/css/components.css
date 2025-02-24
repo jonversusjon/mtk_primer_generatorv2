@@ -86,6 +86,11 @@ body {
   display: block;
 }
 
+.btn-primary.validation-failed {
+  background-color: #dc3545;
+  border-color: #dc3545;
+}
+
 /* --- Tooltips --- */
 .info-icon-container {
   display: inline-block;
@@ -106,7 +111,7 @@ body {
   width: 250px;
   text-align: center;
   display: none;
-  z-index: 10;
+  z-index: 100;
   border: 1px solid rgba(0, 0, 0, 0.1);
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
   white-space: normal;
@@ -127,16 +132,6 @@ body {
 .info-icon-container:focus-within .info-tooltip {
   display: block;
   animation: fadeIn 0.2s ease-out;
-}
-
-/* Dark mode toggle button (example) */
-.dark-mode-btn {
-  align-items: center;
-  gap: 5px;
-  font-size: 14px;
-  padding: 8px 12px;
-  background: none;
-  color: inherit;
 }
 
 /* --- Sequence Section --- */
@@ -269,7 +264,7 @@ body {
   border-radius: 10px;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
   padding: 16px;
-  z-index: 100;
+  z-index: 1000;
   transition: all 0.3s ease-in-out;
 }
 
@@ -278,6 +273,20 @@ body {
   display: flex;
   align-items: center;
   margin-bottom: 12px;
+  flex-direction: row;
+}
+
+/* Make labels wider */
+#settings-card .form-group label {
+  flex: 0 0 170px; /* Fixed width of 200px, adjust as needed */
+  /* or */
+  min-width: 170px; /* Minimum width of 200px */
+}
+
+/* Let the select/input take remaining space */
+#settings-card .form-group select,
+#settings-card .form-group input {
+  flex: 1;
 }
 
 #settings-card .form-group label {
@@ -329,8 +338,11 @@ body {
   border: none;
   max-width: 120px;
   transition: background-color 0.3s ease;
+  z-index: 1000;
 }
 
 #toggle-settings:hover {
   background-color: #1e1b38; /* Slightly darker than space cadet */
 }
+
+

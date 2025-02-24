@@ -67,8 +67,8 @@
     }
 
     .sequence-tab-btn {
-        min-width: 100px;
-        max-width: 135px;
+        min-width: 20px;
+        max-width: 40px;
         padding: 10px 15px;
         font-size: 0.8em;
     }
@@ -114,12 +114,11 @@ body {
 @media (max-width: 860px) {
     .app-container {
         flex-direction: column;
-        height: auto;
     }
 
     .form-container,
     .results-container {
-        width: 100%;
+        max-width: 100%;
         height: auto;
         max-height: 80vh;
         /* Limit height on mobile */

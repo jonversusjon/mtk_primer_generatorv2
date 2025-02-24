@@ -87,57 +87,68 @@ export default class SequenceTabsManager {
      * @private
      */
     setTestSequences() {
-        if (!Array.isArray(APP_STATE.testSeq)) {
+        if (!Array.isArray(APP_STATE.testSeq) || APP_STATE.testSeq.length === 0) {
+            console.error("No valid test sequences found.");
             return;
         }
 
         APP_STATE.testSeq.forEach((sequenceString, index) => {
+            console.log(`Setting test sequence ${index}...`);
+            console.log(`Sequence string: ${sequenceString}`);
+
             if (!sequenceString) return;
 
-            const sequenceNum = index + 1;
-
-            // Get DOM elements
+            // Ensure element selection aligns with expected IDs
             const elements = {
-                sequence: document.getElementById(`sequenceInput${sequenceNum}`),
-                primer: document.getElementById(`primerName${sequenceNum}`),
-                mtk: document.getElementById(`mtkPartNum${sequenceNum}`)
+                sequence: document.getElementById(`sequence${index}`), // Ensure correct indexing
+                primer: document.getElementById(`primerName${index}`),
+                mtk: document.getElementById(`mtkPart${index}`)
             };
 
-            console.log(`Found elements for sequence ${sequenceNum}:`, elements);
+            console.log(`Found elements for sequence ${index}:`, elements);
 
-            // Set sequence value and update character count
-            if (elements.sequence) {
-                console.log(`Setting sequence ${sequenceNum} value:`, sequenceString);
-                elements.sequence.value = sequenceString;
-                this.updateCharCount(elements.sequence);
-            } else {
-                console.log(`Could not find sequence textarea ${sequenceNum}`);
+            if (!elements.sequence) {
+                console.warn(`Sequence input #${index} not found.`);
+                return;
             }
 
-            // Set default primer name
+            // Set sequence value
+            console.log(`Setting sequence ${index} value: ${sequenceString}`);
+            elements.sequence.value = sequenceString;
+            this.updateCharCount(elements.sequence);
+
+            // Set primer name if the field exists
             if (elements.primer) {
-                elements.primer.value = `Primer ${sequenceNum}`;
+                elements.primer.value = `Primer ${index+1}`;
             }
 
-            // Set default MTK part number if available
-            if (elements.mtk && elements.mtk.options.length) {
-                elements.mtk.selectedIndex = 0;
+            // Set MTK part if the dropdown exists and has options
+            if (elements.mtk && elements.mtk.options.length > 0) {
+                elements.mtk.selectedIndex = 18;
             }
         });
+
+        console.log("✅ Test sequences set successfully.");
     }
+
 
     /**
      * Updates the number of visible sequence tabs and synchronizes the UI.
      */
     updateVisibleTabs(newCount) {
+        // Select all tab buttons and content, then toggle visibility based on their 0-index
         document.querySelectorAll(".sequence-tab-btn, .sequence-tab-content").forEach(el => {
-            const idx = parseInt(el.getAttribute("data-tab-index"), 10);
-            el.classList.toggle("hidden", idx > newCount);
+            const idx = parseInt(el.dataset.tabIndex, 10);
+            el.classList.toggle("hidden", idx >= newCount);
         });
 
+        // Update the number input value if it exists
         const numInput = document.getElementById("numSequencesInput");
-        if (numInput) numInput.value = newCount;
+        if (numInput) {
+            numInput.value = newCount;
+        }
     }
+
 
     /**
      * Updates the displayed sequences and their corresponding UI elements.
@@ -172,10 +183,11 @@ export default class SequenceTabsManager {
     incrementSequenceCount() {
         if (this.currentCount < 10) {
             this.currentCount++;
-            // Update the nav buttons and tab contents so that tabs with index > currentCount are hidden.
+            // Update the nav buttons and tab contents to show the correct tabs.
             this.updateSequenceInputs(this.currentCount);
-            // Activate the newly added tab (only one tab active at a time)
-            const newTabBtn = document.querySelector(`.sequence-tab-btn[data-tab-index="${this.currentCount}"]`);
+            // Calculate the new tab's 0-index
+            const newTabIndex = this.currentCount - 1;
+            const newTabBtn = document.querySelector(`.sequence-tab-btn[data-tab-index="${newTabIndex}"]`);
             if (newTabBtn) {
                 newTabBtn.click();
             }
@@ -190,8 +202,10 @@ export default class SequenceTabsManager {
      */
     decrementSequenceCount() {
         if (this.currentCount > 1) {
-            // Clear data on the current (nth) tab that is about to be removed.
-            const tabContent = document.querySelector(`.sequence-tab-content[data-tab-index="${this.currentCount}"]`);
+            // Determine the current tab's 0-index
+            const currentTabIndex = this.currentCount - 1;
+            // Clear data on the current tab that's about to be removed.
+            const tabContent = document.querySelector(`.sequence-tab-content[data-tab-index="${currentTabIndex}"]`);
             if (tabContent) {
                 // Clear the DNA sequence textarea.
                 const seqTextarea = tabContent.querySelector("textarea.dynamic-sequence-input");
@@ -199,25 +213,28 @@ export default class SequenceTabsManager {
                     seqTextarea.value = "";
                     this.updateCharCount(seqTextarea);
                 }
-                // Clear the primer name input.
-                const primerInput = tabContent.querySelector("input.primer-name-input");
+                // Clear the primer name input using its id (matches HTML id="primerName{index}")
+                const primerInput = tabContent.querySelector(`#primerName${currentTabIndex}`);
                 if (primerInput) {
                     primerInput.value = "";
                 }
-                // Reset the MTK part number select to its default (first option).
-                const mtkSelect = tabContent.querySelector("select.mtk-part-select");
+                // Reset the MTK part number select to its default using its id (matches HTML id="mtkPart{index}")
+                const mtkSelect = tabContent.querySelector(`#mtkPart${currentTabIndex}`);
                 if (mtkSelect) {
                     mtkSelect.selectedIndex = 0;
                 }
             }
+            // Decrement the sequence count
             this.currentCount--;
             // Update the UI to hide the removed tab.
             this.updateSequenceInputs(this.currentCount);
-            // Activate the now last visible tab.
-            const lastTabBtn = document.querySelector(`.sequence-tab-btn[data-tab-index="${this.currentCount}"]`);
+            // Activate the now last visible tab (using 0-index)
+            const lastTabIndex = this.currentCount - 1;
+            const lastTabBtn = document.querySelector(`.sequence-tab-btn[data-tab-index="${lastTabIndex}"]`);
             if (lastTabBtn) {
                 lastTabBtn.click();
             }
         }
     }
+
 }

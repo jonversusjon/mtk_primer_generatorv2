@@ -34,6 +34,18 @@
     /* Max mutations is smaller */
 }
 
+.nav-narrow {
+    flex: 1 1 50px;
+    max-width: 100px;
+    /* Narrower for tab buttons */
+}
+
+.nav-fit-content {
+    width: default;
+    max-width: 200px;
+    /* Takes up remaining space */
+}
+
 /* Animations */
 /* --- Shake animation ---*/
 @keyframes shake {

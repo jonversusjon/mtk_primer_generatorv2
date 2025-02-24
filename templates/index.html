@@ -2,233 +2,45 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MTK Primers</title>
-
-  <!-- HTMX + JSON Encoding Extension -->
-  <script src="https://unpkg.com/htmx.org@1.9.6"></script>
-  <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
-
-  <!-- Styles & Icons -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-  <link rel="icon" href="{{ url_for('static', filename='favicon.ico?v=2') }}">
-
-  <!-- Pass server data to JS -->
-  <script type="application/json" id="testing-mode-data">{{ testing_mode | tojson }}</script>
-  <script type="application/json" id="test-template-seq-data">{{ test_template_seq | tojson }}</script>
-  <script type="application/json" id="test-seq-data">{{ test_seq | tojson }}</script>
-
-
-  <!-- Initialize APP_STATE -->
-  <script>
-    const APP_STATE = {
-      testSeq: JSON.parse(document.getElementById("test-seq-data").textContent || "[]"),
-      testTemplateSeq: JSON.parse(document.getElementById("test-template-seq-data").textContent || "\"\""),
-      testingMode: JSON.parse(document.getElementById("testing-mode-data").textContent || "false")
-    };
-    console.log("APP_STATE initialized:", APP_STATE);
-  </script>
-
-  <!-- External JavaScript -->
-  <script defer type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% include 'head.html' %}
 </head>
 
 <body>
-  <!-- Settings Toggle Button -->
-  <button id="toggle-settings" class="settings-toggle">
-    ⚙️ Settings
-  </button>
+  {% include 'app_header.html' %}
 
-  <!-- Floating Settings Card -->
-  <div id="settings-card" class="settings-card hidden">
-    <h4 class="settings-title">Settings</h4>
+  <div class="app-container">
+    
+    <!-- Form Container -->
+    <div class="form-container">
+      <form id="primer-form" hx-post="{{ url_for('main.generate_protocol') }}" hx-trigger="submit"
+        hx-target="#results-container" hx-swap="innerHTML" hx-ext="json-enc" hx-validate="true"
+        hx-on::before-request="console.log('Making request...')" hx-on::after-request="console.log('Request complete')">
 
-    <!-- Settings Content -->
-    <div class="settings-content">
-      <!-- Dark Mode Toggle -->
-      <button id="darkModeToggle" class="dark-mode-btn">
-        <span class="moon-icon">🌙</span>
-        <span class="button-text">Dark Mode</span>
-      </button>
+        <!-- Template Sequence Section -->
+        {% include 'template_sequence.html' %}
 
-      <!-- Species Selection -->
-      <div class="form-group">
-        <label for="species">Species:</label>
-        <select id="species" name="species" class="form-select">
-          <option value="">Select species...</option>
-          {% for s in available_species %}
-          <option value="{{ s }}" {% if loop.first %}selected{% endif %}>{{ s }}</option>
-          {% endfor %}
-        </select>
-      </div>
+        <!-- Sequences to Domesticate Section -->
+        {% include 'sequences_to_domesticate.html' %}
 
-      <!-- Kozak Selection -->
-      <div class="form-group">
-        <label for="kozak">Kozak:</label>
-        <select id="kozak" name="kozak" class="form-select" hx-trigger="change">
-          <option value="MTK" selected>MTK</option>
-          <option value="Canonical">Canonical</option>
-        </select>
-      </div>
+        <!-- Form Buttons -->
+        {% include 'form_buttons.html' %}
+      </form>
+    </div>
+    <!-- End of Form Container -->
 
-      <!-- Mutations Setting -->
-      <div class="form-group">
-        <label for="maxMutPerSite">Max mutations per site:</label>
-        <select id="maxMutPerSite" name="max_mut_per_site" class="form-select" hx-trigger="change">
-          <option value="1" selected>1</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
-        </select>
-      </div>
-
-      <!-- Verbose Mode Toggle -->
-      <div class="form-group checkbox">
-        <input type="checkbox" id="verbose_mode" name="verbose_mode">
-        <label for="verbose_mode">Verbose</label>
-      </div>
-
-      <!-- Close Button -->
-      <button id="close-settings" class="close-settings-btn">
-        Close Settings
-      </button>
+    <!-- Results Sections -->
+    <div id="results-container" class="results-container">
+      {% if results %}
+      {% include 'results_partial.html' %}
+      {% endif %}
+    </div>
+    <!-- Primer Anatomy Section -->
+    <div class="primer-anatomy-container" style="display: none;">
+      {% include 'primer_anatomy.html' %}
     </div>
   </div>
+  <!-- End of App Container -->
 
-  <div class="main-wrapper">
-    <h1 class="app-title">Mammalian Toolkit Domestication Primer Design</h1>
-
-    <div class="app-container">
-      <!-- Form Container -->
-      <div class="form-container">
-        <form id="primer-form" hx-post="{{ url_for('main.generate_protocol') }}" hx-trigger="submit"
-          hx-target="#results-container" hx-swap="innerHTML" hx-ext="json-enc">
-
-          <!-- Template Sequence Section -->
-          <div class="form-sub-container">
-            <div class="template-sequence-header">
-              <h2 class="form-sub-container-title">Template Sequence</h2>
-              <h4>(optional)</h4>
-            </div>
-            <div class="tab-buttons">
-              <button id="template-paste-btn" type="button" class="tab-button active" data-tab="paste">
-                Paste Sequence
-              </button>
-              <button id="template-upload-btn" type="button" class="tab-button" data-tab="upload"
-                style="display: none;">
-                Upload File
-              </button>
-            </div>
-
-            <div class="tab-content">
-              <div class="tab-pane active" id="paste">
-                <label for="templateSequence">Paste Template Sequence:</label>
-                <textarea id="templateSequence" name="templateSequence" class="sequence-input"
-                  placeholder="Enter DNA sequence here..." hx-post="{{ url_for('main.validate_field') }}"
-                  hx-trigger="keyup changed delay:1000ms" hx-target=".error-message"
-                  value="{{ test_template_seq if testing_mode else '' }}"></textarea>
-                <span class="char-count-label">Length: 0 bp</span>
-                <div class="error-message" data-field="templateSequence"></div>
-              </div>
-
-              <div class="tab-pane" id="upload">
-                <label for="fileUpload">Upload DNA File:</label>
-                <input type="file" id="fileUpload" name="fileUpload" class="form-control">
-              </div>
-            </div>
-          </div>
-
-          <!-- Sequences to Domesticate Section -->
-          <div class="form-sub-container">
-            <div class="section-header">
-              <h2 class="form-sub-container-title">Sequences to Domesticate</h2>
-              <div id="sequence-control-buttons">
-                <button type="button" id="decrementBtn" class="sequence-control-btn">–</button>
-                <button type="button" id="incrementBtn" class="sequence-control-btn">+</button>
-              </div>
-            </div>
-
-            <!-- Hidden input for sequence count -->
-            <input type="text" id="numSequencesInput" name="numSequences" value="{{ num_sequences }}">
-            <!-- Sequence Tabs Container -->
-            <div id="sequence-inputs-container" class="tabs-container">
-              <!-- Navigation Buttons -->
-              <div class="sequence-tabs-nav">
-                {% for i in range(1, 11) %}
-                <button type="button"
-                  class="sequence-tab-btn{% if i == 1 %} active{% endif %}{% if i > num_sequences %} hidden{% endif %}"
-                  data-tab-index="{{ i }}">
-                  {{ i }}
-                </button>
-
-                {% endfor %}
-              </div>
-              <!-- Tab Contents -->
-              <div class="sequence-tabs-content">
-                {% for i in range(1, 11) %}
-                <div class="sequence-tab-content{% if i == 1 %} active{% else %} hidden{% endif %}"
-                  data-tab-index="{{ i }}">
-                  <label for="sequenceInput{{ i }}">Sequence {{ i }}:</label>
-                  <textarea id="sequenceInput{{ i }}" name="sequenceInput{{ i }}" class="dynamic-sequence-input"
-                    placeholder="Enter DNA sequence..."></textarea>
-                  <span class="char-count-label">Length: 0 bp</span>
-                  <div class="error-message" data-field="sequenceInput{{ i }}"></div>
-
-                  <label for="primerName{{ i }}">Primer Name:</label>
-                  <input type="text" id="primerName{{ i }}" name="primerName{{ i }}" placeholder="Default Primer Name"
-                    class="primer-name-input">
-
-                  <label for="mtkPartNum{{ i }}">MTK Part Number:</label>
-                  <select id="mtkPartNum{{ i }}" name="mtkPartNum{{ i }}" class="mtk-part-select">
-                    {% for part in mtk_part_nums %}
-                    <option value="{{ part }}">{{ part }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-                {% endfor %}
-              </div>
-            </div>
-          </div>
-
-          <!-- Action Buttons -->
-          <div class="button-container">
-            <button type="submit" class="btn btn-primary" id="runDesignPrimerBtn">
-              Generate Protocol
-            </button>
-            <button type="button" class="btn btn-warning" id="clearForm">
-              Clear Form
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <!-- Results Sections -->
-      <div id="validation-results"></div>
-
-      <div id="results-container" class="results-container">
-        {% if results %}
-        {% include 'results_partial.html' %}
-        {% endif %}
-      </div>
-
-      <!-- Primer Anatomy Section -->
-      <div class="primer-anatomy-container" style="display: none;">
-        {% include 'primer_anatomy.html' %}
-      </div>
-    </div>
-  </div>
-
-  <!-- HTMX-Based Toggle -->
-  <script>
-    document.getElementById("toggle-settings").addEventListener("click", function () {
-      document.getElementById("settings-card").classList.toggle("hidden");
-    });
-
-    document.getElementById("close-settings").addEventListener("click", function () {
-      document.getElementById("settings-card").classList.add("hidden");
-    });
-  </script>
 </body>
 
 </html>

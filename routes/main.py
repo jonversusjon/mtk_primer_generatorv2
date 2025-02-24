@@ -104,7 +104,6 @@ def get_species():
         return jsonify({'error': 'Failed to fetch species'}), 500
 
 
-
 @main.route("/validate_field", methods=["POST"])
 def validate_field():
     """Validate a single form field."""
@@ -167,6 +166,7 @@ def convert_non_serializable(obj):
 @main.route("/generate_protocol", methods=["POST"])
 def generate_protocol():
     try:
+        
         logger.info("Starting protocol generation")
         packaged_data, error_message = utils.package_form_data(request)
         print(f"packaged_data: {packaged_data}")

@@ -7,9 +7,10 @@ export default class CharacterCountManager {
      * Initializes character counters for all sequence inputs.
      */
     setupCharacterCounters() {
-        document.querySelectorAll(".dynamic-sequence-input").forEach(input => {
+        // Select both dynamic sequences and the template sequence
+        document.querySelectorAll(".dynamic-sequence-input, .sequence-input").forEach(input => {
             input.addEventListener("input", () => this.updateCharCount(input));
-            // Ensure character count is updated on page load
+            // Update character count on page load
             this.updateCharCount(input);
         });
     }
@@ -18,20 +19,24 @@ export default class CharacterCountManager {
      * Updates the character count display next to the input field.
      */
     updateCharCount(input) {
-        // Traverse up the DOM to find the sequence-tab-content wrapper
-        let container = input.parentElement;
-        while (container && !container.classList.contains("sequence-tab-content")) {
-            container = container.parentElement;
+        let charCountElement = null;
+
+        // For the template sequence, which has an id "templateSequence"
+        if (input.id === "templateSequence") {
+            charCountElement = document.getElementById("charCount");
+        } else {
+            // For dynamic sequences, traverse up to find the container with class "sequence-tab-content"
+            let container = input.parentElement;
+            while (container && !container.classList.contains("sequence-tab-content")) {
+                container = container.parentElement;
+            }
+            if (!container) {
+                console.warn("⚠️ Could not find sequence-tab-content for:", input);
+                return;
+            }
+            charCountElement = container.querySelector(".char-count-label");
         }
-    
-        if (!container) {
-            console.warn("⚠️ Could not find sequence-tab-content for:", input);
-            return;
-        }
-    
-        // Now, look for the character count element inside this container
-        const charCountElement = container.querySelector(".char-count-label");
-    
+
         if (charCountElement) {
             charCountElement.textContent = `Length: ${input.value.length} bp`;
             charCountElement.style.display = input.value.length ? "inline" : "none";
@@ -39,5 +44,4 @@ export default class CharacterCountManager {
             console.warn("⚠️ Character count element not found for:", input);
         }
     }
-    
 }

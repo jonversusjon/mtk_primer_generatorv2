@@ -1,0 +1,36 @@
+<div class="form-sub-container">
+    <div class="section-header">
+        <div class="template-sequence-header">
+            <h2 class="form-sub-container-title">Template Sequence</h2>
+            <h4>(optional)</h4>
+        </div>
+    </div>
+</div>
+
+<div class="tab-buttons nav-fit-content">
+    <button id="template-paste-btn" type="button" class="tab-button active" data-tab="paste">
+        Paste Sequence
+    </button>
+    <button id="template-upload-btn" type="button" class="tab-button" data-tab="upload" style="display: none;">
+        Upload File
+    </button>
+</div>
+
+<div class="tab-content">
+    <div class="tab-pane active" id="paste">
+        <div class="paste-template-sequence-header">
+            <label for="templateSequence" class="form-label">Paste Template Sequence:</label>
+            <span id="charCount" class="char-count-label">Length: 0 bp</span>
+        </div>
+        <textarea id="templateSequence" name="templateSequence" class="sequence-input"
+            placeholder="Enter DNA sequence here..." hx-post="{{ url_for('main.validate_field') }}"
+            hx-trigger="keyup changed delay:1000ms" hx-target=".error-message">
+          {{ test_template_seq if testing_mode else '' }}
+        </textarea>
+        <div class="error-message" data-field="templateSequence"></div>
+    </div>
+    <div class="tab-pane" id="upload">
+        <label for="fileUpload">Upload DNA File:</label>
+        <input type="file" id="fileUpload" name="fileUpload" class="form-control">
+    </div>
+</div>

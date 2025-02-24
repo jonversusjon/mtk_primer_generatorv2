@@ -58,6 +58,10 @@
   border: 1px solid var(--border-color);
 }
 
+.dark-mode input {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
 /* Hover effect for generic buttons */
 .dark-mode button:hover {
   background-color: rgba(255, 255, 255, 0.1);
@@ -83,9 +87,16 @@
   background-color: var(--warning-hover);
 }
 
+.dark-mode .app-header {
+  background-color: var(--background-color);
+  color: var(--foreground-color);
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
+}
+
 .dark-mode .sequence-input,
 .dark-mode .dynamic-sequence-input {
   color: #b9bbbc !important;
+  background-color: var(--background-color) !important;
 }
 
 /* Minimal Tab Navigation in Dark Mode */
@@ -128,6 +139,12 @@
   border-top: none;
 }
 
+.dark-mode .sequence-tab-content input,
+.dark-mode .sequence-tab-content select,
+.dark-mode .sequence-tab-content textarea {
+    background: var(--background-color) !important;
+}
+
 /* Scroll Buttons in Dark Mode */
 .dark-mode .tab-scroll-button {
   background-color: #1F1C35;
@@ -158,8 +175,9 @@
 .dark-mode .sequence-input,
 .dark-mode .dynamic-sequence-input,
 .dark-mode .form-control,
-.dark-mode .form-select {
-  background-color: rgba(255, 255, 255, 0.05);
+.dark-mode .form-select,
+.dark-mode .input-field {
+  background-color: var(--background-color);
   color: var(--foreground-color);
   border: 1px solid var(--border-color);
 }
@@ -176,6 +194,7 @@
   border: 1px solid var(--border-color);
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
 }
+
 
 /* Invalid / error field highlight */
 .dark-mode .input-field.invalid,
@@ -229,7 +248,7 @@
 
 /* Floating Settings Card in dark mode */
 .dark-mode #settings-card {
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: var(--background-color);
   border: 1px solid var(--border-color);
   box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
   color: var(--foreground-color);
@@ -243,6 +262,15 @@
   background-color: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--border-color);
   color: var(--foreground-color);
+}
+
+.dark-mode-btn {
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  padding: 8px 12px;
+  background: none;
+  color: inherit;
 }
 
 /* Close & toggle buttons in settings card */
@@ -297,4 +325,35 @@
 
 #primer-form::-webkit-scrollbar {
   width: 6px;
+}
+
+/* Select options in dark mode */
+.dark-mode select option {
+  background-color: var(--background-color);
+  color: var(--foreground-color);
+}
+
+/* Webkit browsers (Chrome, Safari) - selected option */
+.dark-mode select option:checked {
+  background: #1F1C35 linear-gradient(0deg, #1F1C35 0%, #1F1C35 100%);
+}
+
+/* Webkit browsers - hover/focus state */
+.dark-mode select option:hover,
+.dark-mode select option:focus {
+  background: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1));
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Invalid select in dark mode */
+.dark-mode select.invalid,
+.dark-mode select.validation-fail {
+  border-color: var(--error-color) !important;
+  background-color: rgba(217, 3, 104, 0.2) !important;
+}
+
+/* Invalid select options in dark mode */
+.dark-mode select.invalid option,
+.dark-mode select.validation-fail option {
+  background-color: var(--error-color) !important;
 }

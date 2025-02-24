@@ -1,3 +1,4 @@
+
 /* Base Form Layout */
 #primer-form {
     background-color: var(--background-color);
@@ -37,11 +38,11 @@
 
 /* Form Sections */
 .form-sub-container {
-    margin-bottom: 2rem;
+    margin: 1rem 0 0.8rem 0;
     position: relative;
 }
 
-.form-sub-container-title {
+.form-sub-container-title {     
     font-size: 1.5rem;
     font-weight: 600;
     color: var(--text-color);
@@ -159,6 +160,16 @@
     background-color: #e6bf00;
 }
 
+.sequence-header,
+.paste-template-sequence-header
+ {
+    display: flex;
+    justify-content: space-between; /* pushes child elements to the outer edges */
+    align-items: center;            /* vertically centers the children */
+    width: 100%;
+  } 
+
+  
 /* Sequence Control Buttons */
 #sequence-control-buttons {
     display: flex;
@@ -192,13 +203,14 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    margin: 0 1rem;
 }
 
 .template-sequence-header {
     display: flex;
+    justify-content: left;
     align-items: center;
-    justify-content: flex-start;
+    width: 100%;
 }
 
 .template-sequence-header h2,
@@ -214,4 +226,28 @@
     margin-top: 0.25rem;
     color: var(--text-muted);
     font-style: italic;
+}
+
+/* Form Validation States */
+.was-validated .invalid-feedback {
+    display: block;
+    color: #dc3545;
+    font-size: 0.875em;
+    margin-top: 0.25rem;
+}
+
+.was-validated .form-control:invalid,
+.was-validated .dynamic-sequence-input:invalid {
+    border-color: #dc3545;
+}
+
+.was-validated .form-control:valid,
+.was-validated .dynamic-sequence-input:valid {
+    border-color: #198754;
+}
+
+/* HTMX Request State */
+.htmx-request .form-control,
+.htmx-request .dynamic-sequence-input {
+    opacity: 0.65;
 }

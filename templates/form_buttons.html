@@ -1,0 +1,18 @@
+<div class="button-container">
+    <button type="submit" class="btn btn-primary" id="runDesignPrimerBtn">
+        Generate Protocol
+    </button>
+    <button type="button" class="btn btn-warning" id="clearForm">
+        Clear Form
+    </button>
+</div>
+
+<!-- HTMX-Based Toggle -->
+<script>
+    document.getElementById("toggle-settings").addEventListener("click", function () {
+        document.getElementById("settings-card").classList.toggle("hidden");
+    });
+    document.getElementById("close-settings").addEventListener("click", function () {
+        document.getElementById("settings-card").classList.add("hidden");
+    });
+</script>

@@ -1,0 +1,25 @@
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MTK Primers</title>
+<!-- HTMX + JSON Encoding Extension -->
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+<script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
+<!-- Styles & Icons -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<link rel="icon" href="{{ url_for('static', filename='favicon.ico?v=2') }}">
+<!-- Pass server data to JS -->
+<script type="application/json" id="testing-mode-data">{{ testing_mode | tojson }}</script>
+<script type="application/json" id="test-template-seq-data">{{ test_template_seq | tojson }}</script>
+<script type="application/json" id="test-seq-data">{{ test_seq | tojson }}</script>
+<!-- Initialize APP_STATE -->
+<script>
+    const APP_STATE = {
+        testSeq: JSON.parse(document.getElementById("test-seq-data").textContent || "[]"),
+        testTemplateSeq: JSON.parse(document.getElementById("test-template-seq-data").textContent || "\"\""),
+        testingMode: JSON.parse(document.getElementById("testing-mode-data").textContent || "false")
+    };
+    console.log("APP_STATE initialized:", APP_STATE);
+</script>
+<!-- External JavaScript -->
+<script defer type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
