@@ -13,6 +13,7 @@ import logging
 from config.logging_config import logger
 from .base import debug_context
 
+
 class GoldenGateUtils:
     def __init__(self, verbose: bool = False):
         self.verbose = verbose
@@ -175,39 +176,51 @@ class GoldenGateUtils:
             print(f"Got request data: {request}")
 
             try:
-                # Determine data format and get data
-                data = self._get_request_data(request)
+                # First check if it's JSON data
+                if request.is_json:
+                    print("Received JSON data")
+                    data = request.json
+                    print(f"JSON data: {data}")
+                    return data, None
 
-                if data is None:
+                # Then try form data
+                elif request.form:
+                    print("Received form data")
+                    # Determine data format and get data
+                    data = self._get_request_data(request)
+
+                    if data is None:
+                        return None, "No data received"
+
+                    if not isinstance(data, dict):
+                        return None, f"Invalid data format: expected dict, got {type(data)}"
+
+                    # Extract and validate main fields
+                    try:
+                        packaged_data = self._extract_form_fields(data)
+                        logger.debug(f"Extracted form fields: {packaged_data}")
+
+                        if packaged_data is None:
+                            return None, "Failed to extract form fields"
+
+                        # Ensure verboseMode exists with a default value
+                        packaged_data['verboseMode'] = packaged_data.get('verboseMode', False)
+                        logger.debug(f"package_data verbose: {packaged_data['verboseMode']}")
+
+                        return packaged_data, None
+
+                    except Exception as e:
+                        logger.error(f"Error in _extract_form_fields: {str(e)}")
+                        return None, str(e)
+
+                # If neither JSON nor form data
+                else:
+                    print("No data received")
+                    print(f"Request data: {request.get_data()}")
                     return None, "No data received"
 
-                if not isinstance(data, dict):
-                    return None, f"Invalid data format: expected dict, got {type(data)}"
-
-                # Extract and validate main fields
-                try:
-                    packaged_data = self._extract_form_fields(data)
-                    logger.debug(
-                        f"Extracted form fields: {packaged_data}")
-
-                    if packaged_data is None:
-                        return None, "Failed to extract form fields"
-
-                    # Ensure verboseMode exists with a default value
-                    packaged_data['verboseMode'] = packaged_data.get(
-                        'verboseMode', False)
-                    logger.debug(
-                        f"package_data verbose: {packaged_data['verboseMode']}")
-
-                    return packaged_data, None
-
-                except Exception as e:
-                    logger.error(
-                        f"Error in _extract_form_fields: {str(e)}")
-                    return None, str(e)
-
             except Exception as e:
-                logger.error(f"Error packaging form data: {str(e)}")
+                print(f"Error packaging form data: {str(e)}")
                 return None, str(e)
 
     def _get_request_data(self, request: Any) -> dict:

@@ -31,7 +31,7 @@
                 </div>
                 <textarea required id="sequence{{ i }}" name="sequences[{{ i }}][sequence]"
                     class="dynamic-sequence-input" placeholder="Paste DNA sequence..."
-                    hx-post="{{ url_for('main.validate_field') }}" hx-trigger="keyup changed delay:100ms, change"
+                    hx-post="{{ url_for('validation.validate_sequence') }}" hx-trigger="keyup changed delay:100ms, change"
                     hx-target=".error-message"
                     hx-vals='{{ {"field": "sequence", "sequenceIndex": i} | tojson | safe }}'>{{ test_seq[i] if test_seq is defined and i < test_seq|length else '' }}</textarea>
                 <div class="error-message" data-field="sequence"></div>
@@ -41,7 +41,7 @@
                         placeholder="Default Primer Name" class="primer-name-input">
                     <label for="mtkPart{{ i }}">MTK Part Number:</label>
                     <select required id="mtkPart{{ i }}" name="sequences[{{ i }}][mtkPart]" class="mtk-part-select"
-                        hx-post="{{ url_for('main.validate_field') }}" hx-trigger="change" hx-target=".error-message"
+                        hx-post="{{ url_for('validation.validate_mtk_part') }}" hx-trigger="change" hx-target=".error-message"
                         hx-vals='{{ {"field": "mtkPart", "sequenceIndex": i} | tojson | safe }}'>
                         {% for part in mtk_part_nums %}
                         <option value="{{ part }}" {% if test_part_number is defined and i < test_part_number|length and

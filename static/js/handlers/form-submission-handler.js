@@ -11,43 +11,12 @@ export default class FormSubmissionHandler {
         this.formTouched = false;
         
         if (this.form && this.submitButton) {
-            this.setupEventListeners();
             this.setupFormValidation();
-            this.setupHTMXListeners();
         }
         
         this.disableSubmitButton("Fill in required fields");
     }
     
-    /**
-     * Collects and structures form data for submission
-     */
-    collectFormData() {
-        const formData = new FormData(this.form);
-        const verboseModeCheckbox = this.form.querySelector('input[name="verbose_mode"]');
-
-        const data = {
-            numSequences: parseInt(formData.get('numSequences')) || 0,
-            kozak: formData.get('kozak') || '',
-            species: formData.get('species') || '',
-            'max-mut-per-site': formData.get('max-mut-per-site') || '3',
-            verboseMode: verboseModeCheckbox ? verboseModeCheckbox.checked : false,
-            templateSequence: formData.get('templateSequence') || '',
-            sequences: []
-        };
-
-        // Build sequences array
-        for (let i = 0; i < data.numSequences; i++) {
-            data.sequences.push({
-                primerName: formData.get(`sequences[${i}][primerName]`) || '',
-                mtkPart: formData.get(`sequences[${i}][mtkPart]`) || '',
-                sequence: formData.get(`sequences[${i}][sequence]`) || ''
-            });
-        }
-
-        console.log('Collected form data:', data);
-        return data;
-    }
     
     /**
      * Disables the submit button and adds a tooltip/title
@@ -79,7 +48,10 @@ export default class FormSubmissionHandler {
 
         if (formIsValid) {
             this.enableSubmitButton();
+            console.log("Validation success!");
+
         } else {
+            console.log("Validation fail: the form is not fully validated yet.");
             this.disableSubmitButton("Please correct errors");
         }
     }
@@ -136,103 +108,6 @@ export default class FormSubmissionHandler {
                     this.updateSubmitButtonState();
                 }
             });
-        });
-    }
-    
-    /**
-     * Sets up HTMX-related event listeners for form submission
-     */
-    setupEventListeners() {
-        // Handle form submission
-        this.form.addEventListener('submit', (event) => {
-            // Prevent default form submission if already processing
-            if (this.submitButton.disabled && this.submitButton.classList.contains('processing')) {
-                event.preventDefault();
-                event.stopPropagation();
-                return false;
-            }
-            
-            // Disable button and show loading state
-            this.disableSubmitButton();
-            this.submitButton.classList.add('processing');
-            this.submitButton.innerHTML = '<span class="spinner"></span> Processing...';
-        });
-
-        // Handle HTMX request configuration
-        document.body.addEventListener('htmx:configRequest', (evt) => {
-            const elt = evt.detail.elt;
-            const isValidationRequest = elt.getAttribute('hx-post')?.includes('validate_field');
-
-            console.log('HTMX Request Config:', {
-                element: elt,
-                isValidation: isValidationRequest,
-                currentHeaders: evt.detail.headers,
-                currentParams: evt.detail.parameters
-            });
-
-            if (isValidationRequest) {
-                evt.detail.parameters = this.formatValidationData(elt);
-            } else if (elt.id === 'primer-form') {
-                evt.detail.parameters = this.collectFormData();
-            }
-        });
-
-        // Listen for validation responses and update the submit button
-        document.body.addEventListener('htmx:afterOnLoad', (evt) => {
-            if (evt.detail.elt.getAttribute('hx-post')?.includes('validate_field')) {
-                this.updateSubmitButtonState();
-            }
-        });
-
-        // Logging before request
-        document.body.addEventListener('htmx:beforeRequest', (evt) => {
-            console.log('HTMX Request:', evt.detail.parameters);
-        });
-
-        // Logging after request
-        document.body.addEventListener('htmx:afterRequest', (evt) => {
-            console.log('HTMX Response:', {
-                status: evt.detail.xhr.status,
-                response: evt.detail.xhr.response,
-                headers: evt.detail.xhr.getAllResponseHeaders()
-            });
-        });
-
-        // Error handling for HTMX requests
-        document.body.addEventListener('htmx:responseError', (evt) => {
-            console.error('HTMX Response Error:', {
-                error: evt.detail.error,
-                xhr: evt.detail.xhr,
-                status: evt.detail.xhr.status,
-                response: evt.detail.xhr.response
-            });
-        });
-    }
-    
-    /**
-     * Sets up global HTMX event listeners for logging and configuration
-     */
-    setupHTMXListeners() {
-        // Check if HTMX is loaded
-        if (typeof htmx === 'undefined') {
-            console.error('HTMX is not loaded!');
-        } else {
-            console.log('HTMX is loaded, version:', htmx.version);
-        }
-        
-        // Listen for HTMX events for logging purposes
-        htmx.on('htmx:beforeSend', (event) => {
-            console.log('Request payload:', event.detail.requestConfig.parameters);
-        });
-        
-        htmx.on('htmx:xhr:loadend', (event) => {
-            console.log('XHR completed with status:', event.detail.xhr.status);
-            console.log('Response:', event.detail.xhr.responseText);
-        });
-        
-        htmx.on('htmx:configRequest', (event) => {
-            // Ensure method is POST for this form
-            event.detail.headers['Content-Type'] = 'application/json';
         });
     }
     

@@ -1,6 +1,7 @@
 from flask import Flask
 from routes.main import main
 from routes.api import api_blueprint
+from routes.validation import validation
 from config.settings import Config, TestConfig
 import os
 from config.logging_config import logger  # Use centralized logger
@@ -16,19 +17,17 @@ def create_app():
     print(f"FLASK_TESTING environment variable: {testing_env}")
     
     config_class = TestConfig if testing_env else Config
-    print(f"Using config class: {config_class.__name__}")
 
     app = Flask(__name__)
     app.config.from_object(config_class)
     print(f"TESTING mode: {app.config['TESTING']}")
-    print(f"TEST_SEQ available: {'TEST_SEQ' in app.config}")
-    print(f"TEST_TEMPLATE_SEQ available: {'TEST_TEMPLATE_SEQ' in app.config}")
     
     logger.info(f"Starting Flask app with config: {config_class.__name__}")
 
     configure_werkzeug_logging()
 
     app.register_blueprint(main)
+    app.register_blueprint(validation, url_prefix='/validation')
     app.register_blueprint(api_blueprint, url_prefix="/api")
 
     @app.context_processor

@@ -11,14 +11,11 @@
   <div class="app-container">
 
     <!-- Form Container -->
-    <div class="form-container">
-      <form id="primer-form"
+    <form id="primer-form"
       hx-post="{{ url_for('main.generate_protocol') }}"
       hx-trigger="submit"
       hx-target="#results-container"
       hx-swap="innerHTML"
-      hx-ext="json-enc" 
-      hx-validate="true"
       hx-indicator="#loading-indicator"
       novalidate>
 

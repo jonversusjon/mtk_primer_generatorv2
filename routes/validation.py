@@ -1,6 +1,5 @@
 from flask import Blueprint, request, Response, jsonify
 from functools import wraps
-from validators import ProtocolValidator
 import re
 from typing import Optional, Tuple, Any
 from dataclasses import dataclass
@@ -8,7 +7,6 @@ from http import HTTPStatus
 import json
 
 validation = Blueprint('validation', __name__)
-validator = ProtocolValidator()
 
 
 @dataclass
@@ -80,6 +78,7 @@ def validation_handler(f):
     
     return wrapper
 
+
 class SequenceValidator:
     """Handles DNA sequence validation logic"""
     
@@ -150,10 +149,11 @@ def validate_primer_name(value: str, field: str, sequence_index: Optional[int]) 
 @validation_handler
 def validate_species(value: str, field: str, sequence_index: Optional[int]) -> ValidationResult:
     """Validate species input"""
-    error = validator._validate_species(value)
-    if error:
-        return ValidationResult(False, error)
+    if not value.strip():
+        return ValidationResult(False, "Species cannot be empty")
+    # Optionally, add more validation logic here if needed
     return ValidationResult(True)
+
 
 @validation.route('/validate/max-mut-per-site', methods=['POST'])
 @validation_handler
@@ -167,7 +167,7 @@ def validate_max_mutations(value: str, field: str, sequence_index: Optional[int]
     except ValueError:
         return ValidationResult(False, "Must be a number")
 
-@validation.route('/validate-form', methods=['POST'])
+@validation.route('validate/form', methods=['POST'])
 def validate_form():
     """Validate the entire form and return validation status"""
     try:

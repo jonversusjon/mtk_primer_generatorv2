@@ -23,7 +23,7 @@
             <span id="charCount" class="char-count-label">Length: 0 bp</span>
         </div>
         <textarea id="templateSequence" name="templateSequence" class="sequence-input"
-            placeholder="Enter DNA sequence here..." hx-post="{{ url_for('main.validate_field') }}"
+            placeholder="Enter DNA sequence here..." hx-post="{{ url_for('validation.validate_sequence') }}"
             hx-trigger="keyup changed delay:1000ms" hx-target=".error-message">
           {{ test_template_seq if testing_mode else '' }}
         </textarea>
