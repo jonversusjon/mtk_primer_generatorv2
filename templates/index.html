@@ -9,12 +9,18 @@
   {% include 'app_header.html' %}
 
   <div class="app-container">
-    
+
     <!-- Form Container -->
     <div class="form-container">
-      <form id="primer-form" hx-post="{{ url_for('main.generate_protocol') }}" hx-trigger="submit"
-        hx-target="#results-container" hx-swap="innerHTML" hx-ext="json-enc" hx-validate="true"
-        hx-on::before-request="console.log('Making request...')" hx-on::after-request="console.log('Request complete')">
+      <form id="primer-form"
+      hx-post="{{ url_for('main.generate_protocol') }}"
+      hx-trigger="submit"
+      hx-target="#results-container"
+      hx-swap="innerHTML"
+      hx-ext="json-enc" 
+      hx-validate="true"
+      hx-indicator="#loading-indicator"
+      novalidate>
 
         <!-- Template Sequence Section -->
         {% include 'template_sequence.html' %}
@@ -23,7 +29,23 @@
         {% include 'sequences_to_domesticate.html' %}
 
         <!-- Form Buttons -->
-        {% include 'form_buttons.html' %}
+        <div class="button-container">
+          <button type="submit" class="btn btn-primary" id="runDesignPrimerBtn" disabled title="Fill in required fields">
+            Generate Protocol
+          </button>
+          <button type="button" class="btn btn-warning" id="clearForm">
+            Clear Form
+          </button>
+        </div>
+        <!-- Loading indicator -->
+        <div id="loading-indicator" class="htmx-indicator">
+          <div class="spinner-container">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Processing...</span>
+            </div>
+            <span class="loading-text">Processing your request...</span>
+          </div>
+        </div>
       </form>
     </div>
     <!-- End of Form Container -->
@@ -40,7 +62,66 @@
     </div>
   </div>
   <!-- End of App Container -->
-
+  <script type="module">
+    import FormSubmissionHandler from "{{ url_for('static', filename='js/handlers/form-submission-handler.js') }}";
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize the form handler (it will handle button states and form validation)
+      new FormSubmissionHandler();
+      
+      // Clear form button functionality
+      document.getElementById('clearForm').addEventListener('click', function() {
+        document.getElementById('primer-form').reset();
+        
+        // Reset validation state after clearing form
+        const errorMessages = document.querySelectorAll('.error-message');
+        errorMessages.forEach(el => el.textContent = '');
+        
+        // Remove validation classes
+        document.querySelectorAll('.is-valid, .is-invalid').forEach(el => {
+          el.classList.remove('is-valid', 'is-invalid');
+        });
+        
+        // Reset the submit button state
+        const submitButton = document.getElementById('runDesignPrimerBtn');
+        submitButton.disabled = true;
+        submitButton.title = "Fill in required fields";
+        submitButton.classList.remove('processing');
+        submitButton.innerHTML = 'Generate Protocol';
+      });
+    });
+  </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check if HTMX is loaded
+      if (typeof htmx === 'undefined') {
+        console.error('HTMX is not loaded!');
+      } else {
+        console.log('HTMX is loaded, version:', htmx.version);
+      }
+      
+      // Listen for all HTMX events
+      htmx.on('htmx:beforeSend', function(event) {
+        console.log('Request payload:', event.detail.requestConfig.parameters);
+      });
+      
+      htmx.on('htmx:xhr:loadend', function(event) {
+        console.log('XHR completed with status:', event.detail.xhr.status);
+        console.log('Response:', event.detail.xhr.responseText);
+      });
+      
+      htmx.on('htmx:configRequest', function(event) {
+        // Ensure method is POST for this form
+        event.detail.headers['Content-Type'] = 'application/json';
+      });
+      
+      // Clear form button functionality
+      document.getElementById('clearForm').addEventListener('click', function() {
+        document.getElementById('primer-form').reset();
+      });
+    });
+  </script>
 </body>
 
 </html>
+

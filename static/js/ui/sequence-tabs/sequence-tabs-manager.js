@@ -40,13 +40,22 @@ export default class SequenceTabsManager {
         document.querySelectorAll(".sequence-tab-btn").forEach(btn => {
             btn.addEventListener("click", () => {
                 const tabIndex = btn.getAttribute("data-tab-index");
-
+    
+                // Update tab buttons
                 document.querySelectorAll(".sequence-tab-btn").forEach(el => el.classList.remove("active"));
                 btn.classList.add("active");
-
+    
+                // Update tab content
                 document.querySelectorAll(".sequence-tab-content").forEach(el => {
-                    el.classList.toggle("active", el.getAttribute("data-tab-index") === tabIndex);
+                    const isActive = el.getAttribute("data-tab-index") === tabIndex;
+                    el.classList.toggle("active", isActive);
                     el.style.opacity = el.classList.contains("active") ? "1" : "0";
+                    
+                    // Exclude inactive tabs from validation - fixed scope issue
+                    el.querySelectorAll('[required]').forEach(field => {
+                        if (!isActive) field.removeAttribute('required');
+                        else field.setAttribute('required', '');
+                    });
                 });
             });
         });
@@ -136,10 +145,27 @@ export default class SequenceTabsManager {
      * Updates the number of visible sequence tabs and synchronizes the UI.
      */
     updateVisibleTabs(newCount) {
-        // Select all tab buttons and content, then toggle visibility based on their 0-index
-        document.querySelectorAll(".sequence-tab-btn, .sequence-tab-content").forEach(el => {
+        // Make newCount number of tabs navs visible
+        document.querySelectorAll(".sequence-tab-btn").forEach(el => {
             const idx = parseInt(el.dataset.tabIndex, 10);
             el.classList.toggle("hidden", idx >= newCount);
+        });
+
+        // Make newCount number of tabs visible, exclude inactive tabs from validation
+        document.querySelectorAll(".sequence-tab-content").forEach(el => {
+            const idx = parseInt(el.dataset.tabIndex, 10);
+            const isVisible = idx < newCount;
+            el.classList.toggle("hidden", !isVisible);
+                    
+        // Exclude inactive tabs from validation
+        el.querySelectorAll('[required]').forEach(field => {
+            if (!isVisible) {
+                field.removeAttribute('required');
+            } else {
+                field.setAttribute('required', '');
+            }
+        });
+
         });
 
         // Update the number input value if it exists

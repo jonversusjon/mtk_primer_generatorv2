@@ -166,7 +166,7 @@ def convert_non_serializable(obj):
 @main.route("/generate_protocol", methods=["POST"])
 def generate_protocol():
     try:
-        
+        print(f"generate_protocol received request: {request}")
         logger.info("Starting protocol generation")
         packaged_data, error_message = utils.package_form_data(request)
         print(f"packaged_data: {packaged_data}")

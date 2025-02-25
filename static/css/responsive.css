@@ -114,6 +114,7 @@ body {
 @media (max-width: 860px) {
     .app-container {
         flex-direction: column;
+        gap: 0;
     }
 
     .form-container,

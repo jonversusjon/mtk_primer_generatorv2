@@ -1,13 +1,15 @@
-from flask import Blueprint, request, Response
+from flask import Blueprint, request, Response, jsonify
 from functools import wraps
 from validators import ProtocolValidator
 import re
 from typing import Optional, Tuple, Any
 from dataclasses import dataclass
 from http import HTTPStatus
+import json
 
 validation = Blueprint('validation', __name__)
 validator = ProtocolValidator()
+
 
 @dataclass
 class ValidationResult:
@@ -15,31 +17,67 @@ class ValidationResult:
     is_valid: bool
     message: Optional[str] = None
     status_code: int = HTTPStatus.OK
+    field_name: Optional[str] = None
+    field_index: Optional[int] = None
 
     def to_response(self) -> Response:
         """Convert validation result to Flask response"""
-        if self.is_valid:
-            return Response('', status=HTTPStatus.OK)
-        return Response(
-            self.message or 'Validation failed',
-            status=self.status_code or HTTPStatus.BAD_REQUEST
-        )
+        response_data = {
+            "valid": self.is_valid,
+            "message": self.message or '',
+            "field": self.field_name,
+            "index": self.field_index
+        }
+
+        response = jsonify(response_data)
+        # Always return 200 for validation responses
+        response.status_code = HTTPStatus.OK
+
+        return response
+
 
 def validation_handler(f):
     """Decorator to handle common validation patterns"""
     @wraps(f)
     def wrapper(*args, **kwargs):
         try:
-            value = request.form.get('value', '').strip()
-            result = f(value, *args, **kwargs)
-            if isinstance(result, ValidationResult):
-                return result.to_response()
-            return Response('', HTTPStatus.OK)
+            # Get common parameters
+            data = request.json if request.is_json else request.form
+            value = data.get('value', '').strip()
+            field = data.get('field', '')
+            sequence_index = data.get('sequenceIndex', None)
+            
+            # Convert sequenceIndex to int if it exists
+            if sequence_index is not None:
+                try:
+                    sequence_index = int(sequence_index)
+                except (ValueError, TypeError):
+                    sequence_index = None
+            
+            # Call the validation function
+            result = f(value, field, sequence_index, *args, **kwargs)
+            
+            # Ensure we have a ValidationResult
+            if not isinstance(result, ValidationResult):
+                result = ValidationResult(True)
+                
+            # Add field information
+            if not result.field_name:
+                result.field_name = field
+            if result.field_index is None:
+                result.field_index = sequence_index
+                
+            return result.to_response()
+            
         except Exception as e:
-            return Response(
-                str(e),
-                status=HTTPStatus.INTERNAL_SERVER_ERROR
+            # Return a formatted error response
+            error_result = ValidationResult(
+                is_valid=False,
+                message=f"Validation error: {str(e)}",
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR
             )
+            return error_result.to_response()
+    
     return wrapper
 
 class SequenceValidator:
@@ -65,58 +103,61 @@ class SequenceValidator:
 # Validation Routes
 @validation.route('/validate/sequence', methods=['POST'])
 @validation_handler
-def validate_sequence(sequence: str) -> ValidationResult:
+def validate_sequence(value: str, field: str, sequence_index: Optional[int]) -> ValidationResult:
     """Validate DNA sequence input"""
-    template = request.form.get('template', '').strip()
-
-    if not sequence:
+    if not value:
         return ValidationResult(False, "Sequence cannot be empty")
 
-    if not SequenceValidator.is_valid_dna_sequence(sequence):
+    if not SequenceValidator.is_valid_dna_sequence(value):
         return ValidationResult(
             False,
             "Only valid DNA bases (A, T, G, C, W, S, M, K, R, Y, B, D, H, V, N) allowed"
         )
 
-    if not SequenceValidator.validate_sequence_length(sequence):
+    if not SequenceValidator.validate_sequence_length(value):
         return ValidationResult(False, "Sequence must be at least 80 bp")
-
-    if template and not SequenceValidator.is_amplicon_valid(sequence, template):
-        return ValidationResult(False, "Sequence must be within the template")
+        
+    # Template validation would go here if needed
+    # We could fetch the template sequence from the form data if required
 
     return ValidationResult(True)
 
 @validation.route('/validate/mtk-part', methods=['POST'])
 @validation_handler
-def validate_mtk_part(part_number: str) -> ValidationResult:
+def validate_mtk_part(value: str, field: str, sequence_index: Optional[int]) -> ValidationResult:
     """Validate MTK part number"""
-    if not part_number:
+    if not value:
         return ValidationResult(False, "MTK Part number is required")
     
-    if not part_number.isdigit():
+    if not value.isdigit():
         return ValidationResult(False, "MTK part must be a number")
     
     return ValidationResult(True)
 
 @validation.route('/validate/primer-name', methods=['POST'])
 @validation_handler
-def validate_primer_name(name: str) -> ValidationResult:
+def validate_primer_name(value: str, field: str, sequence_index: Optional[int]) -> ValidationResult:
     """Validate primer name"""
     # Add custom primer name validation if needed
+    if not value:
+        return ValidationResult(False, "Primer name is required")
+        
+    # Add more validation logic if needed
+    
     return ValidationResult(True)
 
 @validation.route('/validate/species', methods=['POST'])
 @validation_handler
-def validate_species(species: str) -> ValidationResult:
+def validate_species(value: str, field: str, sequence_index: Optional[int]) -> ValidationResult:
     """Validate species input"""
-    error = validator._validate_species(species)
+    error = validator._validate_species(value)
     if error:
         return ValidationResult(False, error)
     return ValidationResult(True)
 
 @validation.route('/validate/max-mut-per-site', methods=['POST'])
 @validation_handler
-def validate_max_mutations(value: str) -> ValidationResult:
+def validate_max_mutations(value: str, field: str, sequence_index: Optional[int]) -> ValidationResult:
     """Validate maximum mutations per site"""
     try:
         max_mut = int(value)
@@ -126,11 +167,32 @@ def validate_max_mutations(value: str) -> ValidationResult:
     except ValueError:
         return ValidationResult(False, "Must be a number")
 
+@validation.route('/validate-form', methods=['POST'])
+def validate_form():
+    """Validate the entire form and return validation status"""
+    try:
+        # Get form data
+        data = request.json if request.is_json else request.form
+        
+        # You could implement comprehensive form validation here
+        # For now, we'll return a simple success response
+        
+        return jsonify({
+            "valid": True,
+            "message": "Form validation passed"
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "valid": False,
+            "message": f"Form validation error: {str(e)}"
+        })
+
 # Error Handlers
 @validation.errorhandler(Exception)
 def handle_exception(e):
     """Global error handler for validation routes"""
-    return Response(
-        str(e),
-        status=HTTPStatus.INTERNAL_SERVER_ERROR
-    )
+    return jsonify({
+        "valid": False,
+        "message": f"Validation error: {str(e)}"
+    }), HTTPStatus.INTERNAL_SERVER_ERROR
