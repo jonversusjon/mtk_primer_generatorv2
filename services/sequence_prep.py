@@ -2,7 +2,8 @@
 from Bio.Seq import Seq, CodonTable
 from prettytable import PrettyTable
 import re
-from typing import Dict, Optional, Union, List
+from typing import Dict, Optional, Union, List, Tuple
+
 from collections import defaultdict
 import logging
 from config.logging_config import logger
@@ -35,44 +36,98 @@ class SequencePreparator:
 
         if self.verbose:
             self.logger.info("SequencePreparator is running in verbose mode.")
-
-    def adjust_sequence_for_frame_and_codons(
-        self, 
-        seq: Union[str, Seq],
-    ) -> Seq:
-        """Adjusts sequence to be in frame and removes start/stop codons."""
-        with debug_context("adjust_sequence_for_frame_and_codons"):
-            if isinstance(seq, str):
-                seq = Seq(seq)
-            print(f"seq: {seq}")
-            self.state['current_sequence'] = seq
-            self.state['adjustments_made'] = []
-
-            # Adjust for frame
-            original_length = len(seq)
-            seq = seq[:len(seq) - (len(seq) % 3)]
-            if len(seq) != original_length:
-                self.state['adjustments_made'].append('frame_adjusted')
-                logger.info(f"Trimmed {original_length - len(seq)} nucleotides for frame adjustment")
-
-            # Check codons
-            translated_seq = seq.translate()
-
-            # Handle stop codon
-            if translated_seq[-1] == '*':
-                self.state['adjustments_made'].append('stop_codon_removed')
-                logger.info('Stop codon removed from the end of the sequence')
-                seq = seq[:-3]
-
-            # Handle start codon
-            if translated_seq[0] == 'M':
-                self.state['adjustments_made'].append('start_codon_removed')
-                logger.info('Start codon removed from the beginning of the sequence')
-                seq = seq[3:]
-
-            return seq
         
 
+    def preprocess_sequence(self, sequence: Union[str, Seq]) -> Tuple[Optional[Seq], str, bool]:
+        """
+        Processes a DNA sequence by:
+        1. Converting to uppercase
+        2. Removing start codon (ATG) if present
+        3. Removing stop codons (TAA, TAG, TGA) if present
+        4. Ensuring the sequence is in frame (divisible by 3)
+        
+        Args:
+            sequence: DNA sequence as string or Seq object
+            
+        Returns:
+            Tuple of (processed_sequence, message, success)
+            Where success is False if processing failed
+        """
+        with debug_context("pre_process_sequence"):
+            # Convert to Seq object and uppercase if needed
+            if isinstance(sequence, str):
+                sequence = Seq(sequence.upper())
+            else:
+                sequence = sequence.upper()
+            
+            cleaned_sequence = sequence
+            sequence_length = len(sequence)
+            
+            # Initialize tracking variables
+            trim_start_codon = False
+            trim_stop_codon = False
+            in_frame = sequence_length % 3 == 0
+            message_parts = []
+            
+            # Check for start codon
+            if len(cleaned_sequence) >= 3 and cleaned_sequence[0:3] == "ATG":
+                cleaned_sequence = cleaned_sequence[3:]
+                trim_start_codon = True
+                logger.info('Start codon removed from the beginning of the sequence')
+            
+            # Check for stop codons (TAA, TAG, TGA)
+            stop_codons = ["TAA", "TAG", "TGA"]
+            if len(cleaned_sequence) >= 3 and cleaned_sequence[-3:] in stop_codons:
+                cleaned_sequence = cleaned_sequence[:-3]
+                trim_stop_codon = True
+                logger.info('Stop codon removed from the end of the sequence')
+            
+            # Handle frame adjustment based on codon presence
+            final_length = len(cleaned_sequence)
+            remainder = final_length % 3
+            
+            if remainder != 0:
+                if trim_start_codon:
+                    # If we removed start codon, trim from the end to make divisible by 3
+                    bases_to_trim = remainder
+                    cleaned_sequence = cleaned_sequence[:-bases_to_trim]
+                    logger.info(f"Trimmed {bases_to_trim} nucleotides from end for frame adjustment")
+                elif trim_stop_codon:
+                    # If we removed stop codon, trim from the beginning to make divisible by 3
+                    bases_to_trim = remainder
+                    cleaned_sequence = cleaned_sequence[bases_to_trim:]
+                    logger.info(f"Trimmed {bases_to_trim} nucleotides from start for frame adjustment")
+                else:
+                    # If no start/stop codon was found, we don't know how to infer frame
+                    # This will be handled in the message logic
+                    pass
+            
+            # Create human readable message
+            if not in_frame:
+                if trim_start_codon and trim_stop_codon:
+                    message = "Provided sequence does not appear to be in frame, using provided start codon to infer translation frame. Stop and start codons detected and have been removed."
+                elif trim_start_codon:
+                    message = "Provided sequence does not appear to be in frame, using provided start codon to infer translation frame. Start codon has been removed."
+                elif trim_stop_codon:
+                    message = "Provided sequence does not appear to be in frame, using provided stop codon to infer frame. Stop codon has been removed."
+                else:
+                    # If no codons were found and sequence is not in frame, return error message
+                    message = "Provided sequence does not appear to be in frame, please check your sequence and try again"
+                    # Return None for sequence, the error message, and success=False
+                    return None, message, False
+            else:
+                # Sequence is already in frame, we just report codon trimming
+                if trim_start_codon and trim_stop_codon:
+                    message = "Start and stop codons detected and removed."
+                elif trim_start_codon:
+                    message = "Start codon detected and removed."
+                elif trim_stop_codon:
+                    message = "Stop codon detected and removed."
+                else:
+                    message = "Sequence is in frame, no codon adjustments needed."
+            
+        return cleaned_sequence, message, True
+    
     def find_bsmbi_bsai_sites(self, sequence, verbose):
         """
         Finds restriction enzyme recognition sites within a DNA sequence,
@@ -161,43 +216,80 @@ class SequencePreparator:
 
 
     def _find_sites_for_enzyme(
-        self,
-        seq: Seq,
-        recognition_seq: str
-    ) -> list:
-        """Helper method to find sites for a specific enzyme."""
-        site_details = []
-        
-        # Forward strand matches
-        forward_matches = re.finditer(f"(?={recognition_seq})", str(seq))
-        for match in forward_matches:
-            index = match.start()
-            frame = (index) % 3  # Calculate frame (0, 1, or 2)
-            codons = self.get_codons(seq, index, len(recognition_seq), frame)
-            site_details.append({
-                'position': index+1,
-                'sequence': recognition_seq,
-                'frame': frame,
-                'codons': codons,
-                'strand': '+'
-            })
+            self,
+            seq: Seq,
+            recognition_seq: str
+        ) -> list:
+            """Helper method to find sites for a specific enzyme."""
+            site_details = []
+            seq_str = str(seq)
+            
+            # Simple string search first to confirm presence
+            print(f"Sequence length: {len(seq_str)}")
+            print(f"First 30 bases: {seq_str[:30]}")
+            print(f"Last 30 bases: {seq_str[-30:]}")
 
-        # Reverse strand matches
-        rev_comp = str(Seq(recognition_seq).reverse_complement())
-        reverse_matches = re.finditer(f"(?={rev_comp})", str(seq))
-        for match in reverse_matches:
-            index = match.start()
-            frame = (index) % 3  # Calculate frame (0, 1, or 2)
-            codons = self.get_codons(seq, index, len(recognition_seq), frame)
-            site_details.append({
-                'position': index+1,
-                'sequence': rev_comp,
-                'frame': frame,
-                'codons': codons,
-                'strand': '-'
-            })
+            # Check if substring exists directly
+            print(f"Manual check for reverse site: {'gagacc' in seq_str.lower()}")
+            print(f"Position: {seq_str.lower().find('gagacc')}")
+            # Direct string search instead of regex first
+            fwd_positions = []
+            pos = 0
+            while True:
+                pos = seq_str.find(recognition_seq, pos)
+                if pos == -1:
+                    break
+                fwd_positions.append(pos)
+                pos += 1
+                
+            rev_comp = str(Seq(recognition_seq).reverse_complement())
+            print(f"Recognition sequence: '{recognition_seq}'")
+            print(f"Reverse complement: '{rev_comp}'")
+            rev_positions = []
+            pos = 0
+            while True:
+                pos = seq_str.find(rev_comp, pos)
+                if pos == -1:
+                    break
+                rev_positions.append(pos)
+                pos += 1
+                
+            print(f"Direct string search for {recognition_seq}: Found at positions {fwd_positions}")
+            print(f"Direct string search for {rev_comp}: Found at positions {rev_positions}")
+            
+            # Forward strand matches using regex
+            forward_matches = list(re.finditer(re.escape(recognition_seq), seq_str))
+            print(f"Regex search for {recognition_seq}: Found {len(forward_matches)} matches")
+            
+            for match in forward_matches:
+                index = match.start()
+                frame = (index) % 3  # Calculate frame (0, 1, or 2)
+                codons = self.get_codons(seq, index, len(recognition_seq), frame)
+                site_details.append({
+                    'position': index+1,  # Convert to 1-based indexing
+                    'sequence': recognition_seq,
+                    'frame': frame,
+                    'codons': codons,
+                    'strand': '+'
+                })
 
-        return site_details
+            # Reverse strand matches
+            reverse_matches = list(re.finditer(re.escape(rev_comp), seq_str))
+            print(f"Regex search for {rev_comp}: Found {len(reverse_matches)} matches")
+            
+            for match in reverse_matches:
+                index = match.start()
+                frame = (index) % 3  # Calculate frame (0, 1, or 2)
+                codons = self.get_codons(seq, index, len(recognition_seq), frame)
+                site_details.append({
+                    'position': index+1,  # Convert to 1-based indexing
+                    'sequence': rev_comp,
+                    'frame': frame,
+                    'codons': codons,
+                    'strand': '-'
+                })
+
+            return site_details
 
 
     def summarize_bsmbi_bsai_sites(self, site_details):
@@ -237,12 +329,6 @@ class SequencePreparator:
             logger.info("\n")
             logger.info("\nRestriction Site Analysis Summary:")
             logger.info(f"\n{str(table)}")
-
-    def preprocess_sequence(self, sequence: str) -> Seq:
-        """Converts sequence to uppercase and adjusts for frame and codons."""
-        with debug_context("preprocess_sequence"):
-            sequence = Seq(sequence.upper())
-            return self.adjust_sequence_for_frame_and_codons(sequence)
         
     def find_and_summarize_sites(self, sequence: Seq, index: int) -> List[Dict]:
         """Finds and summarizes restriction sites needing mutation."""

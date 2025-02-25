@@ -1,0 +1,31 @@
+{# error_messages.html - this will be returned when errors occur #}
+
+{% if general_error %}
+  <div class="alert alert-danger" id="general-error" role="alert">
+    {{ general_error }}
+  </div>
+{% endif %}
+
+{% for i in range(form_data.numSequences|int) %}
+  {% if form_data['sequences[' ~ i ~ '][sequence]']|trim %}
+    {% if sequence_errors and i|string in sequence_errors %}
+      <div class="alert alert-danger sequence-error" data-sequence-index="{{ i }}">
+        <strong>Error in sequence {{ i + 1 }}:</strong> {{ sequence_errors[i|string] }}
+      </div>
+      <script>
+        // Highlight the problematic field
+        document.querySelector('textarea[name="sequences[{{ i }}][sequence]"]').classList.add('is-invalid');
+        
+        // Scroll to the error
+        document.querySelector('[data-sequence-index="{{ i }}"]').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      </script>
+    {% endif %}
+  {% endif %}
+{% endfor %}
+
+{% if partial_result %}
+  <div class="alert alert-warning">
+    <strong>Note:</strong> Some sequences were processed successfully. See partial results below.
+  </div>
+  {# Include partial results here #}
+{% endif %}

@@ -370,3 +370,67 @@ class PrimerDesigner:
     
     def _find_off_targets(self, binding_seq: str, template_seq: str):
         return []
+    
+    def generate_GG_edge_primers(self, sequence, detection_results, overhang_5_prime, overhang_3_prime):
+        """
+        Generate Golden Gate edge primers for a sequence.
+        
+        Args:
+            sequence (Seq): The DNA sequence to process
+            detection_results (dict): Results from restriction site detection
+            overhang_5_prime (str): 5' overhang sequence 
+            overhang_3_prime (str): 3' overhang sequence
+            
+        Returns:
+            dict: Information about generated primers including sequences and properties
+        """
+        # Convert to string for consistent handling
+        seq_str = str(sequence)
+        seq_length = len(seq_str)
+        
+        # Default primer length (can be adjusted based on your requirements)
+        primer_length = 20  # Excluding overhangs and recognition site
+        
+        # Define enzyme recognition sequences
+        enzyme_rec_seq = "GGTCTC"  # BsaI
+        enzyme_rev_comp = "GAGACC"
+        
+        # 5' Primer (forward)
+        # Format: [5' overhang] + [enzyme site] + [N1] + [N2] + [sequence-specific part]
+        
+        forward_primer_binding = seq_str[:primer_length]
+        forward_primer = overhang_5_prime + enzyme_rec_seq + "A" + forward_primer_binding
+        
+        # 3' Primer (reverse)
+        # Format: [5' overhang] + [enzyme site] + [N1] + [N2] + [sequence-specific part (reverse complement)]
+        
+        reverse_primer_binding = str(Seq(seq_str[-primer_length:]).reverse_complement())
+        reverse_primer = overhang_3_prime + enzyme_rec_seq + "A" + reverse_primer_binding
+        
+        # Calculate properties like Tm, GC content, etc.
+        forward_tm = self.calculate_tm(forward_primer_binding)
+        reverse_tm = self.calculate_tm(reverse_primer_binding)
+        
+        forward_gc = self.calculate_gc_content(forward_primer_binding)
+        reverse_gc = self.calculate_gc_content(reverse_primer_binding)
+        
+        # Create result dictionary
+        primers = {
+            "forward_primer": {
+                "sequence": forward_primer,
+                "binding_region": forward_primer_binding,
+                "tm": forward_tm,
+                "gc_content": forward_gc,
+                "length": len(forward_primer)
+            },
+            "reverse_primer": {
+                "sequence": reverse_primer,
+                "binding_region": reverse_primer_binding,
+                "tm": reverse_tm,
+                "gc_content": reverse_gc,
+                "length": len(reverse_primer)
+            },
+            "product_size": seq_length
+        }
+        
+        return primers

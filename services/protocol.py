@@ -87,20 +87,20 @@ class GoldenGateProtocol:
     def create_gg_protocol(self) -> Dict:
         """
         Main function to orchestrate the Golden Gate protocol creation.
-        Each step is clearly defined and its output feeds into the next step.
         """
         logger.info("Starting Golden Gate protocol creation...")
         result_data = {
             'primers': [],
             'restriction_sites': [],
             'mutations': [],
-            'sequence_analysis': []
+            'sequence_analysis': [],
+            'has_errors': False,
+            'sequence_errors': {}
         }
 
         for i, single_seq in enumerate(self.seq):
             try:
                 print(f"Processing sequence {i+1}/{len(self.seq)}")
-                print(f"Current sequence: {single_seq}")
                 sequence_data = {
                     'sequence_index': i,
                     'processed_sequence': None,
@@ -111,13 +111,21 @@ class GoldenGateProtocol:
 
                 # 1. Remove start/stop codons and find restriction sites
                 with debug_context("Preprocessing sequence"):
-                    processed_seq = self.sequence_preparator.preprocess_sequence(
+                    processed_seq, message, success = self.sequence_preparator.preprocess_sequence(
                         single_seq)
+                    
+                    if not success:
+                        result_data['has_errors'] = True
+                        result_data['sequence_errors'][i] = message
+                        logger.error(f"Preprocessing failed for sequence {i}: {message}")
+                        continue
+                    
+                with debug_context("Finding restriction sites"):  
                     sites_to_mutate = self.sequence_preparator.find_and_summarize_sites(
                         processed_seq, i)
                     sequence_data['processed_sequence'] = processed_seq
                     sequence_data['restriction_sites'] = sites_to_mutate
-
+                        
                 if sites_to_mutate:
                     with debug_context("Mutation analysis"):
                         # 2. Generate all possible silent mutations using MutationAnalyzer
@@ -160,14 +168,17 @@ class GoldenGateProtocol:
                 result_data['primers'].extend(primers)
             
             except Exception as e:
-                logger.error(f"Error processing sequence {i}: {str(e)}")
+                logger.error(f"Unhandled error processing sequence {i}: {str(e)}")
                 sequence_data['error'] = str(e)
                 result_data['sequence_analysis'].append(sequence_data)
+                result_data['has_errors'] = True
+                result_data['sequence_errors'][i] = str(e)
                 continue
 
         # Step 3: Save results and return
-        self._save_primers_to_tsv(result_data['primers'], self.output_tsv_path)
-        
+        if not result_data['has_errors']:
+            self._save_primers_to_tsv(result_data['primers'], self.output_tsv_path)
+                  
         return result_data
 
     def _save_primers_to_tsv(self, primer_data: List[List[str]], output_tsv_path: str) -> None:

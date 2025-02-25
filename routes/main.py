@@ -144,54 +144,46 @@ def convert_non_serializable(obj):
 @main.route("/generate_protocol", methods=["POST"])
 def generate_protocol():
     print("⭐ generate_protocol route triggered")
+    
+    # Get basic form data
+    species = request.form.get("species", "")
+    kozak = request.form.get("kozak", "MTK")
+    max_mut_per_site = int(request.form.get("max_mut_per_site", 3))
+    verbose_mode = "verbose_mode" in request.form
+    template_sequence = request.form.get("templateSequence", "").strip() or "TEST_TEMPLATE"
+    
+    # Extract sequences data
+    num_sequences = int(request.form.get("numSequences", 0))
+    sequences = []
+    primer_names = []
+    mtk_parts = []
+    
+    for i in range(num_sequences):
+        seq_key = f"sequences[{i}][sequence]"
+        name_key = f"sequences[{i}][primerName]"
+        part_key = f"sequences[{i}][mtkPart]"
+        
+        sequence = request.form.get(seq_key, "").strip()
+        if sequence:  # Only process non-empty sequences
+            sequences.append(sequence)
+            primer_names.append(request.form.get(name_key, "").strip() or f"Test Primer {i+1}")
+            mtk_parts.append(request.form.get(part_key, "").strip() or "6")
+    
+    # Check if we have valid sequences
+    if not sequences:
+        return render_template(
+            "error_messages.html", 
+            general_error="No valid sequences provided",
+            form_data=request.form
+        ), 422
+    
     try:
-        print(f"Form contains {len(request.form)} keys:")
-        for key in request.form:
-            value = request.form[key]
-            # For long values (like sequences), truncate the logging
-            if len(str(value)) > 100:
-                print(f"Form[{key}]: {str(value)[:50]}... (truncated, total length: {len(str(value))})")
-            else:
-                print(f"Form[{key}]: {value}")
-        
-        # Get basic form data
-        species = request.form.get("species", "")
-        kozak = request.form.get("kozak", "MTK")
-        max_mut_per_site = int(request.form.get("max_mut_per_site", 3))
-        verbose_mode = "verbose_mode" in request.form
-        template_sequence = request.form.get("templateSequence", "").strip() or "TEST_TEMPLATE"
-        
-        print(f"generate_protocol received species: {species}")
-        codon_usage_dict = utils.get_codon_usage_dict(species)
-        print(f"generate_protocol codon_usage_dict: {codon_usage_dict}")
-        
-        # Extract sequences data from form
-        num_sequences = int(request.form.get("numSequences", 0))
-        sequences = []
-        primer_names = []
-        mtk_parts = []
-        
-        for i in range(num_sequences):
-            seq_key = f"sequences[{i}][sequence]"
-            name_key = f"sequences[{i}][primerName]"
-            part_key = f"sequences[{i}][mtkPart]"
-            
-            sequence = request.form.get(seq_key, "").strip()
-            if sequence:  # Only process non-empty sequences
-                sequences.append(sequence)
-                primer_names.append(request.form.get(name_key, "").strip() or f"Test Primer {i+1}")
-                mtk_parts.append(request.form.get(part_key, "").strip() or "6")
-        
-        # Check if we have valid sequences
-        if not sequences:
-            return jsonify({"error": "No valid sequences provided"}), 400
-            
         # Create protocol
         protocol_maker = GoldenGateProtocol(
             seq=sequences,
-            codon_usage_dict=codon_usage_dict,
+            codon_usage_dict=utils.get_codon_usage_dict(species),
             part_num_left=mtk_parts,
-            part_num_right=["" for _ in sequences],  # Placeholder
+            part_num_right=["" for _ in sequences],
             max_mutations=max_mut_per_site,
             primer_name=primer_names,
             template_seq=template_sequence,
@@ -199,12 +191,25 @@ def generate_protocol():
             verbose=verbose_mode
         )
         
-        # Generate the protocol using the correct method
+        # Generate the protocol
         result = protocol_maker.create_gg_protocol()
         
-        # Return the result as JSON
-        return jsonify(result)
+        # Check for errors
+        if result.get('has_errors', False):
+            return render_template(
+                "error_messages.html",
+                sequence_errors=result.get('sequence_errors', {}),
+                partial_result=result,
+                form_data=request.form
+            ), 422
+        
+        # Success - use results_partial.html which already exists
+        return render_template("results_partial.html", results=result)
         
     except Exception as e:
         print(f"Error in generate_protocol: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+        return render_template(
+            "error_messages.html",
+            general_error=str(e),
+            form_data=request.form
+        ), 500
