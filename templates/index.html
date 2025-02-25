@@ -62,65 +62,6 @@
     </div>
   </div>
   <!-- End of App Container -->
-  <script type="module">
-    import FormSubmissionHandler from "{{ url_for('static', filename='js/handlers/form-submission-handler.js') }}";
-    
-    document.addEventListener('DOMContentLoaded', function() {
-      // Initialize the form handler (it will handle button states and form validation)
-      new FormSubmissionHandler();
-      
-      // Clear form button functionality
-      document.getElementById('clearForm').addEventListener('click', function() {
-        document.getElementById('primer-form').reset();
-        
-        // Reset validation state after clearing form
-        const errorMessages = document.querySelectorAll('.error-message');
-        errorMessages.forEach(el => el.textContent = '');
-        
-        // Remove validation classes
-        document.querySelectorAll('.is-valid, .is-invalid').forEach(el => {
-          el.classList.remove('is-valid', 'is-invalid');
-        });
-        
-        // Reset the submit button state
-        const submitButton = document.getElementById('runDesignPrimerBtn');
-        submitButton.disabled = true;
-        submitButton.title = "Fill in required fields";
-        submitButton.classList.remove('processing');
-        submitButton.innerHTML = 'Generate Protocol';
-      });
-    });
-  </script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // Check if HTMX is loaded
-      if (typeof htmx === 'undefined') {
-        console.error('HTMX is not loaded!');
-      } else {
-        console.log('HTMX is loaded, version:', htmx.version);
-      }
-      
-      // Listen for all HTMX events
-      htmx.on('htmx:beforeSend', function(event) {
-        console.log('Request payload:', event.detail.requestConfig.parameters);
-      });
-      
-      htmx.on('htmx:xhr:loadend', function(event) {
-        console.log('XHR completed with status:', event.detail.xhr.status);
-        console.log('Response:', event.detail.xhr.responseText);
-      });
-      
-      htmx.on('htmx:configRequest', function(event) {
-        // Ensure method is POST for this form
-        event.detail.headers['Content-Type'] = 'application/json';
-      });
-      
-      // Clear form button functionality
-      document.getElementById('clearForm').addEventListener('click', function() {
-        document.getElementById('primer-form').reset();
-      });
-    });
-  </script>
 </body>
 
 </html>

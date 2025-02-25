@@ -1,7 +1,7 @@
 // static/js/handlers/form-submission-handler.js
 
 /**
- * Manages passing form submission and and validation state
+ * Manages passing form submission and validation state
  */
 export default class FormSubmissionHandler {
     constructor() {
@@ -9,16 +9,16 @@ export default class FormSubmissionHandler {
         this.submitButton = document.getElementById("runDesignPrimerBtn");
         this.loadingIndicator = document.getElementById("loading-indicator");
         this.formTouched = false;
-
-
+        
         if (this.form && this.submitButton) {
             this.setupEventListeners();
             this.setupFormValidation();
+            this.setupHTMXListeners();
         }
-
+        
         this.disableSubmitButton("Fill in required fields");
     }
-
+    
     /**
      * Collects and structures form data for submission
      */
@@ -48,7 +48,7 @@ export default class FormSubmissionHandler {
         console.log('Collected form data:', data);
         return data;
     }
-
+    
     /**
      * Disables the submit button and adds a tooltip/title
      */
@@ -56,7 +56,7 @@ export default class FormSubmissionHandler {
         this.submitButton.disabled = true;
         this.submitButton.title = reason;
     }
-
+    
     /**
      * Enables the submit button
      */
@@ -64,10 +64,10 @@ export default class FormSubmissionHandler {
         this.submitButton.disabled = false;
         this.submitButton.title = "Submit form";
     }
-
+    
     /**
-         * Updates the submit button based on form validity
-         */
+     * Updates the submit button based on form validity
+     */
     updateSubmitButtonState() {
         if (!this.formTouched) {
             this.disableSubmitButton("Form unchanged");
@@ -83,7 +83,7 @@ export default class FormSubmissionHandler {
             this.disableSubmitButton("Please correct errors");
         }
     }
-
+    
     /**
      * Checks overall form validity by examining all validation error messages and required fields
      */
@@ -116,7 +116,7 @@ export default class FormSubmissionHandler {
 
         return true;
     }
-
+    
     /**
      * Sets up the initial form validation state
      */
@@ -138,7 +138,7 @@ export default class FormSubmissionHandler {
             });
         });
     }
-
+    
     /**
      * Sets up HTMX-related event listeners for form submission
      */
@@ -180,7 +180,7 @@ export default class FormSubmissionHandler {
         // Listen for validation responses and update the submit button
         document.body.addEventListener('htmx:afterOnLoad', (evt) => {
             if (evt.detail.elt.getAttribute('hx-post')?.includes('validate_field')) {
-                this.updateSubmitButton();
+                this.updateSubmitButtonState();
             }
         });
 
@@ -208,7 +208,34 @@ export default class FormSubmissionHandler {
             });
         });
     }
-
+    
+    /**
+     * Sets up global HTMX event listeners for logging and configuration
+     */
+    setupHTMXListeners() {
+        // Check if HTMX is loaded
+        if (typeof htmx === 'undefined') {
+            console.error('HTMX is not loaded!');
+        } else {
+            console.log('HTMX is loaded, version:', htmx.version);
+        }
+        
+        // Listen for HTMX events for logging purposes
+        htmx.on('htmx:beforeSend', (event) => {
+            console.log('Request payload:', event.detail.requestConfig.parameters);
+        });
+        
+        htmx.on('htmx:xhr:loadend', (event) => {
+            console.log('XHR completed with status:', event.detail.xhr.status);
+            console.log('Response:', event.detail.xhr.responseText);
+        });
+        
+        htmx.on('htmx:configRequest', (event) => {
+            // Ensure method is POST for this form
+            event.detail.headers['Content-Type'] = 'application/json';
+        });
+    }
+    
     /**
      * Formats validation data for HTMX requests
      */
@@ -219,8 +246,3 @@ export default class FormSubmissionHandler {
         };
     }
 }
-
-// Initialize the handler when the DOM is loaded
-document.addEventListener("DOMContentLoaded", () => {
-    new FormSubmissionHandler();
-});
