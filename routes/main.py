@@ -8,7 +8,7 @@ from validators.protocol_validator import ProtocolValidator
 from collections import defaultdict
 from Bio.Seq import Seq
 import numpy as np
-import json 
+import json
 
 main = Blueprint("main", __name__)
 
@@ -145,48 +145,66 @@ def convert_non_serializable(obj):
 def generate_protocol():
     print("⭐ generate_protocol route triggered")
     try:
-        # Process form data the standard Flask way
-        form_data = request.form
-        print(f"Form data: {form_data}")
+        print(f"Form contains {len(request.form)} keys:")
+        for key in request.form:
+            value = request.form[key]
+            # For long values (like sequences), truncate the logging
+            if len(str(value)) > 100:
+                print(f"Form[{key}]: {str(value)[:50]}... (truncated, total length: {len(str(value))})")
+            else:
+                print(f"Form[{key}]: {value}")
         
-        packaged_data, error_message = utils.package_form_data(request)
-
-        species = packaged_data.get("species", "")
+        # Get basic form data
+        species = request.form.get("species", "")
+        kozak = request.form.get("kozak", "MTK")
+        max_mut_per_site = int(request.form.get("max_mut_per_site", 3))
+        verbose_mode = "verbose_mode" in request.form
+        template_sequence = request.form.get("templateSequence", "").strip() or "TEST_TEMPLATE"
+        
         print(f"generate_protocol received species: {species}")
         codon_usage_dict = utils.get_codon_usage_dict(species)
         print(f"generate_protocol codon_usage_dict: {codon_usage_dict}")
-
+        
+        # Extract sequences data from form
+        num_sequences = int(request.form.get("numSequences", 0))
+        sequences = []
+        primer_names = []
+        mtk_parts = []
+        
+        for i in range(num_sequences):
+            seq_key = f"sequences[{i}][sequence]"
+            name_key = f"sequences[{i}][primerName]"
+            part_key = f"sequences[{i}][mtkPart]"
+            
+            sequence = request.form.get(seq_key, "").strip()
+            if sequence:  # Only process non-empty sequences
+                sequences.append(sequence)
+                primer_names.append(request.form.get(name_key, "").strip() or f"Test Primer {i+1}")
+                mtk_parts.append(request.form.get(part_key, "").strip() or "6")
+        
+        # Check if we have valid sequences
+        if not sequences:
+            return jsonify({"error": "No valid sequences provided"}), 400
+            
+        # Create protocol
         protocol_maker = GoldenGateProtocol(
-            seq=[str(entry.get("sequence", "").strip()) or "TEST_SEQUENCE"
-                 for entry in packaged_data.get("sequences", [])],
+            seq=sequences,
             codon_usage_dict=codon_usage_dict,
-            part_num_left=[entry.get("mtkPart", "").strip(
-            ) or "6" for entry in packaged_data.get("sequences", [])],
-            part_num_right=["" for _ in packaged_data.get(
-                "sequences", [])],  # Placeholder
-            max_mutations=int(packaged_data.get("max-mut-per-site", 3)),
-            primer_name=[entry.get("primerName", "").strip() or f"Test Primer {i+1}"
-                         for i, entry in enumerate(packaged_data.get("sequences", []))],
-            template_seq=str(packaged_data.get(
-                "templateSequence", "").strip()) or "TEST_TEMPLATE",
-            kozak=packaged_data.get("kozak", "MTK"),
-            verbose=packaged_data.get("verboseMode", False)
+            part_num_left=mtk_parts,
+            part_num_right=["" for _ in sequences],  # Placeholder
+            max_mutations=max_mut_per_site,
+            primer_name=primer_names,
+            template_seq=template_sequence,
+            kozak=kozak,
+            verbose=verbose_mode
         )
-
-        protocol_results = protocol_maker.create_gg_protocol()
-
-        # Recursively convert all non-serializable objects (Seq, ndarray)
-        protocol_results_cleaned = convert_non_serializable(protocol_results)
-
-        processed_sites = process_restriction_sites(
-            protocol_results_cleaned.get("sequence_analysis", []))
-
-        logger.info(f"Sending to Jinja - restriction_sites: {processed_sites}")
-
-        return render_template("results_partial.html",
-                               results=protocol_results_cleaned,
-                               restriction_sites=processed_sites)
-
+        
+        # Generate the protocol using the correct method
+        result = protocol_maker.create_gg_protocol()
+        
+        # Return the result as JSON
+        return jsonify(result)
+        
     except Exception as e:
-        logger.error(f"Error generating protocol: {str(e)}", exc_info=True)
-        return f"<div class='error-message'><p>Error: {str(e)}</p></div>", 500
+        print(f"Error in generate_protocol: {str(e)}")
+        return jsonify({"error": str(e)}), 500

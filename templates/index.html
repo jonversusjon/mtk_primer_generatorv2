@@ -11,40 +11,81 @@
   <div class="app-container">
 
     <!-- Form Container -->
-    <form id="primer-form"
-      hx-post="{{ url_for('main.generate_protocol') }}"
-      hx-trigger="submit"
-      hx-target="#results-container"
-      hx-swap="innerHTML"
-      hx-indicator="#loading-indicator"
-      novalidate>
-
-        <!-- Template Sequence Section -->
-        {% include 'template_sequence.html' %}
-
-        <!-- Sequences to Domesticate Section -->
-        {% include 'sequences_to_domesticate.html' %}
-
-        <!-- Form Buttons -->
-        <div class="button-container">
-          <button type="submit" class="btn btn-primary" id="runDesignPrimerBtn" disabled title="Fill in required fields">
-            Generate Protocol
+    <form id="primer-form" hx-post="{{ url_for('main.generate_protocol') }}" hx-trigger="submit"
+      hx-target="#results-container" hx-swap="innerHTML" hx-indicator="#loading-indicator" novalidate>
+      <!-- Floating Settings Card -->
+      <div id="settings-card" class="settings-card hidden">
+        <!-- Settings Content -->
+        <div class="settings-content">
+          <!-- Dark Mode Toggle -->
+          <button id="darkModeToggle" class="dark-mode-btn">
+            <span class="moon-icon">🌙</span>
+            <span class="button-text">Dark Mode</span>
           </button>
-          <button type="button" class="btn btn-warning" id="clearForm">
-            Clear Form
-          </button>
-        </div>
-        <!-- Loading indicator -->
-        <div id="loading-indicator" class="htmx-indicator">
-          <div class="spinner-container">
-            <div class="spinner-border text-primary" role="status">
-              <span class="visually-hidden">Processing...</span>
-            </div>
-            <span class="loading-text">Processing your request...</span>
+
+          <!-- Species Selection -->
+          <div class="form-group">
+            <label for="species">Species:</label>
+            <select id="species" name="species" class="form-select">
+              <option value="">Select species...</option>
+              {% for s in available_species %}
+              <option value="{{ s }}" {% if loop.first %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
           </div>
+
+          <!-- Kozak Selection -->
+          <div class="form-group">
+            <label for="kozak">Kozak:</label>
+            <select id="kozak" name="kozak" class="form-select" hx-trigger="change">
+              <option value="MTK" selected>MTK</option>
+              <option value="Canonical">Canonical</option>
+            </select>
+          </div>
+
+          <!-- Mutations Setting -->
+          <div class="form-group">
+            <label for="maxMutPerSite">Max mutations per site:</label>
+            <select id="maxMutPerSite" name="max_mut_per_site" class="form-select" hx-trigger="change">
+              <option value="1" selected>1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+            </select>
+          </div>
+
+          <!-- Verbose Mode Toggle -->
+          <div class="form-group checkbox">
+            <input type="checkbox" id="verbose_mode" name="verbose_mode">
+            <label for="verbose_mode">Verbose</label>
+          </div>
+          <button id="close-settings" class="close-settings-btn" style="display: none;">Close Settings</button>
         </div>
-      </form>
-    </div>
+      </div>
+      <!-- Template Sequence Section -->
+      {% include 'template_sequence.html' %}
+
+      <!-- Sequences to Domesticate Section -->
+      {% include 'sequences_to_domesticate.html' %}
+
+      <!-- Form Buttons -->
+      <div class="button-container">
+        <button type="submit" class="btn btn-primary" id="runDesignPrimerBtn" disabled title="Fill in required fields">
+          Generate Protocol
+        </button>
+        <button type="button" class="btn btn-warning" id="clearForm">
+          Clear Form
+        </button>
+      </div>
+      <!-- Loading indicator -->
+      <div id="loading-indicator" class="htmx-indicator">
+        <div class="spinner-container">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Processing...</span>
+          </div>
+          <span class="loading-text">Processing your request...</span>
+        </div>
+      </div>
+    </form>
     <!-- End of Form Container -->
 
     <!-- Results Sections -->
@@ -62,4 +103,3 @@
 </body>
 
 </html>
-

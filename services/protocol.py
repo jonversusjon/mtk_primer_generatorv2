@@ -99,6 +99,8 @@ class GoldenGateProtocol:
 
         for i, single_seq in enumerate(self.seq):
             try:
+                print(f"Processing sequence {i+1}/{len(self.seq)}")
+                print(f"Current sequence: {single_seq}")
                 sequence_data = {
                     'sequence_index': i,
                     'processed_sequence': None,

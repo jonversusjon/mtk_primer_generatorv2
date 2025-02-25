@@ -44,7 +44,7 @@ class SequencePreparator:
         with debug_context("adjust_sequence_for_frame_and_codons"):
             if isinstance(seq, str):
                 seq = Seq(seq)
-            
+            print(f"seq: {seq}")
             self.state['current_sequence'] = seq
             self.state['adjustments_made'] = []
 
