@@ -1,21 +1,26 @@
-import React from 'react';
-import '../../styles/Settings.css';
+import React from "react";
+import "../../styles/Settings.css";
 
-function Settings({ show, onClose, formData, updateFormData, availableSpecies }) {
+function Settings({
+  show,
+  onClose,
+  formData,
+  updateFormData,
+  availableSpecies,
+}) {
   if (!show) return null;
-  
+
   return (
-    <div id="settings-card" className="settings-card">
+    <div className="settings-modal">
       <div className="settings-content">
         {/* Species Selection */}
         <div className="form-group">
-          <label htmlFor="species">Species:</label>
+          <label htmlFor="species-select">Species:</label>
           <select
-            id="species"
-            name="species"
-            className="form-select"
+            id="species-select"
+            className="form-control"
             value={formData.species}
-            onChange={(e) => updateFormData('species', e.target.value)}
+            onChange={(e) => updateFormData("species", e.target.value)}
           >
             <option value="">Select species...</option>
             {availableSpecies.map((species) => (
@@ -28,13 +33,12 @@ function Settings({ show, onClose, formData, updateFormData, availableSpecies })
 
         {/* Kozak Selection */}
         <div className="form-group">
-          <label htmlFor="kozak">Kozak:</label>
+          <label htmlFor="kozak-select">Kozak:</label>
           <select
-            id="kozak"
-            name="kozak"
-            className="form-select"
+            id="kozak-select"
+            className="form-control"
             value={formData.kozak}
-            onChange={(e) => updateFormData('kozak', e.target.value)}
+            onChange={(e) => updateFormData("kozak", e.target.value)}
           >
             <option value="MTK">MTK</option>
             <option value="Canonical">Canonical</option>
@@ -43,13 +47,14 @@ function Settings({ show, onClose, formData, updateFormData, availableSpecies })
 
         {/* Mutations Setting */}
         <div className="form-group">
-          <label htmlFor="maxMutPerSite">Max mutations per site:</label>
+          <label htmlFor="mutations-select">Max mutations per site:</label>
           <select
-            id="maxMutPerSite"
-            name="max_mut_per_site"
-            className="form-select"
+            id="mutations-select"
+            className="form-control"
             value={formData.max_mut_per_site}
-            onChange={(e) => updateFormData('max_mut_per_site', parseInt(e.target.value))}
+            onChange={(e) =>
+              updateFormData("max_mut_per_site", parseInt(e.target.value))
+            }
           >
             <option value="1">1</option>
             <option value="2">2</option>
@@ -58,24 +63,24 @@ function Settings({ show, onClose, formData, updateFormData, availableSpecies })
         </div>
 
         {/* Verbose Mode Toggle */}
-        <div className="form-group checkbox">
+        <div className="form-check">
           <input
             type="checkbox"
-            id="verbose_mode"
-            name="verbose_mode"
+            className="form-check-input"
+            id="verbose-mode"
             checked={formData.verbose_mode}
-            onChange={(e) => updateFormData('verbose_mode', e.target.checked)}
+            onChange={(e) => updateFormData("verbose_mode", e.target.checked)}
           />
-          <label htmlFor="verbose_mode">Verbose</label>
+          <label className="form-check-label" htmlFor="verbose-mode">
+            Verbose
+          </label>
         </div>
-        
-        <button 
-          id="close-settings" 
-          className="close-settings-btn" 
-          onClick={onClose}
-        >
-          Close Settings
-        </button>
+
+        <div className="settings-footer">
+          <button type="button" className="btn btn-primary" onClick={onClose}>
+            Close Settings
+          </button>
+        </div>
       </div>
     </div>
   );

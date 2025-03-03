@@ -1,41 +1,41 @@
-import React, { useState } from 'react';
-import RestrictionSiteSummary from './RestrictionSiteSummary';
-import PrimerAnatomy from './PrimerAnatomy';
-import '../../styles/Results.css';
+import React, { useState } from "react";
+import RestrictionSiteSummary from "./RestrictionSiteSummary";
+import PrimerAnatomy from "./PrimerAnatomy";
+import "../../styles/Results.css";
 
 function Results({ data }) {
   const [showPrimerAnatomy, setShowPrimerAnatomy] = useState(false);
-  
+
   if (!data) return null;
-  
+
   const { restriction_sites, primers, mutations, sequence_analysis } = data;
-  
+
   return (
     <div className="protocol-results">
       <h2>Golden Gate Protocol Results</h2>
-      
+
       {/* Toggle Primer Anatomy View */}
       <div className="result-actions">
         <button
           className="btn btn-secondary"
           onClick={() => setShowPrimerAnatomy(!showPrimerAnatomy)}
         >
-          {showPrimerAnatomy ? 'Hide' : 'Show'} Primer Anatomy
+          {showPrimerAnatomy ? "Hide" : "Show"} Primer Anatomy
         </button>
       </div>
-      
+
       {/* Show Primer Anatomy if toggled */}
       {showPrimerAnatomy && (
         <div className="primer-anatomy-container">
           <PrimerAnatomy />
         </div>
       )}
-      
+
       {/* Show Restriction Site Summary if available */}
       {restriction_sites && restriction_sites.length > 0 && (
         <RestrictionSiteSummary sites={restriction_sites} />
       )}
-      
+
       {/* Show Primers if available */}
       {primers && primers.length > 0 && (
         <div className="primers-summary">
@@ -60,7 +60,7 @@ function Results({ data }) {
           </table>
         </div>
       )}
-      
+
       {/* Show Mutations if available */}
       {mutations && mutations.length > 0 && (
         <div className="mutations-summary">
@@ -87,7 +87,7 @@ function Results({ data }) {
           </table>
         </div>
       )}
-      
+
       {/* Show any additional analysis data */}
       {sequence_analysis && sequence_analysis.length > 0 && (
         <div className="sequence-analysis-summary">
@@ -96,10 +96,17 @@ function Results({ data }) {
             {sequence_analysis.map((analysis, index) => (
               <div key={index} className="analysis-item">
                 <h4>Sequence {index + 1}</h4>
-                <p><strong>Processed Length:</strong> {analysis.processed_sequence?.length || 0} bp</p>
-                {analysis.restriction_sites && analysis.restriction_sites.length > 0 && (
-                  <p><strong>Restriction Sites:</strong> {analysis.restriction_sites.length}</p>
-                )}
+                <p>
+                  <strong>Processed Length:</strong>{" "}
+                  {analysis.processed_sequence?.length || 0} bp
+                </p>
+                {analysis.restriction_sites &&
+                  analysis.restriction_sites.length > 0 && (
+                    <p>
+                      <strong>Restriction Sites:</strong>{" "}
+                      {analysis.restriction_sites.length}
+                    </p>
+                  )}
               </div>
             ))}
           </div>

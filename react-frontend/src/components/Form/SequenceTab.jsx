@@ -35,64 +35,57 @@ function SequenceTab({ sequence, index, updateSequence, mtkPartOptions }) {
   };
 
   return (
-    <>
+    <div className="sequence-tab-content">
       <div className="sequence-header">
-        <label htmlFor={`sequence${index}`} className="form-label">
-          Sequence {index + 1}:
-        </label>
-        <span
-          id={`charCount${index}`}
-          className="char-count-label"
-          style={{ display: charCount > 0 ? "inline" : "none" }}
-        >
+        <label htmlFor={`sequence-${index}`}>Sequence {index + 1}:</label>
+        <div className="char-count" style={{ display: charCount > 0 ? "inline" : "none" }}>
           Length: {charCount} bp
-        </span>
+        </div>
       </div>
 
       <SequenceInput
-        id={`sequence${index}`}
-        name={`sequences[${index}][sequence]`}
+        id={`sequence-${index}`}
         value={sequence.sequence}
         onChange={handleSequenceChange}
-        placeholder="Paste DNA sequence..."
-        className="dynamic-sequence-input"
-        required
+        placeholder="Paste your DNA sequence here"
       />
 
       {validationMessage && (
-        <div className="validation-feedback invalid">{validationMessage}</div>
+        <div className="validation-message error">
+          {validationMessage}
+        </div>
       )}
 
-      <div className="form-group">
-        <label htmlFor={`primerName${index}`}>Primer Name:</label>
-        <input
-          type="text"
-          id={`primerName${index}`}
-          name={`sequences[${index}][primerName]`}
-          placeholder="Default Primer Name"
-          value={sequence.primerName}
-          onChange={handlePrimerNameChange}
-          className="primer-name-input"
-          required
-        />
+      <div className="sequence-metadata">
+        <div className="form-group">
+          <label htmlFor={`primer-name-${index}`}>Primer Name:</label>
+          <input
+            type="text"
+            id={`primer-name-${index}`}
+            value={sequence.primerName}
+            onChange={handlePrimerNameChange}
+            className="form-control"
+            placeholder="Enter primer name"
+          />
+        </div>
 
-        <label htmlFor={`mtkPart${index}`}>MTK Part Number:</label>
-        <select
-          id={`mtkPart${index}`}
-          name={`sequences[${index}][mtkPart]`}
-          value={sequence.mtkPart}
-          onChange={handleMtkPartChange}
-          className="mtk-part-select"
-          required
-        >
-          {mtkPartOptions.map((part) => (
-            <option key={part} value={part}>
-              {part}
-            </option>
-          ))}
-        </select>
+        <div className="form-group">
+          <label htmlFor={`mtk-part-${index}`}>MTK Part Number:</label>
+          <select
+            id={`mtk-part-${index}`}
+            value={sequence.mtkPart}
+            onChange={handleMtkPartChange}
+            className="form-control"
+          >
+            {mtkPartOptions.map((part) => (
+              <option key={part} value={part}>
+                {part}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
-    </>
+    </div>
   );
 }
 

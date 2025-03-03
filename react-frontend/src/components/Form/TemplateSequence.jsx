@@ -30,36 +30,28 @@ function TemplateSequence({ value, onChange }) {
   };
 
   return (
-    <div className="form-sub-container">
+    <div className="template-sequence-section">
       <div className="section-header">
-        <div className="template-sequence-header">
-          <h2 className="form-sub-container-title">Template Sequence</h2>
-          <h4>(optional)</h4>
+        <div className="section-title">
+          <h3>Template Sequence</h3>
+          <span className="optional-badge">(optional)</span>
         </div>
       </div>
 
-      <div className="paste-template-sequence-header">
-        <label htmlFor="templateSequence" className="form-label">
-          Paste Template Sequence:
-        </label>
-        <span id="charCount" className="char-count-label">
-          Length: {charCount} bp
-        </span>
+      <div className="sequence-input-container">
+        <label htmlFor="templateSequence">Paste Template Sequence:</label>
+        <div className="char-count">Length: {charCount} bp</div>
       </div>
 
       <SequenceInput
         id="templateSequence"
-        name="templateSequence"
         value={value}
         onChange={handleChange}
-        placeholder="Enter DNA sequence here..."
-        className="sequence-input"
+        placeholder="Paste your template DNA sequence here (optional)"
       />
 
       {validationMessage && (
-        <div className="error-message" data-field="templateSequence">
-          {validationMessage}
-        </div>
+        <div className="validation-message error">{validationMessage}</div>
       )}
     </div>
   );

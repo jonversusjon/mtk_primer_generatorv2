@@ -162,3 +162,10 @@
       max-height: 80vh;
     }
   }
+
+  .dark-mode-btn {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1000; /* Ensures it appears above other elements */
+  }
