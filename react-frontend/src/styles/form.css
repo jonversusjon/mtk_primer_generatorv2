@@ -1,0 +1,374 @@
+/* Base Form Layout */
+#primer-form {
+  background-color: var(--background-color);
+  margin: 0;
+  border-radius: 0.75rem;
+  box-shadow: 0 5px 10px var(--shadow-color);
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: calc(100vh - 140px);
+  position: relative;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+#primer-form::-webkit-scrollbar {
+  width: 6px;
+}
+
+#primer-form::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 4px 0;
+}
+
+#primer-form::-webkit-scrollbar-thumb {
+  background-color: var(--shadow-color);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+#primer-form::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-color);
+}
+
+/* Form Sections */
+.form-sub-container {
+  margin: 2rem 0 0.8rem 0;
+  position: relative;
+  max-width: 500px;
+}
+
+.form-sub-container-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0 0 1rem;
+}
+
+/* Input Groups & Rows */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.form-group-row {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.input-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+/* Labels */
+.form-label {
+  font-size: 0.9rem;
+  color: var(--text-color);
+  margin: 0;
+}
+
+/* Inputs */
+.form-control,
+.form-select {
+  font-size: 0.875rem;
+  height: 2.5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.375rem;
+  background-color: var(--sub-box-bg);
+  color: var(--text-color);
+  transition: border-color 0.15s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+  outline: none;
+  border-color: var(--color-indigo);
+  box-shadow: 0 0 0 2px rgba(84, 19, 136, 0.1);
+}
+
+.form-control-small {
+  max-width: 80px;
+}
+
+/* Character Counter */
+.char-count-label {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+}
+
+/* Error Messages & Validation */
+.error-message {
+  position: absolute;
+  bottom: -1.25rem;
+  left: 0;
+  font-size: 0.75rem;
+  color: var(--error-color);
+}
+
+/* Validation feedback styles */
+.validation-feedback {
+  display: block;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  min-height: 1.25rem; /* Prevent layout shifts */
+}
+
+/* Invalid state */
+.validation-feedback.invalid {
+  color: #dc2626;
+}
+
+/* Valid state */
+.validation-feedback.valid {
+  color: #198754;
+}
+
+/* Advisory state */
+.validation-feedback.advisory {
+  color: #f59e0b; /* Amber warning color */
+}
+
+/* Bootstrap validation classes */
+.was-validated .invalid-feedback {
+  display: block;
+  color: #dc3545;
+  font-size: 0.875em;
+  margin-top: 0.25rem;
+}
+
+.was-validated .form-control:invalid,
+.was-validated .dynamic-sequence-input:invalid,
+.form-control.is-invalid,
+.form-select.is-invalid,
+textarea.is-invalid {
+  border-color: #dc3545;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right calc(0.375em + 0.1875rem) center;
+  background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.was-validated .form-control:valid,
+.was-validated .dynamic-sequence-input:valid,
+.form-control.is-valid,
+.form-select.is-valid,
+textarea.is-valid {
+  border-color: #198754;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c-.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right calc(0.375em + 0.1875rem) center;
+  background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+
+/* Button Container */
+.button-container {
+  background-color: var(--background-color);
+  padding: 1rem 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2rem;
+  border-top: 1px solid var(--border-color);
+  max-width: 500px;
+}
+
+/* Buttons */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-primary {
+  background-color: var(--color-indigo);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #4a1177;
+}
+
+.btn-warning {
+  background-color: var(--color-gold);
+  color: var(--text-color);
+}
+
+.btn-warning:hover {
+  background-color: #e6bf00;
+}
+
+/* Section Headers */
+.section-header,
+.sequence-header,
+/*combined sequence header*/
+.paste-template-sequence-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.section-header {
+  margin: 0 1rem;
+  /*section header specific margin*/
+}
+
+.template-sequence-header {
+  display: flex;
+  justify-content: left;
+  align-items: center;
+  width: 100%;
+}
+
+.template-sequence-header h2,
+.template-sequence-header h4 {
+  margin: 0;
+  padding-right: 5px;
+  /* Optional spacing */
+}
+
+.template-sequence-header h4 {
+  font-weight: 400;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Sequence Control Buttons */
+#sequence-control-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+#sequence-control-buttons button {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--btn-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+#sequence-control-buttons button:hover {
+  background-color: var(--btn-hover-color);
+}
+
+#sequence-control-buttons button:active {
+  background-color: var(--btn-active-color);
+}
+
+/* HTMX Request State */
+.htmx-request .form-control,
+.htmx-request .dynamic-sequence-input {
+  opacity: 0.65;
+}
+
+/* Submit Button & Spinner */
+#runDesignPrimerBtn {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+#runDesignPrimerBtn:disabled,
+#runDesignPrimerBtn.processing {
+  /*combined disabled and processing*/
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+#runDesignPrimerBtn.processing {
+  padding-left: 2.5rem;
+  pointer-events: none;
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+.spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  vertical-align: middle;
+  border: 0.2em solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+  margin-right: 0.5rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Loading Indicator */
+#loading-indicator {
+  display: none;
+  text-align: center;
+  padding: 1rem;
+  font-style: italic;
+  color: #6c757d;
+}
+
+#loading-indicator.htmx-request {
+  display: block;
+}
+
+/* Add these styles to your CSS file */
+
+.sequence-tab-btn {
+  position: relative;
+}
+
+.nav-indicator {
+  display: inline-block;
+  color: #ff9900;
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 16px;
+  height: 16px;
+  background-color: rgba(0, 0, 0, 0.7);
+  border-radius: 50%;
+  font-size: 12px;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* Make the active tab with error more noticeable */
+.sequence-tab-btn.active .nav-indicator {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.7; }
+  50% { opacity: 1; }
+  100% { opacity: 0.7; }
+}

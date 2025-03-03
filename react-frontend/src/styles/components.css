@@ -1,0 +1,338 @@
+/* --- Base Variables & Palette --- */
+:root {
+  --color-indigo: #541388;
+  --color-dogwood-rose: #D90368;
+  --color-eggshell: #F9F6F0;
+  --color-space-cadet: #2E294E;
+  --color-gold: #FFD400;
+
+  --primary-color: var(--color-dogwood-rose);
+  --primary-hover: #b80258;
+  --warning-color: var(--color-gold);
+  --warning-hover: #e6bf00;
+  --error-color: var(--color-dogwood-rose);
+  --success-color: var(--color-indigo);
+  --border-color: var(--color-space-cadet);
+  --text-dark: black;
+  --text-muted:  #414d5a;/* or lighten/darken one of the palette colors */
+}
+
+/* Optional global body style */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  background-color: var(--color-eggshell);
+  color: var(--text-dark);
+}
+
+/* --- Common Utilities --- */
+.hidden {
+  display: none;
+}
+
+/* --- Buttons --- */
+.btn {
+  padding: 8px 12px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+}
+
+.btn-warning {
+  background-color: var(--warning-color);
+  color: #fff;
+}
+
+.btn-warning:hover {
+  background-color: var(--warning-hover);
+}
+
+/* --- Form Elements --- */
+.input-field {
+  transition: all 0.3s ease;
+  border: 2px solid var(--border-color);
+}
+
+.input-field.valid {
+  border-color: var(--success-color);
+}
+
+.input-field.invalid {
+  border-color: var(--error-color) !important;
+  background-color: rgba(255, 0, 0, 0.1);
+  animation: shake 0.3s ease-in-out;
+}
+
+
+.btn-primary.validation-failed {
+  background-color: #dc3545;
+  border-color: #dc3545;
+}
+
+/* --- Tooltips --- */
+.info-icon-container {
+  display: inline-block;
+  position: relative;
+  overflow: visible;
+}
+
+.info-tooltip {
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--text-dark);
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 250px;
+  text-align: center;
+  display: none;
+  z-index: 100;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  white-space: normal;
+  pointer-events: none;
+}
+
+.info-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-top-color: rgba(255, 255, 255, 0.95);
+}
+
+.info-icon-container:hover .info-tooltip,
+.info-icon-container:focus-within .info-tooltip {
+  display: block;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* --- Sequence Section --- */
+.sequence-content {
+  max-width: 800px;
+  margin: 10px auto;
+  /* Use eggshell or a very light tone for the background */
+  background: var(--color-eggshell);
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.sequence-content label {
+  font-size: 0.9em;
+}
+
+.sequence-input,
+.dynamic-sequence-input {
+  min-width: 100%;
+  overflow-wrap: break-word;
+  color: var(--text-muted);
+  font-family: "Fira Code", Consolas, Monaco, monospace;
+  width: 100%;
+  min-height: 8rem; /* Equivalent to 80px */
+  font-size: 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.375rem;
+  background-color: white;
+  resize: vertical;
+  margin-top: 0.5rem; /* added from dynamic-sequence-input */
+}
+
+#numSequences {
+  width: 40px;
+  padding: 6px;
+}
+
+#upload {
+  width: 75%;
+}
+
+/* --- Results Section --- */
+#results {
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 5px;
+  border: 1px solid var(--border-color);
+  margin-top: 20px;
+}
+
+/* --- Utility Classes --- */
+.char-count-label {
+  font-size: 0.8em;
+  color: var(--text-dark);
+  margin: 4px 0 0 12px;
+}
+
+#verbose_mode_container {
+  margin-left: 0;
+  transform: scale(0.6);
+}
+
+#verbose_mode {
+  width: 30px;
+  margin-left: 12px;
+}
+
+/* --- Table Section --- */
+.restriction-site-summary-table-container {
+  width: 100%;
+  margin: 20px 0;
+  font-size: 12px;
+  text-align: left;
+  background-color: #fff;
+  color: var(--text-dark);
+}
+
+.restriction-site-summary-table-title {
+  font-size: 16px;
+  margin: 12px;
+}
+
+.restriction-site-summary-table-container table {
+  margin-left: 20px;
+  border-collapse: collapse;
+}
+
+/* Table Header */
+.restriction-site-summary-table-container thead {
+  background-color: var(--color-eggshell);
+  color: var(--text-dark);
+  font-weight: bold;
+}
+
+/* Table Header Cells */
+.restriction-site-summary-table-container th {
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  text-align: center;
+}
+
+/* Table Body Cells */
+.restriction-site-summary-table-container td {
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  text-align: center;
+}
+
+/* Alternate Row Coloring */
+.restriction-site-summary-table-container tbody tr:nth-child(even) {
+  background-color: var(--color-eggshell);
+}
+
+.restriction-site-summary-table-container tbody tr:nth-child(odd) {
+  background-color: #fff;
+}
+
+/* Hover Effect */
+.restriction-site-summary-table-container tbody tr:hover {
+  background-color: #e0e0e0; /* Optionally replace with a lighter var(--color-eggshell) if desired */
+}
+
+/* --- Settings Card --- */
+#settings-card {
+  position: fixed;
+  top: 60px;
+  right: 20px;
+  width: 320px;
+  background-color: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  z-index: 1000;
+  transition: all 0.3s ease-in-out;
+  transform: scale(0.8);
+}
+
+/* Form Layout */
+#settings-card .form-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-direction: row;
+}
+
+/* Make labels wider */
+#settings-card .form-group label {
+  flex: 0 0 170px; /* Fixed width of 200px, adjust as needed */
+  /* or */
+  min-width: 170px; /* Minimum width of 200px */
+}
+
+/* Let the select/input take remaining space */
+#settings-card .form-group select,
+#settings-card .form-group input {
+  flex: 1;
+}
+
+#settings-card .form-group label {
+  width: 40%;
+  font-weight: 500;
+  color: var(--text-dark);
+}
+
+#settings-card .form-group select {
+  width: 60%;
+  padding: 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  font-size: 14px;
+  background-color: var(--color-eggshell);
+}
+
+/* Close Button */
+#close-settings {
+  display: block;
+  width: 100%;
+  background-color: var(--error-color);
+  color: #fff;
+  border: none;
+  padding: 8px;
+  font-size: 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 12px;
+  text-align: center;
+  transition: background-color 0.3s ease;
+}
+
+#close-settings:hover {
+  background-color: #a50147; /* A darker shade of dogwood rose */
+}
+
+/* Toggle Button */
+#toggle-settings {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background-color: var(--text-dark);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 5px;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  border: none;
+  max-width: 120px;
+  transition: background-color 0.3s ease;
+  z-index: 1000;
+  transform: scale(0.8)
+}
+
+#toggle-settings:hover {
+  background-color: #1e1b38; /* Slightly darker than space cadet */
+}
+
+

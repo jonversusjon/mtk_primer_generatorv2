@@ -1,0 +1,43 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Start Backend (Flask)",
+        "type": "shell",
+        "command": "python app.py",
+        "options": {
+          "cwd": "${workspaceFolder}/flask-backend"
+        },
+        "presentation": {
+          "reveal": "always",
+          "panel": "new",
+          "group": "develop"
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "Start Frontend (React)",
+        "type": "shell",
+        "command": "npm start",
+        "options": {
+          "cwd": "${workspaceFolder}/react-frontend"
+        },
+        "presentation": {
+          "reveal": "always",
+          "panel": "new",
+          "group": "develop"
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "Start Full Stack App",
+        "dependsOn": ["Start Backend (Flask)", "Start Frontend (React)"],
+        "dependsOrder": "parallel",
+        "presentation": {
+          "reveal": "always",
+          "panel": "new"
+        },
+        "problemMatcher": []
+      }
+    ]
+  }

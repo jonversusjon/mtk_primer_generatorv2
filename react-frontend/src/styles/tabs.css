@@ -1,0 +1,280 @@
+/* Main Tab Container */
+.sequence-tabs {
+    margin: 1.5rem 0;
+}
+
+/* Container for tabs with scroll buttons */
+.tabs-container {
+    position: relative;
+    margin: 0.25rem 0;
+}
+
+/* Scroll button styling */
+.tab-scroll-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2rem;
+    height: 2rem;
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    cursor: pointer;
+    display: none;
+    /* Hidden by default, shown via JS when needed */
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: all 0.2s ease;
+    color: var(--text-color);
+}
+
+.tab-scroll-button:hover {
+    background-color: var(--btn-hover-color);
+}
+
+.tab-scroll-button.left {
+    left: -1rem;
+}
+
+.tab-scroll-button.right {
+    right: -1rem;
+}
+
+/* Tab navigation container */
+.tab-buttons,
+.sequence-tabs-nav {
+    display: flex;
+    gap: 2rem;
+    padding: 0.2rem 1rem;
+    margin-bottom: 0.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scroll-behavior: smooth;
+    position: relative;
+    max-width: 500px;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.tab-buttons::-webkit-scrollbar,
+.sequence-tabs-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.sequence-tab-btn,
+.tab-button {
+    flex: 1 1 auto;
+    position: relative;
+    padding: 0.75rem 1rem;
+    /* Added horizontal padding */
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+/* Hover state */
+.sequence-tab-btn:hover,
+.tab-button:hover {
+    color: var(--text-color);
+}
+
+/* Active state */
+.sequence-tab-btn.active,
+.tab-button.active {
+    color: var(--color-indigo);
+    font-weight: 600;
+}
+
+/* Underline indicator */
+.sequence-tab-btn::after,
+.tab-button::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: var(--color-indigo);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.sequence-tab-btn.active::after,
+.tab-button.active::after {
+    transform: scaleX(1);
+}
+
+/* Tab Content Areas */
+.tab-content,
+.sequence-tabs-content {
+    background-color: #dcdcdc;
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    overflow-x: hidden;
+    margin-right: 1rem;
+    margin-bottom: 2rem;
+    max-width: 500px;
+}
+
+/* Tab Panes */
+.tab-pane,
+.sequence-tab-content {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.tab-pane.active,
+.sequence-tab-content.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Form Layout Within Tabs */
+.sequence-tab-content .form-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.sequence-tab-content .input-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* Form Elements Within Tabs */
+.sequence-tab-wrapper .form-row-top {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.sequence-tab-wrapper .input-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 150px;
+}
+
+/* Input Styling Within Tabs */
+.sequence-tab-content input,
+.sequence-tab-content select,
+.sequence-tab-content textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+    background: white;
+}
+
+.sequence-tab-content textarea {
+    min-height: 8rem;
+    resize: vertical;
+}
+
+/* Error Messages */
+.error-message {
+    color: #dc2626;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* Character Counter */
+.char-count-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+
+    .tab-buttons,
+    .sequence-tabs-nav {
+        gap: 1rem;
+        padding: 0.1rem;
+    }
+
+    .sequence-tab-btn,
+    .tab-button {
+        padding: 0.5rem 0;
+        font-size: 0.8125rem;
+    }
+
+    .tab-content,
+    .sequence-tabs-content {
+        padding: 1rem;
+    }
+
+    .sequence-tab-wrapper .input-group {
+        min-width: 100%;
+    }
+
+    .tab-scroll-button {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+}
+
+.form-sub-container-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+}
+
+#sequence-control-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.sequence-control-btn {
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+    color: var(--text-color);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sequence-control-btn:hover {
+    background-color: var(--btn-hover-color);
+}
+
+.sequence-control-btn:active {
+    background-color: var(--btn-active-color);
+}
+
+/* Ensure proper spacing for the tabs container */
+#sequence-tabs-container {
+    margin-top: 1rem;
+}
+
+.sequence-tabs-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    /* Optional: adds space between buttons */
+}
+

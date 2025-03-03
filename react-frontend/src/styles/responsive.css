@@ -1,0 +1,145 @@
+/* Base breakpoint variables */
+@media (min-width: 600px) {
+
+    .form-row .input-group,
+    .sequence-pane .form-row-top .input-group {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .form-row .input-group label,
+    .sequence-pane .form-row-top .input-group label {
+        margin-right: 8px;
+        white-space: nowrap;
+    }
+}
+
+/* Mobile styles */
+@media (max-width: 600px) {
+    body {
+        max-width: 100%;
+        padding: 10px;
+    }
+
+    button,
+    textarea,
+    input,
+    select {
+        font-size: 14px;
+    }
+
+    .info-tooltip {
+        width: 200px;
+        font-size: 12px;
+        padding: 8px;
+    }
+
+    .form-row-top,
+    .sequence-pane .form-row-top,
+    .input-group {
+        flex-direction: column;
+    }
+
+    .input-group {
+        align-items: stretch;
+    }
+
+    .input-group label {
+        margin-right: 0;
+        margin-bottom: 4px;
+    }
+}
+
+/* Tablet styles */
+@media (max-width: 768px) {
+
+    .results-container {
+        border-left: none;
+        /* Remove left border in stacked view */
+        border-top: 1px solid #ddd;
+        /* Add a top border for separation */
+    }
+
+    .sequence-tabs-nav {
+        height: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .sequence-tab-btn {
+        min-width: 20px;
+        max-width: 40px;
+        padding: 10px 15px;
+        font-size: 0.8em;
+    }
+
+    .sequence-tabs-content {
+        padding: 15px;
+        margin: 0 10px;
+    }
+
+    .sequence-tab-wrapper .form-row-top {
+        flex-direction: column;
+    }
+
+    .sequence-tab-wrapper .input-group {
+        width: 100%;
+    }
+
+    .dropdown-item {
+        width: 100%;
+    }
+
+    .col-large,
+    .col-medium,
+    .col-small {
+        flex: 1;
+    }
+}
+
+/* --- General Styles --- */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+    color: #000;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    /* Centers the app container horizontally */
+}
+
+/* Add this media query for responsive layout */
+@media (max-width: 860px) {
+    .app-container {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .form-container,
+    .results-container {
+        max-width: 100%;
+        height: auto;
+        max-height: 80vh;
+        /* Limit height on mobile */
+    }
+}
+
+/* Dark mode button adjustments */
+@media (max-width: 1000px) {
+    .dark-mode-btn {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        justify-content: center;
+    }
+
+    .dark-mode-btn .button-text {
+        display: none;
+    }
+
+    .dark-mode-btn .moon-icon {
+        font-size: 14px;
+    }
+}

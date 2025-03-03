@@ -1,0 +1,360 @@
+.dark-mode {
+  /* Override the same custom properties used in light mode, but give them dark-friendly values */
+  --background-color: #100E1B;
+  /* Rich black for overall bg */
+  --foreground-color: #F9F6F0;
+  /* Eggshell text on dark bg */
+  --primary-color: #D90368;
+  /* Dogwood rose as primary accent */
+  --primary-hover: #b80258;
+  /* Slightly darker dogwood rose on hover */
+  --warning-color: #FFD400;
+  /* Gold for warnings */
+  --warning-hover: #e6bf00;
+  /* Darker gold for hover */
+  --error-color: #D90368;
+  /* Reuse dogwood rose for errors (or pick another) */
+  --success-color: #541388;
+  /* Indigo for success */
+  --border-color: #BFAFDE;
+  /* A lighter purple-ish border, adjust to taste */
+  --text-dark: #F1E9DA;
+  /* Your main text color in dark mode */
+  --text-muted: #d8d2c8;
+  /* A slightly lighter version for muted text, if desired */
+
+  /* Set background + text at the container level */
+  background-color: var(--background-color);
+  color: var(--foreground-color);
+}
+
+/* === Dark Mode Styles === */
+.dark-mode {
+  /* (See variables defined above) */
+  background-color: var(--background-color);
+  color: var(--foreground-color);
+}
+
+/* Headings, labels, etc. */
+.dark-mode h1,
+.dark-mode h2,
+.dark-mode h3,
+.dark-mode h4,
+.dark-mode h5,
+.dark-mode h6,
+.dark-mode label,
+.dark-mode .instruction-text {
+  color: var(--foreground-color);
+}
+
+/* Form elements, inputs, selects, textareas, buttons */
+.dark-mode select,
+.dark-mode input,
+.dark-mode textarea,
+.dark-mode button {
+  background-color: rgba(255, 255, 255, 0.05);
+  /* Slightly lighter overlay on space-cadet */
+  color: var(--foreground-color);
+  border: 1px solid var(--border-color);
+}
+
+.dark-mode input {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Hover effect for generic buttons */
+.dark-mode button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Dark-mode primary & warning buttons */
+.dark-mode .btn-primary {
+  background-color: var(--primary-color);
+  color: var(--foreground-color);
+}
+
+.dark-mode .btn-primary:hover {
+  background-color: var(--primary-hover);
+}
+
+.dark-mode .btn-warning {
+  background-color: var(--warning-color);
+  color: #3c4752;
+  /*var(--background-color);*/
+}
+
+.dark-mode .btn-warning:hover {
+  background-color: var(--warning-hover);
+}
+
+.dark-mode .app-header {
+  background-color: var(--background-color);
+  color: var(--foreground-color);
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dark-mode .sequence-input,
+.dark-mode .dynamic-sequence-input {
+  color: #b9bbbc !important;
+  background-color: var(--background-color) !important;
+}
+
+/* Minimal Tab Navigation in Dark Mode */
+.dark-mode .sequence-tabs-nav {
+  background: none;
+}
+
+.dark-mode .sequence-tab-btn,
+.dark-mode .tab-button {
+  background: none;
+  color: var(--text-muted);
+  border: none;
+  position: relative;
+}
+
+.dark-mode .sequence-tab-btn:hover,
+.dark-mode .tab-button:hover {
+  color: var(--foreground-color);
+  background: none;
+}
+
+.dark-mode .sequence-tab-btn.active,
+.dark-mode .tab-button.active {
+  color: var(--primary-color) !important;
+  background: none !important;
+  font-weight: 600;
+}
+
+/* Underline indicator for active tab */
+.dark-mode .sequence-tab-btn::after,
+.dark-mode .tab-button::after {
+  background-color: var(--primary-color);
+}
+
+/* Tab Content Area */
+.dark-mode .sequence-tabs-content,
+.dark-mode .tab-content {
+  background-color: #1F1C35;
+  border: 1px solid var(--border-color);
+  border-top: none;
+}
+
+.dark-mode .sequence-tab-content input,
+.dark-mode .sequence-tab-content select,
+.dark-mode .sequence-tab-content textarea {
+    background: var(--background-color) !important;
+}
+
+/* Scroll Buttons in Dark Mode */
+.dark-mode .tab-scroll-button {
+  background-color: #1F1C35;
+  border: 1px solid var(--border-color);
+  color: var(--foreground-color);
+}
+
+.dark-mode .tab-scroll-button:hover {
+  background-color: var(--tab-hover-bg);
+}
+
+/* Sequence Control Buttons */
+.dark-mode #sequence-control-buttons .sequence-control-btn {
+  background-color: #1F1C35;
+  border: 1px solid var(--border-color);
+  color: var(--foreground-color);
+}
+
+.dark-mode #sequence-control-buttons .sequence-control-btn:hover {
+  background-color: var(--tab-hover-bg);
+}
+
+.dark-mode #sequence-control-buttons .sequence-control-btn:active {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Form Elements in Dark Mode */
+.dark-mode .sequence-input,
+.dark-mode .dynamic-sequence-input,
+.dark-mode .form-control,
+.dark-mode .form-select,
+.dark-mode .input-field {
+  background-color: var(--background-color);
+  color: var(--foreground-color);
+  border: 1px solid var(--border-color);
+}
+
+
+/* Tooltips: arrow & background */
+.dark-mode .info-tooltip::after {
+  border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+}
+
+.dark-mode .info-tooltip {
+  background: rgba(0, 0, 0, 0.8);
+  color: var(--foreground-color);
+  border: 1px solid var(--border-color);
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+
+/* Invalid / error field highlight */
+.dark-mode .input-field.invalid,
+.dark-mode .validation-fail {
+  border-color: var(--error-color) !important;
+  background-color: rgba(217, 3, 104, 0.2);
+  /* Semi-transparent dogwood rose */
+}
+
+/* Another example for a deeper input area */
+.dark-mode .dynamic-sequence-input {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--foreground-color);
+  border: 1px solid var(--border-color);
+}
+
+/* Character count or small text */
+.dark-mode .char-count-label {
+  color: var(--text-muted);
+}
+
+/* Dark mode table containers */
+.dark-mode .restriction-site-summary-table-container {
+  background-color: var(--background-color);
+  color: var(--foreground-color);
+  border: none;
+}
+
+.dark-mode .restriction-site-summary-table-container thead {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--foreground-color);
+}
+
+.dark-mode .restriction-site-summary-table-container th,
+.dark-mode .restriction-site-summary-table-container td {
+  border: 1px solid var(--border-color);
+}
+
+/* Alternate Row Coloring */
+.dark-mode .restriction-site-summary-table-container tbody tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark-mode .restriction-site-summary-table-container tbody tr:nth-child(odd) {
+  background-color: transparent;
+}
+
+.dark-mode .restriction-site-summary-table-container tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Floating Settings Card in dark mode */
+.dark-mode #settings-card {
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
+  color: var(--foreground-color);
+}
+
+.dark-mode #settings-card .form-group label {
+  color: var(--foreground-color);
+}
+
+.dark-mode #settings-card .form-group select {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--foreground-color);
+}
+
+.dark-mode-btn {
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  padding: 8px 12px;
+  background: none;
+  color: inherit;
+}
+
+/* Close & toggle buttons in settings card */
+.dark-mode #close-settings {
+  background-color: var(--error-color);
+  color: var(--foreground-color);
+}
+
+.dark-mode #close-settings:hover {
+  background-color: #b80258;
+  /* darker dogwood rose */
+}
+
+.dark-mode #toggle-settings {
+  background-color: var(--foreground-color);
+  color: var(--background-color);
+}
+
+.dark-mode #toggle-settings:hover {
+  background-color: #e5dbc9;
+  /* lighten eggshell a bit */
+}
+
+/* Example spinner buttons */
+.dark-mode #sequence-control-buttons button {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--foreground-color);
+}
+
+.dark-mode #sequence-control-buttons button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode #sequence-control-buttons button:active {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Base Form Layout */
+.dark-mode #primer-form {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: white;
+}
+
+.dark-mode #primer-form .sequence-input,
+.dark-mode #primer-form .dynamic-sequence-input {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+#primer-form::-webkit-scrollbar {
+  width: 6px;
+}
+
+/* Select options in dark mode */
+.dark-mode select option {
+  background-color: var(--background-color);
+  color: var(--foreground-color);
+}
+
+/* Webkit browsers (Chrome, Safari) - selected option */
+.dark-mode select option:checked {
+  background: #1F1C35 linear-gradient(0deg, #1F1C35 0%, #1F1C35 100%);
+}
+
+/* Webkit browsers - hover/focus state */
+.dark-mode select option:hover,
+.dark-mode select option:focus {
+  background: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1));
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Invalid select in dark mode */
+.dark-mode select.invalid,
+.dark-mode select.validation-fail {
+  border-color: var(--error-color) !important;
+  background-color: rgba(217, 3, 104, 0.2) !important;
+}
+
+/* Invalid select options in dark mode */
+.dark-mode select.invalid option,
+.dark-mode select.validation-fail option {
+  background-color: var(--error-color) !important;
+}

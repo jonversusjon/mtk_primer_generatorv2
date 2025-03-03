@@ -1,0 +1,93 @@
+/* Utility classes */
+
+.hidden {
+    display: none;
+}
+
+.show {
+    display: block;
+}
+
+/* Width control classes */
+.col-large {
+    flex: 2;
+    /* Takes up more space for species */
+}
+
+.col-medium {
+    flex: 1;
+    /* Medium space for kozak */
+}
+
+.col-small {
+    flex: 0.5;
+    /* Less space for max mutations */
+}
+
+.wide {
+    flex: 2 1 200px;
+    /* Species and Kozak are wider */
+}
+
+.narrow {
+    flex: 1 1 100px;
+    /* Max mutations is smaller */
+}
+
+.nav-narrow {
+    flex: 1 1 50px;
+    max-width: 100px;
+    /* Narrower for tab buttons */
+}
+
+.nav-fit-content {
+    width: default;
+    max-width: 200px;
+    /* Takes up remaining space */
+}
+
+/* Animations */
+/* --- Shake animation ---*/
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-5px);
+    }
+
+    50% {
+        transform: translateX(5px);
+    }
+
+    75% {
+        transform: translateX(-5px);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Accessibility */
+.sequence-tab-btn:focus {
+    outline: 2px solid #007bff;
+    outline-offset: -2px;
+}
+
+.sequence-tab-btn:focus:not(:focus-visible) {
+    outline: none;
+}
+
+.sequence-tab-content.active {
+    animation: fadeIn 0.3s ease-in-out;
+}
