@@ -1,0 +1,96 @@
+/* SequenceTab.css */
+
+.sequence-tab-content {
+    padding: 15px 0;
+  }
+  
+  .sequence-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  
+  .sequence-header label {
+    font-weight: bold;
+    font-size: 0.9em;
+    margin: 0;
+  }
+  
+  .char-count {
+    font-size: 0.8em;
+    color: #666;
+  }
+  
+  .validation-message {
+    margin-top: 5px;
+    font-size: 0.8em;
+  }
+  
+  .validation-message.error {
+    color: #ef4444;
+  }
+  
+  .sequence-metadata {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 15px;
+  }
+  
+  .form-group {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+    margin-bottom: 15px;
+  }
+  
+  .form-group label {
+    display: block;
+    font-weight: bold;
+    font-size: 0.9em;
+    margin-bottom: 5px;
+  }
+  
+  .form-control {
+    width: 100%;
+    padding: 8px;
+    font-size: 0.9em;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    transition: border-color 0.3s ease;
+  }
+  
+  .form-control:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  }
+  
+  /* Dark Mode */
+  .dark-mode .char-count {
+    color: #b0b3b8;
+  }
+  
+  .dark-mode .form-control {
+    background-color: #222;
+    color: white;
+    border: 1px solid #555;
+  }
+  
+  .dark-mode .form-control:focus {
+    border-color: #48A9FF;
+    box-shadow: 0 0 0 0.2rem rgba(72, 169, 255, 0.25);
+  }
+  
+  /* Responsive */
+  @media (max-width: 600px) {
+    .sequence-metadata {
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .form-group {
+      min-width: 100%;
+    }
+  }

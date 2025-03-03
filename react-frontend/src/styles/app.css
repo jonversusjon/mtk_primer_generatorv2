@@ -169,3 +169,106 @@
     left: 20px;
     z-index: 1000; /* Ensures it appears above other elements */
   }
+
+  /* Settings Toggle Button */
+.settings-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  padding: 8px 12px;
+  background-color: var(--form-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 16px;
+  box-shadow: 0 2px 4px var(--shadow-color);
+  transition: background-color 0.3s ease;
+  color: var(--text-dark);
+}
+
+.settings-toggle:hover {
+  background-color: var(--primary-hover);
+  color: white;
+}
+
+/* Settings Modal */
+.settings-modal {
+  position: fixed;
+  top: 60px; /* Below the toggle button */
+  right: 20px;
+  width: 300px;
+  background-color: var(--form-bg);
+  color: var(--text-dark);
+  box-shadow: 0 4px 12px var(--shadow-color);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  z-index: 999;
+  padding: 16px;
+  max-height: 80vh;
+  overflow-y: auto;
+  transition: all 0.3s ease;
+}
+
+.settings-content {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.settings-modal .form-group {
+  margin-bottom: 16px;
+}
+
+.settings-modal label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: var(--text-dark);
+}
+
+.settings-modal .form-control {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--background-color);
+  color: var(--text-dark);
+}
+
+.settings-modal .form-check {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.settings-modal .form-check-input {
+  margin-right: 8px;
+  width: auto;
+}
+
+.settings-footer {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.settings-footer button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.settings-footer button:hover {
+  background-color: var(--primary-hover);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

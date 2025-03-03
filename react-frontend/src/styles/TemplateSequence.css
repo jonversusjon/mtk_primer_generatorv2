@@ -1,0 +1,87 @@
+/* TemplateSequence.css */
+
+.template-sequence-section {
+    padding: 32px;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .section-header {
+    margin-bottom: 15px;
+  }
+  
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .section-title h3 {
+    margin: 0;
+    font-size: 1.2em;
+    color: #333;
+  }
+  
+  .optional-badge {
+    font-size: 0.8em;
+    color: #6c757d;
+    font-style: italic;
+  }
+  
+  .sequence-input-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  
+  .sequence-input-container label {
+    font-weight: bold;
+    font-size: 0.9em;
+    margin: 0;
+  }
+  
+  .char-count {
+    font-size: 0.8em;
+    color: #666;
+  }
+  
+  .validation-message {
+    margin-top: 5px;
+    font-size: 0.8em;
+  }
+  
+  .validation-message.error {
+    color: #ef4444;
+  }
+  
+  /* Dark Mode */
+  .dark-mode .section-title h3 {
+    color: #fff;
+  }
+  
+  .dark-mode .optional-badge {
+    color: #adb5bd;
+  }
+  
+  .dark-mode .char-count {
+    color: #b0b3b8;
+  }
+  
+  .dark-mode .sequence-input-container label {
+    color: #fff;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .template-sequence-section {
+      padding: 20px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .sequence-input-container {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 5px;
+    }
+  }

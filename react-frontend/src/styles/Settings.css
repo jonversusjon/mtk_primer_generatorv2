@@ -1,6 +1,118 @@
+/* Settings Toggle Button */
 .settings-toggle {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1000; /* Ensures it appears above other elements */
-  }
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.settings-toggle:hover {
+  background-color: #e9ecef;
+}
+
+/* Settings Modal */
+.settings-modal {
+  position: fixed;
+  top: 60px; /* Below the toggle button */
+  right: 20px;
+  width: 300px;
+  background-color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  z-index: 999;
+  padding: 16px;
+  max-height: 80vh;
+  overflow-y: auto;
+  transition: all 0.3s ease;
+}
+
+.settings-content {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+/* Settings Form Groups */
+.settings-modal .form-group {
+  margin-bottom: 16px;
+}
+
+.settings-modal label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.settings-modal .form-control {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+}
+
+.settings-modal .form-check {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.settings-modal .form-check-input {
+  margin-right: 8px;
+  width: auto;
+}
+
+.settings-footer {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Dark Mode Styles for Settings */
+.dark-mode .settings-toggle {
+  background-color: #333;
+  color: white;
+  border-color: #555;
+}
+
+.dark-mode .settings-toggle:hover {
+  background-color: #444;
+}
+
+.dark-mode .settings-modal {
+  background-color: #222;
+  color: #f8f9fa;
+  border: 1px solid #444;
+}
+
+.dark-mode .settings-modal .form-group label {
+  color: #e9ecef;
+}
+
+.dark-mode .settings-modal .form-control {
+  background-color: #333;
+  color: #f8f9fa;
+  border-color: #555;
+}
+
+.dark-mode .settings-modal .form-check-label {
+  color: #e9ecef;
+}
+
+.dark-mode .settings-modal .settings-footer button {
+  background-color: #375a7f;
+  border-color: #375a7f;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
