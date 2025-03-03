@@ -1,0 +1,22 @@
+{
+  "python.defaultInterpreterPath": "C:\\Users\\email\\anaconda3\\envs\\mtk_primer_generator\\python.exe",
+  "terminal.integrated.env.windows": {
+      "CONDA_PREFIX": "C:\\Users\\email\\anaconda3\\envs\\mtk_primer_generator",
+      "PATH": "C:\\Users\\email\\anaconda3\\envs\\mtk_primer_generator;${env:PATH}"
+  },
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true,
+  "python.analysis.extraPaths": ["./flask-backend"],
+  "python.envFile": "${workspaceFolder}/.env",
+  "python.terminal.activateEnvironment": true,
+
+  "[python]": {
+      "editor.formatOnSave": true,
+      "editor.defaultFormatter": "ms-python.python"
+  },
+
+  "python.formatting.provider": "black",
+  "editor.codeActionsOnSave": [
+      "source.fixAll"
+  ]
+}
