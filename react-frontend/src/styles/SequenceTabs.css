@@ -177,7 +177,7 @@
       height: auto;
       flex-wrap: nowrap;
       overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
+      /* -webkit-overflow-scrolling: touch; */
       padding-bottom: 5px;
     }
   
