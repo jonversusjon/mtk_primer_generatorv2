@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import "../../styles/Settings.css";
 
 function Settings({
@@ -8,11 +8,26 @@ function Settings({
   updateFormData,
   availableSpecies,
 }) {
+  // Create a ref for the modal content - hooks must be called unconditionally
+  const modalContentRef = useRef(null);
+
+  // Handle clicks outside the modal content
+  const handleOutsideClick = (e) => {
+    // If we click outside the modal content, close the modal
+    if (
+      modalContentRef.current &&
+      !modalContentRef.current.contains(e.target)
+    ) {
+      onClose();
+    }
+  };
+
+  // If not shown, return null - but AFTER calling hooks
   if (!show) return null;
 
   return (
-    <div className="settings-modal">
-      <div className="settings-content">
+    <div className="settings-modal" onClick={handleOutsideClick}>
+      <div className="settings-content" ref={modalContentRef}>
         {/* Species Selection */}
         <div className="form-group">
           <label htmlFor="species-select">Species:</label>
@@ -76,11 +91,7 @@ function Settings({
           </label>
         </div>
 
-        <div className="settings-footer">
-          <button type="button" className="btn btn-primary" onClick={onClose}>
-            Close Settings
-          </button>
-        </div>
+        {/* No footer with close button - will close by clicking outside or toggling settings button */}
       </div>
     </div>
   );
