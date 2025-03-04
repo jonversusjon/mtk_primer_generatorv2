@@ -59,6 +59,7 @@
     border: 1px solid #ccc;
     border-radius: 5px;
     transition: border-color 0.3s ease;
+    box-sizing: border-box;
   }
   
   .form-control:focus {

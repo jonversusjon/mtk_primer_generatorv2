@@ -26,64 +26,6 @@ def get_species():
         return jsonify({'error': 'Failed to fetch species'}), 500
 
 
-@api.route("/validate/sequence", methods=["POST"])
-def validate_sequence():
-    """Validate a DNA sequence"""
-    try:
-        data = request.get_json()
-        sequence = data.get("sequence", "").strip()
-
-        if not sequence:
-            return jsonify({
-                "isValid": False,
-                "message": "Sequence cannot be empty",
-                "isAdvisory": False
-            })
-
-        # Check for valid DNA bases
-        if not validator.is_valid_dna_sequence(sequence):
-            return jsonify({
-                "isValid": False,
-                "message": "Only valid DNA bases (A, T, G, C) or extended DNA code allowed",
-                "isAdvisory": False
-            })
-
-        # Check for sequence length
-        if len(sequence) < 80:
-            return jsonify({
-                "isValid": False,
-                "message": "Sequence must be at least 80 bp",
-                "isAdvisory": False
-            })
-
-        # Check if sequence is in frame
-        in_frame = len(sequence) % 3 == 0
-        if not in_frame:
-            return jsonify({
-                "isValid": False,
-                "message": "Sequence length must be divisible by 3 (in frame)",
-                "isAdvisory": False
-            })
-
-        # Check for start/stop codons
-        valid, message, is_advisory = validator.check_frame_and_codons(
-            sequence)
-
-        return jsonify({
-            "isValid": valid,
-            "message": message,
-            "isAdvisory": is_advisory
-        })
-
-    except Exception as e:
-        logger.error(f"Validation error: {str(e)}", exc_info=True)
-        return jsonify({
-            "isValid": False,
-            "message": f"Server error: {str(e)}",
-            "isAdvisory": False
-        }), 500
-
-
 @api.route("/protocol", methods=["POST"])
 def generate_protocol():
     """Generate a Golden Gate protocol based on the provided sequences"""

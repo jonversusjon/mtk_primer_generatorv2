@@ -392,12 +392,6 @@
   background: var(--scrollbar-track);
 }
 
-/* Global Firefox scrollbar styling */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
-}
-
 /* FORM CONTAINER - Left side scrollbar with no visible track */
 .form-container {
   overflow-y: auto;

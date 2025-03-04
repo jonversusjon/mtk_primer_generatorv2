@@ -61,7 +61,7 @@ export const validateDnaSequence = (
       return {
         isValid: false,
         message: "Sequence length must be divisible by 3 (in frame)",
-        isAdvisory: false,
+        isAdvisory: true,
       };
     }
   }
