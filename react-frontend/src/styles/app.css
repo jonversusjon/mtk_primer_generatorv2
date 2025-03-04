@@ -349,20 +349,56 @@
 
 /* Firefox scrollbar (supports only some properties) */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  @supports (scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track)) {
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+  /* For WebKit browsers */
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  &::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+    border-radius: 10px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 10px;
+    transition: background 0.3s ease;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+  }
 }
 
 /* Target specific containers with scrollbars */
 .form-container,
 .output-container {
-  /* Apply smoother scrolling */
+  /* Apply smoother scrolling where supported */
   scroll-behavior: smooth;
-  /* Hide scrollbar on mobile devices while keeping functionality */
-  @media (max-width: 768px) {
-    scrollbar-width: none; /* Firefox */
+}
+
+/* Hide scrollbar on mobile devices while keeping functionality */
+@media (max-width: 768px) {
+  .form-container,
+  .output-container {
+    /* Hide scrollbar for older browsers */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+    overflow: hidden;
+    overflow-y: auto; /* Ensure scrolling remains */
+
+    /* Fallback for WebKit browsers */
+    position: relative;
   }
 }
+
+/* WebKit-based browsers scrollbar removal */
+.form-container::-webkit-scrollbar,
+.output-container::-webkit-scrollbar {
+  display: none; /* Hide scrollbar for Chrome, Safari, Edge */
+}
+
+
 
 .form-container::-webkit-scrollbar,
 .output-container::-webkit-scrollbar {

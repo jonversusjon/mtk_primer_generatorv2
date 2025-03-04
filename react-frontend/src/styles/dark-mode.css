@@ -313,16 +313,45 @@
 /* Base Form Layout */
 .dark-mode #primer-form {
   scroll-behavior: smooth;
-  scrollbar-width: thin;
-  scrollbar-color: white;
 }
 
+/* WebKit-based scrollbar styling (Chrome, Safari, Edge) */
+.dark-mode #primer-form::-webkit-scrollbar {
+  width: 8px; /* Adjust scrollbar width */
+}
+
+.dark-mode #primer-form::-webkit-scrollbar-thumb {
+  background-color: white; /* Scrollbar thumb color */
+  border-radius: 4px; /* Rounded corners */
+}
+
+.dark-mode #primer-form::-webkit-scrollbar-track {
+  background-color: transparent; /* Scrollbar track */
+}
+
+/* Styling for nested scrollable inputs */
 .dark-mode #primer-form .sequence-input,
 .dark-mode #primer-form .dynamic-sequence-input {
   scroll-behavior: smooth;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 }
+
+/* WebKit-based scrollbar styling for inputs */
+.dark-mode #primer-form .sequence-input::-webkit-scrollbar,
+.dark-mode #primer-form .dynamic-sequence-input::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dark-mode #primer-form .sequence-input::-webkit-scrollbar-thumb,
+.dark-mode #primer-form .dynamic-sequence-input::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.dark-mode #primer-form .sequence-input::-webkit-scrollbar-track,
+.dark-mode #primer-form .dynamic-sequence-input::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
 
 #primer-form::-webkit-scrollbar {
   width: 6px;
