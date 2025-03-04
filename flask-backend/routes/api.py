@@ -12,11 +12,14 @@ CORS(api)  # Enable CORS for all routes in this blueprint
 utils = GoldenGateUtils()
 validator = ProtocolValidator()
 
+
 @api.route("/species", methods=["GET"])
 def get_species():
+    print("get species route called")
     """Return available species as JSON"""
     try:
         species = utils.get_available_species()
+        print(f"Available species: {species}")
         return jsonify({"species": species})
     except Exception as e:
         logger.error(f"Error fetching species: {str(e)}", exc_info=True)
@@ -29,14 +32,14 @@ def validate_sequence():
     try:
         data = request.get_json()
         sequence = data.get("sequence", "").strip()
-        
+
         if not sequence:
             return jsonify({
                 "isValid": False,
                 "message": "Sequence cannot be empty",
                 "isAdvisory": False
             })
-            
+
         # Check for valid DNA bases
         if not validator.is_valid_dna_sequence(sequence):
             return jsonify({
@@ -44,7 +47,7 @@ def validate_sequence():
                 "message": "Only valid DNA bases (A, T, G, C) or extended DNA code allowed",
                 "isAdvisory": False
             })
-            
+
         # Check for sequence length
         if len(sequence) < 80:
             return jsonify({
@@ -52,7 +55,7 @@ def validate_sequence():
                 "message": "Sequence must be at least 80 bp",
                 "isAdvisory": False
             })
-            
+
         # Check if sequence is in frame
         in_frame = len(sequence) % 3 == 0
         if not in_frame:
@@ -61,16 +64,17 @@ def validate_sequence():
                 "message": "Sequence length must be divisible by 3 (in frame)",
                 "isAdvisory": False
             })
-            
+
         # Check for start/stop codons
-        valid, message, is_advisory = validator.check_frame_and_codons(sequence)
-        
+        valid, message, is_advisory = validator.check_frame_and_codons(
+            sequence)
+
         return jsonify({
             "isValid": valid,
             "message": message,
             "isAdvisory": is_advisory
         })
-        
+
     except Exception as e:
         logger.error(f"Validation error: {str(e)}", exc_info=True)
         return jsonify({
@@ -86,42 +90,42 @@ def generate_protocol():
     try:
         # Handle form data submitted by React
         form_data = request.form.to_dict()
-        
+
         # Process sequences data - form data is flattened so we need to restructure it
         sequences = []
         num_sequences = int(form_data.get("numSequences", 0))
-        
+
         for i in range(num_sequences):
             seq_key = f"sequences[{i}][sequence]"
             name_key = f"sequences[{i}][primerName]"
             part_key = f"sequences[{i}][mtkPart]"
-            
+
             if seq_key in form_data:
                 sequences.append({
                     "sequence": form_data.get(seq_key, "").strip(),
                     "primerName": form_data.get(name_key, "").strip(),
                     "mtkPart": form_data.get(part_key, "").strip()
                 })
-                
+
         # Extract other form fields
         species = form_data.get("species", "")
         kozak = form_data.get("kozak", "MTK")
         max_mut_per_site = int(form_data.get("max_mut_per_site", 3))
         verbose_mode = "verbose_mode" in form_data
         template_sequence = form_data.get("templateSequence", "").strip()
-        
+
         # Validate input
         if not species:
             return jsonify({"error": "Species not specified"}), 400
-            
+
         if not sequences:
             return jsonify({"error": "No sequences provided"}), 400
-            
+
         # Extract list data for protocol generation
         seq_list = [seq["sequence"] for seq in sequences]
         primer_names = [seq["primerName"] for seq in sequences]
         mtk_parts = [seq["mtkPart"] for seq in sequences]
-        
+
         # Create protocol
         protocol_maker = GoldenGateProtocol(
             seq=seq_list,
@@ -134,23 +138,23 @@ def generate_protocol():
             kozak=kozak,
             verbose=verbose_mode
         )
-        
+
         # Generate the protocol
         result = protocol_maker.create_gg_protocol()
-        
+
         # Process any non-JSON serializable objects in the result
         result = json.loads(json.dumps(result, default=lambda o: str(o)))
-        
+
         # Check for errors
         if result.get('has_errors', False):
             return jsonify({
                 "error": "Error in protocol generation",
                 "sequence_errors": result.get('sequence_errors', {})
             }), 422
-            
+
         # Success - return the result
         return jsonify(result)
-        
+
     except Exception as e:
         logger.error(f"Error in generate_protocol: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 500
@@ -162,24 +166,24 @@ def export_protocol():
     try:
         data = request.get_json()
         primers = data.get("primers", [])
-        
+
         if not primers:
             return jsonify({"error": "No primers to export"}), 400
-            
+
         # Generate a unique filename
         filename = f"primers_{utils.generate_unique_id()}.tsv"
         filepath = f"static/exports/{filename}"
-        
+
         # Export primers to TSV
         with open(filepath, "w") as f:
             f.write("Primer Name\tSequence\tAmplicon\n")
             for primer in primers:
                 f.write(f"{primer[0]}\t{primer[1]}\t{primer[2]}\n")
-                
+
         # Return the download URL
         download_url = f"/static/exports/{filename}"
         return jsonify({"download_url": download_url})
-        
+
     except Exception as e:
         logger.error(f"Error exporting protocol: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 500

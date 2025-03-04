@@ -7,9 +7,16 @@ import { defaultParameters } from "../../config/defaultParameters";
 import "../../styles/form.css";
 
 function Form({ onSubmit, isSubmitting }) {
+  // State variables for species loading
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [species, setSpecies] = useState([]);
+
   // Custom hook for loading defaults based on environment mode
   const useLoadDefaults = () => {
     return useCallback(() => {
+      console.log("Loading defaults with parameters:", defaultParameters);
+
       // Map the default sequences from config
       const initialSequences = [];
 
@@ -43,6 +50,7 @@ function Form({ onSubmit, isSubmitting }) {
   };
 
   const loadDefaults = useLoadDefaults();
+  console.log("Species:", species);
 
   // Form state initialization with default parameters
   const [formData, setFormData] = useState(loadDefaults());
@@ -58,14 +66,16 @@ function Form({ onSubmit, isSubmitting }) {
   useEffect(() => {
     const loadSpecies = async () => {
       try {
-        const species = await fetchAvailableSpecies();
-        setAvailableSpecies(species);
-        if (species.length > 0) {
-          // Set default species
-          setFormData((prev) => ({ ...prev, species: species[0] }));
-        }
+        setLoading(true);
+        setError(null);
+        const speciesData = await fetchAvailableSpecies();
+        setSpecies(speciesData);
+        setAvailableSpecies(speciesData); // Update availableSpecies for Settings component
       } catch (error) {
         console.error("Failed to load species data:", error);
+        setError("Failed to load species data. Please try again later.");
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -147,6 +157,11 @@ function Form({ onSubmit, isSubmitting }) {
 
   return (
     <form id="primer-form" onSubmit={handleSubmit}>
+      {loading && (
+        <div className="loading-overlay">Loading species data...</div>
+      )}
+      {error && <div className="error-message">{error}</div>}
+
       {/* Settings Card */}
       <Settings
         show={showSettings}
@@ -185,7 +200,7 @@ function Form({ onSubmit, isSubmitting }) {
           type="submit"
           className={`btn btn-primary ${isSubmitting ? "processing" : ""}`}
           id="runDesignPrimerBtn"
-          disabled={!isFormValid || isSubmitting}
+          disabled={!isFormValid || isSubmitting || loading}
         >
           {isSubmitting ? (
             <>

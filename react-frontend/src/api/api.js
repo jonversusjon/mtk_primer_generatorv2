@@ -1,10 +1,8 @@
+import { API_BASE_URL } from "../config/config.js";
+
 /**
  * API functions for communicating with the Flask backend
  */
-
-// Base URL for API requests - adjust based on your environment
-const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 
 /**
  * Helper function to handle fetch requests
@@ -12,34 +10,13 @@ const API_BASE_URL =
  * @param {Object} options - Fetch options (method, headers, body)
  * @returns {Promise} Promise that resolves to the JSON response
  */
-const fetchWithErrorHandling = async (endpoint, options = {}) => {
+export const fetchWithErrorHandling = async (url, options = {}) => {
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    });
-
-    // Check if the response is successful
+    const response = await fetch(url, options);
     if (!response.ok) {
-      // Try to extract error message from response
-      let errorMessage;
-      try {
-        const errorData = await response.json();
-        errorMessage =
-          errorData.error || errorData.message || "An unknown error occurred";
-      } catch (e) {
-        errorMessage = `HTTP Error ${response.status}: ${response.statusText}`;
-      }
-
-      throw new Error(errorMessage);
+      throw new Error(`API request failed with status ${response.status}`);
     }
-
-    // Parse and return the JSON response
-    const data = await response.json();
-    return data;
+    return await response.json();
   } catch (error) {
     console.error("API request failed:", error);
     throw error;
@@ -51,8 +28,13 @@ const fetchWithErrorHandling = async (endpoint, options = {}) => {
  * @returns {Promise<Array>} Array of available species
  */
 export const fetchAvailableSpecies = async () => {
-  const data = await fetchWithErrorHandling("/get_species");
-  return data.species || [];
+  try {
+    const response = await fetchWithErrorHandling("/api/species");
+    return response;
+  } catch (error) {
+    console.error("Error fetching species:", error);
+    throw error;
+  }
 };
 
 /**

@@ -91,21 +91,6 @@ def get_sequence_inputs():
     )
 
 
-@main.route("/get_species")
-def get_species():
-    """Return available species as an HTML option list."""
-    try:
-        species = utils.get_available_species()
-        options_html = "".join(
-            f'<option value="{s}" {"selected" if i == 0 else ""}>{s}</option>'
-            for i, s in enumerate(species)
-        )
-        return options_html
-    except Exception as e:
-        logger.error(f"Error fetching species: {str(e)}", exc_info=True)
-        return jsonify({'error': 'Failed to fetch species'}), 500
-
-
 def process_restriction_sites(sequence_analysis):
     """Prepare restriction site summary for Jinja template rendering."""
     grouped_sites = defaultdict(list)
@@ -144,39 +129,41 @@ def convert_non_serializable(obj):
 @main.route("/generate_protocol", methods=["POST"])
 def generate_protocol():
     print("⭐ generate_protocol route triggered")
-    
+
     # Get basic form data
     species = request.form.get("species", "")
     kozak = request.form.get("kozak", "MTK")
     max_mut_per_site = int(request.form.get("max_mut_per_site", 3))
     verbose_mode = "verbose_mode" in request.form
-    template_sequence = request.form.get("templateSequence", "").strip() or "TEST_TEMPLATE"
-    
+    template_sequence = request.form.get(
+        "templateSequence", "").strip() or "TEST_TEMPLATE"
+
     # Extract sequences data
     num_sequences = int(request.form.get("numSequences", 0))
     sequences = []
     primer_names = []
     mtk_parts = []
-    
+
     for i in range(num_sequences):
         seq_key = f"sequences[{i}][sequence]"
         name_key = f"sequences[{i}][primerName]"
         part_key = f"sequences[{i}][mtkPart]"
-        
+
         sequence = request.form.get(seq_key, "").strip()
         if sequence:  # Only process non-empty sequences
             sequences.append(sequence)
-            primer_names.append(request.form.get(name_key, "").strip() or f"Test Primer {i+1}")
+            primer_names.append(request.form.get(
+                name_key, "").strip() or f"Test Primer {i+1}")
             mtk_parts.append(request.form.get(part_key, "").strip() or "6")
-    
+
     # Check if we have valid sequences
     if not sequences:
         return render_template(
-            "error_messages.html", 
+            "error_messages.html",
             general_error="No valid sequences provided",
             form_data=request.form
         ), 422
-    
+
     try:
         # Create protocol
         protocol_maker = GoldenGateProtocol(
@@ -190,11 +177,11 @@ def generate_protocol():
             kozak=kozak,
             verbose=verbose_mode
         )
-        
+
         # Generate the protocol
         result = protocol_maker.create_gg_protocol()
         print("Restriction sites in result:", result.get('restriction_sites'))
-        
+
         # Check for errors
         if result.get('has_errors', False):
             return render_template(
@@ -203,10 +190,10 @@ def generate_protocol():
                 partial_result=result,
                 form_data=request.form
             ), 422
-        
+
         # Success - use results_partial.html which already exists
         return render_template("results_partial.html", results=result)
-        
+
     except Exception as e:
         print(f"Error in generate_protocol: {str(e)}")
         return render_template(
