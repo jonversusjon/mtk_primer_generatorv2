@@ -13,7 +13,7 @@ function TemplateSequence({ value, onChange }) {
 
     // Validate template sequence (optional field)
     if (value) {
-      const validationResult = validateDnaSequence(value);
+      const validationResult = validateDnaSequence(value, false, false);
       if (!validationResult.isValid) {
         setValidationMessage(validationResult.message);
       } else {

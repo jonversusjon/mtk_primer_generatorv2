@@ -3,19 +3,49 @@ import TemplateSequence from "./TemplateSequence";
 import SequenceTabs from "./SequenceTabs";
 import Settings from "./Settings";
 import { fetchAvailableSpecies } from "../../api/api";
+import { defaultParameters } from "../../config/defaultParameters";
 import "../../styles/form.css";
 
 function Form({ onSubmit, isSubmitting }) {
-  // Form state
-  const [formData, setFormData] = useState({
-    templateSequence: "",
-    numSequences: 1,
-    species: "",
-    kozak: "MTK",
-    max_mut_per_site: 1,
-    verbose_mode: true,
-    sequences: [{ sequence: "", primerName: "", mtkPart: "" }],
-  });
+  // Custom hook for loading defaults based on environment mode
+  const useLoadDefaults = () => {
+    return useCallback(() => {
+      // Map the default sequences from config
+      const initialSequences = [];
+
+      // If we have test sequences (in TESTING mode), populate them
+      if (
+        defaultParameters.sequencesToDomesticate &&
+        defaultParameters.sequencesToDomesticate.length > 0
+      ) {
+        defaultParameters.sequencesToDomesticate.forEach((seq, index) => {
+          initialSequences.push({
+            sequence: seq,
+            primerName: defaultParameters.primerNames[index] || "",
+            mtkPart: defaultParameters.mtkPartNums[index] || "",
+          });
+        });
+      } else {
+        // Default to one empty sequence
+        initialSequences.push({ sequence: "", primerName: "", mtkPart: "" });
+      }
+
+      return {
+        templateSequence: defaultParameters.templateSequence || "",
+        numSequences: initialSequences.length,
+        species: "", // Will be set after fetching available species
+        kozak: "MTK",
+        max_mut_per_site: 1,
+        verbose_mode: true,
+        sequences: initialSequences,
+      };
+    }, []);
+  };
+
+  const loadDefaults = useLoadDefaults();
+
+  // Form state initialization with default parameters
+  const [formData, setFormData] = useState(loadDefaults());
 
   // Settings state
   const [showSettings, setShowSettings] = useState(false);
@@ -105,6 +135,16 @@ function Form({ onSubmit, isSubmitting }) {
     }
   };
 
+  // Reset form to defaults
+  const resetForm = () => {
+    const defaults = loadDefaults();
+    // Preserve the current species selection
+    setFormData({
+      ...defaults,
+      species: formData.species,
+    });
+  };
+
   return (
     <form id="primer-form" onSubmit={handleSubmit}>
       {/* Settings Card */}
@@ -160,17 +200,7 @@ function Form({ onSubmit, isSubmitting }) {
           type="button"
           className="btn btn-warning"
           id="clearForm"
-          onClick={() => {
-            setFormData({
-              templateSequence: "",
-              numSequences: 1,
-              species: formData.species, // Keep the selected species
-              kozak: "MTK",
-              max_mut_per_site: 1,
-              verbose_mode: true,
-              sequences: [{ sequence: "", primerName: "", mtkPart: "" }],
-            });
-          }}
+          onClick={resetForm}
         >
           Clear Form
         </button>
