@@ -37,7 +37,6 @@ function Settings({
             value={formData.species}
             onChange={(e) => updateFormData("species", e.target.value)}
           >
-            <option value="">Select species...</option>
             {availableSpecies.map((species) => (
               <option key={species} value={species}>
                 {species}

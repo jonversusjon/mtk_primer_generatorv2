@@ -69,12 +69,43 @@
 }
 
 /* form.css */
+/* Input Fields */
+textarea, input, select {
+  width: 100%;
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--background-color);
+  color: var(--text-dark);
+  margin-bottom: 15px;
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
 
 #primer-form {
-margin: 20px;
+margin: 20px auto;
+padding: 20px;
 border-radius: 12px;
 background-color: #f3ffe6;
 box-shadow: 5px 5px 10px var(--shadow-color);
+max-width: 600px;
+}
+
+/* Form Row: Align Inputs Properly */
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.form-row input, 
+.form-row select {
+  flex: 1;
 }
 
 .settings-toggle {
@@ -112,7 +143,8 @@ border-radius: 4px;
 font-weight: 500;
 cursor: pointer;
 transition: all 0.2s ease-in-out;
-font-size: 16px;
+width: 48%;
+text-align: center;
 }
 
 /* Button sizes */
@@ -144,7 +176,6 @@ cursor: not-allowed;
 /* Warning Button */
 .btn-warning {
 background-color: var(--warning-color);
-color: var(--text-dark);
 border: 1px solid var(--warning-color);
 }
 .btn-warning:hover {

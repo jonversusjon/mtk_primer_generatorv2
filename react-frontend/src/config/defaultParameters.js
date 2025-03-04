@@ -29,9 +29,9 @@ const modeConfigs = {
   },
   [appModes.DEVELOPMENT]: {
     templateSequence: templateSequences.test,
-    sequencesToDomesticate: [],
-    mtkPartNums: [],
-    primerNames: [],
+    sequencesToDomesticate: testSequences,
+    mtkPartNums: ["6", "6"],
+    primerNames: ["Test 1", "Test 2"],
   },
 };
 

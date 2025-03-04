@@ -1,3 +1,22 @@
+/* Fixed header */
 .app-header {
-    text-align: center;
-}
+    width: 100%;
+    color: var(--text-dark);
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    height: 60px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Dark mode adjustments */
+  .dark-mode .app-header {
+    color: white !important;
+  }
+  
+  

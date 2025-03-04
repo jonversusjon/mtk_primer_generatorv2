@@ -57,7 +57,6 @@ function Form({ onSubmit, isSubmitting }) {
 
   // Settings state
   const [showSettings, setShowSettings] = useState(false);
-  const [availableSpecies, setAvailableSpecies] = useState([]);
 
   // Form validation
   const [isFormValid, setIsFormValid] = useState(false);
@@ -69,8 +68,7 @@ function Form({ onSubmit, isSubmitting }) {
         setLoading(true);
         setError(null);
         const speciesData = await fetchAvailableSpecies();
-        setSpecies(speciesData);
-        setAvailableSpecies(speciesData); // Update availableSpecies for Settings component
+        setSpecies(speciesData.species);
       } catch (error) {
         console.error("Failed to load species data:", error);
         setError("Failed to load species data. Please try again later.");
@@ -81,6 +79,13 @@ function Form({ onSubmit, isSubmitting }) {
 
     loadSpecies();
   }, []);
+
+  // Set default species once species list is loaded
+useEffect(() => {
+  if (species.length > 0 && !formData.species) {
+    setFormData(prev => ({ ...prev, species: species[0] }));
+  }
+}, [species, formData.species]);
 
   // Memoize validateForm function to prevent unnecessary rerenders
   const validateForm = useCallback(() => {
@@ -168,7 +173,7 @@ function Form({ onSubmit, isSubmitting }) {
         onClose={() => setShowSettings(false)}
         formData={formData}
         updateFormData={updateFormData}
-        availableSpecies={availableSpecies}
+        availableSpecies={species}
       />
 
       {/* Settings Toggle Button */}

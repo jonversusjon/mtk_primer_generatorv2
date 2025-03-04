@@ -48,6 +48,14 @@
         margin-right: 0;
         margin-bottom: 4px;
     }
+    .button-container {
+        flex-direction: column;
+        gap: 10px;
+      }
+    
+      .btn {
+        width: 100%;
+      }
 }
 
 /* Tablet styles */
@@ -63,7 +71,6 @@
     .sequence-tabs-nav {
         height: auto;
         flex-wrap: nowrap;
-        -webkit-overflow-scrolling: touch;
     }
 
     .sequence-tab-btn {
