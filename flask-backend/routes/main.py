@@ -158,11 +158,10 @@ def generate_protocol():
 
     # Check if we have valid sequences
     if not sequences:
-        return render_template(
-            "error_messages.html",
-            general_error="No valid sequences provided",
-            form_data=request.form
-        ), 422
+        return jsonify({
+            "error": "No valid sequences provided",
+            "form_data": request.form
+        }), 422
 
     try:
         # Create protocol
@@ -182,22 +181,19 @@ def generate_protocol():
         result = protocol_maker.create_gg_protocol()
         print("Restriction sites in result:", result.get('restriction_sites'))
 
-        # Check for errors
+        # Check for errors in the result
         if result.get('has_errors', False):
-            return render_template(
-                "error_messages.html",
-                sequence_errors=result.get('sequence_errors', {}),
-                partial_result=result,
-                form_data=request.form
-            ), 422
+            return jsonify({
+                "error": "Protocol generation error",
+                "sequence_errors": result.get('sequence_errors', {}),
+                "partial_result": result,
+                "form_data": request.form
+            }), 422
 
-        # Success - use results_partial.html which already exists
-        return render_template("results_partial.html", results=result)
-
+        return jsonify({"success": True, "data": result})
     except Exception as e:
-        print(f"Error in generate_protocol: {str(e)}")
-        return render_template(
-            "error_messages.html",
-            general_error=str(e),
-            form_data=request.form
-        ), 500
+        error_response = {
+            "error": "An error occurred in generate_protocol",
+            "details": str(e)
+        }
+        return jsonify(error_response), 500
