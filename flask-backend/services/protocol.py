@@ -10,9 +10,6 @@ from .utils import GoldenGateUtils
 from config.logging_config import logger
 from .base import debug_context
 
-# Define a minimum sequence length if desired
-MIN_SEQUENCE_LENGTH = 50  # Adjust as needed
-
 
 class GoldenGateProtocol:
     """
@@ -72,11 +69,11 @@ class GoldenGateProtocol:
             'primers_designed': []
         }
 
-    def create_gg_protocol(self) -> str:
+    def create_gg_protocol(self) -> dict:
         """
         Main function to orchestrate the Golden Gate protocol creation.
         Returns:
-            str: A JSON string containing protocol details.
+            dict: A dictionary containing protocol details.
         """
         logger.info("Starting Golden Gate protocol creation...")
         result_data = {
@@ -101,14 +98,6 @@ class GoldenGateProtocol:
             try:
                 print(f"Processing sequence {i+1}/{len(self.seq)}")
 
-                # Early check: skip sequences that are too short
-                if len(single_seq.strip()) < MIN_SEQUENCE_LENGTH:
-                    message = f"Sequence length {len(single_seq.strip())} is too short for processing."
-                    sequence_data['preprocessing_message'] = message
-                    result_data['sequence_analysis'].append(sequence_data)
-                    logger.warning(f"Skipping sequence {i}: {message}")
-                    continue
-
                 # 1. Preprocess sequence (remove start/stop codons, etc.)
                 with debug_context("Preprocessing sequence"):
                     processed_seq, message, success = self.sequence_preparator.preprocess_sequence(
@@ -118,7 +107,9 @@ class GoldenGateProtocol:
                     # If preprocessing returns None, fallback to the original sequence.
                     if processed_seq is None:
                         processed_seq = single_seq
-                    sequence_data['processed_sequence'] = processed_seq
+                    # Always convert Seq object to string when storing in result
+                    sequence_data['processed_sequence'] = str(
+                        processed_seq) if processed_seq is not None else None
 
                 # 2. Find restriction sites
                 with debug_context("Finding restriction sites"):
@@ -182,7 +173,8 @@ class GoldenGateProtocol:
             self._save_primers_to_tsv(
                 result_data['primers'], self.output_tsv_path)
 
-        return json.dumps(result_data)
+        # Convert any remaining non-serializable objects and return the dictionary
+        return self.utils.convert_non_serializable(result_data)
 
     def _save_primers_to_tsv(self, primer_data: List[List[str]], output_tsv_path: str) -> None:
         """Saves primer data to a TSV file."""

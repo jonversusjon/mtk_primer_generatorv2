@@ -84,10 +84,10 @@ def generate_protocol():
         serializable_result = utils.convert_non_serializable(result)
 
         # Check for errors
-        if result.get('has_errors', False):
+        if serializable_result.get('has_errors', False):
             return jsonify({
                 "error": "Error in protocol generation",
-                "sequence_errors": result.get('sequence_errors', {})
+                "sequence_errors": serializable_result.get('sequence_errors', {})
             }), 422
 
         # Success - return the result
