@@ -94,7 +94,7 @@ body {
   color: var(--text-dark);
   padding: 10px;
   border-radius: 6px;
-  font-size: 14px;
+  /* font-size: 14px; */
   width: 250px;
   text-align: center;
   display: none;
@@ -130,9 +130,9 @@ body {
   box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.sequence-content label {
-  font-size: 0.9em;
-}
+/* .sequence-content label { */
+  /* font-size: 0.9em; */
+/* } */
 
 .sequence-input,
 .dynamic-sequence-input {
@@ -185,60 +185,7 @@ body {
   margin-left: 12px;
 }
 
-/* --- Table Section --- */
-.restriction-site-summary-table-container {
-  width: 100%;
-  margin: 20px 0;
-  font-size: 12px;
-  text-align: left;
-  background-color: #fff;
-  color: var(--text-dark);
-}
 
-.restriction-site-summary-table-title {
-  font-size: 16px;
-  margin: 12px;
-}
-
-.restriction-site-summary-table-container table {
-  margin-left: 20px;
-  border-collapse: collapse;
-}
-
-/* Table Header */
-.restriction-site-summary-table-container thead {
-  background-color: var(--color-eggshell);
-  color: var(--text-dark);
-  font-weight: bold;
-}
-
-/* Table Header Cells */
-.restriction-site-summary-table-container th {
-  padding: 12px;
-  border: 1px solid var(--border-color);
-  text-align: center;
-}
-
-/* Table Body Cells */
-.restriction-site-summary-table-container td {
-  padding: 10px;
-  border: 1px solid var(--border-color);
-  text-align: center;
-}
-
-/* Alternate Row Coloring */
-.restriction-site-summary-table-container tbody tr:nth-child(even) {
-  background-color: var(--color-eggshell);
-}
-
-.restriction-site-summary-table-container tbody tr:nth-child(odd) {
-  background-color: #fff;
-}
-
-/* Hover Effect */
-.restriction-site-summary-table-container tbody tr:hover {
-  background-color: #e0e0e0; /* Optionally replace with a lighter var(--color-eggshell) if desired */
-}
 
 /* --- Settings Card --- */
 #settings-card {

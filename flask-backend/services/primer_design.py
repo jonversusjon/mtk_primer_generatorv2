@@ -15,8 +15,6 @@ class PrimerDesigner:
 
     def __init__(
         self,
-        part_num_left: List[str],
-        part_num_right: List[str],
         kozak: str = "MTK",
         verbose: bool = False,
     ):
@@ -30,8 +28,6 @@ class PrimerDesigner:
             'current_mutation': None
         }
 
-        self.part_num_left = part_num_left
-        self.part_num_right = part_num_right
         self.kozak = kozak
         self.part_end_dict = self.utils.get_mtk_partend_sequences()
 
@@ -50,53 +46,9 @@ class PrimerDesigner:
         self.bsmbi_site = "CGTCTC"
         self.spacer = "GAA"
 
-    def design_primers(
+    def design_mutation_primers(
         self,
-        sequence: str,
-        seq_index: int,
-        mutations: Optional[List[Dict]] = None,
-        compatibility_matrices: List[np.ndarray] = None,
-        template_seq: Optional[str] = None,
-        primer_names: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
-        """
-        Main orchestrator function for primer design.
-        """
-        with debug_context("design_primers"):
-            results = {}
-
-            # 1. Design mutation primers if mutations are provided
-            if mutations and compatibility_matrices:
-                mutation_primers = self._design_mutation_primers(
-                    sequence,
-                    mutations,
-                    compatibility_matrices,
-                    primer_names[seq_index] if primer_names else None
-                )
-                if mutation_primers:
-                    results['mutation_primers'] = mutation_primers
-
-            # 2. Generate edge primers
-            mtk_partend_sequences = self.utils.get_mtk_partend_sequences()
-            edge_primers = self._generate_edge_primers(
-                sequence,
-                seq_index,
-                mtk_partend_sequences,
-                primer_names[seq_index] if primer_names else None
-            )
-            if edge_primers:
-                results['edge_primers'] = edge_primers
-
-            # 3. Perform off-target analysis if template sequence is provided
-            if template_seq and results:
-                self._analyze_off_targets_for_all_primers(
-                    results, template_seq)
-
-            return results
-
-    def _design_mutation_primers(
-        self,
-        target_seq: str,
+        full_sequence: str,
         mutation_sets: List[Dict],
         comp_matrices: List[np.ndarray],
         primer_name: Optional[str] = None
@@ -114,7 +66,8 @@ class PrimerDesigner:
                     continue
 
                 # Apply mutations to sequence
-                mutated_seq = self._apply_mutations(target_seq, mutation_set)
+                mutated_seq = self._apply_mutations(
+                    full_sequence, mutation_set)
 
                 # Design primers using first valid combination
                 primers = self._construct_mutation_primers(
@@ -237,39 +190,6 @@ class PrimerDesigner:
 
         return primer_seq
 
-    def _generate_edge_primers(
-        self,
-        sequence: str,
-        seq_index: int,
-        part_end_dict: Dict[str, str],
-        primer_name: Optional[str] = None
-    ) -> Dict[str, Tuple[str, str]]:
-        """Generate edge primers for assembly."""
-        with debug_context("generate_edge_primers"):
-            primers = {}
-
-            # Forward primer
-            forward_name, forward_seq = self._construct_edge_primer(
-                sequence,
-                self.part_num_left[seq_index],
-                "forward",
-                primer_name
-            )
-
-            # Reverse primer
-            reverse_name, reverse_seq = self._construct_edge_primer(
-                sequence,
-                self.part_num_right[seq_index],
-                "reverse",
-                primer_name
-            )
-
-            if forward_name and reverse_name:
-                primers['forward'] = (forward_name, forward_seq)
-                primers['reverse'] = (reverse_name, reverse_seq)
-
-            return primers
-
     def _analyze_off_targets_for_all_primers(
         self,
         primer_results: Dict[str, Any],
@@ -355,7 +275,7 @@ class PrimerDesigner:
             tm = 64.9 + (41 * (g_count + c_count - 16.4)) / length
         return round(tm, 2)
 
-    def generate_GG_edge_primers(self, idx, sequence, overhang_5_prime, overhang_3_prime):
+    def generate_GG_edge_primers(self, idx, sequence, overhang_5_prime, overhang_3_prime, primer_name):
         """
         Generate Golden Gate edge primers for a sequence.
         """

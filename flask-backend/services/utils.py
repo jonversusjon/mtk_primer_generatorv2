@@ -53,6 +53,33 @@ class GoldenGateUtils:
         """Loads MTK part-end sequences."""
         return self.load_json_file("mtk_partend_sequences.json")
 
+    def get_mtk_partend_sequence(self, mtk_part_num: str, primer_direction: str, kozak: str = "MTK") -> Optional[str]:
+        """
+        Retrieve the correct overhang sequence based on the part number, direction, and kozak preference.
+
+        Args:
+            mtk_part_num (str): The part number (e.g., "2", "3", "4a").
+            primer_direction (str): Either "forward" or "reverse".
+            kozak (str): Either "MTK" (default) or "Canonical".
+
+        Returns:
+            Optional[str]: The corresponding primer sequence if found, otherwise None.
+        """
+        mtk_sequences = self.get_mtk_partend_sequences()
+        if not mtk_sequences:
+            return None
+
+        # Construct the standard key
+        base_key = f"{mtk_part_num}{primer_direction}"
+
+        # Check if a star version should be used for Canonical Kozak cases
+        if kozak == "Canonical" and mtk_part_num in {"2", "3", "3a"} and primer_direction == "forward":
+            star_key = f"{mtk_part_num}star{primer_direction}"
+            return mtk_sequences.get(star_key, mtk_sequences.get(base_key))
+
+        # Default behavior (MTK)
+        return mtk_sequences.get(base_key, None)
+    
     def get_available_species(self) -> List[str]:
         """Gets list of available species from codon usage tables."""
         with debug_context("get_available_species"):
@@ -131,59 +158,6 @@ class GoldenGateUtils:
             except Exception as e:
                 logger.error(f"Error translating codon {codon}: {str(e)}")
                 return "?"
-
-    def package_form_data(self, request: Any) -> tuple:
-        """Parses and restructures form data."""
-        with debug_context("package_form_data"):
-            try:
-                # First check if it's JSON data
-                if request.is_json:
-                    data = request.json
-                    return data, None
-
-                # Then try form data
-                elif request.form:
-                    # Get data from request
-                    data = self._get_request_data(request)
-
-                    if data is None:
-                        return None, "No data received"
-
-                    # Extract fields assuming valid data
-                    packaged_data = {
-                        'templateSequence': data.get('templateSequence', ''),
-                        'numSequences': int(data.get('numSequences', 1)),
-                        'species': data.get('species', ''),
-                        'kozak': data.get('kozak', 'MTK'),
-                        'sequences': data.get('sequences', []),
-                        'verboseMode': data.get('verboseMode', False)
-                    }
-
-                    return packaged_data, None
-
-                else:
-                    return None, "No data received"
-
-            except Exception as e:
-                logger.error(f"Error packaging form data: {str(e)}")
-                return None, str(e)
-
-    def _get_request_data(self, request: Any) -> dict:
-        """Get data from request object, handling different content types."""
-        try:
-            if request.is_json:
-                return request.get_json(force=True)
-            elif request.form:
-                return dict(request.form)
-            else:
-                raw_data = request.get_data()
-                if raw_data:
-                    return json.loads(raw_data)
-                return None
-
-        except Exception as e:
-            logger.error(f"Error getting request data: {str(e)}")
-            return None
 
     def seq_to_index(self, seq: str) -> int:
         """Converts a 4-nucleotide sequence to its corresponding matrix index."""

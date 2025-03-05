@@ -7,14 +7,15 @@ from itertools import product
 from config.logging_config import logger
 from services.base import debug_context
 
+
 class MutationAnalyzer:
     """
     Analyzes DNA sequences and generates possible mutations for Golden Gate assembly.
     Focuses on finding and evaluating potential mutation sites.
     """
+
     def __init__(
         self,
-        sequence: Union[Seq, str],
         codon_usage_dict: Dict[str, Dict[str, float]],
         max_mutations: int = 1,
         verbose: bool = False
@@ -27,7 +28,6 @@ class MutationAnalyzer:
             'mutations_found': []
         }
 
-        self.sequence = str(sequence) if isinstance(sequence, Seq) else sequence
         self.codon_usage_dict = codon_usage_dict
         self.max_mutations = max_mutations
         self.verbose = verbose
@@ -79,14 +79,14 @@ class MutationAnalyzer:
                     mutation_options[site_key] = site_mutations
 
                 if self.verbose:
-                    logger.info(f"Found {len(mutation_options)} sites with valid mutations")
+                    logger.info(
+                        f"Found {len(mutation_options)} sites with valid mutations")
 
                 return mutation_options
 
         except Exception as e:
             logger.error(f"Error in mutation analysis: {str(e)}")
             return mutation_options  # Still return what was processed to avoid silent failure
-
 
     def _find_alternative_codons(
         self,
@@ -136,9 +136,11 @@ class MutationAnalyzer:
                 continue
 
             # Determine mutation tuple (0,1,0) format indicating changed bases.
-            mutation_tuple = tuple(1 if candidate[i] != original_codon[i] else 0 for i in range(3))
-            usage = self.utils.get_codon_usage(str(candidate), amino_acid, self.codon_usage_dict)
-            
+            mutation_tuple = tuple(
+                1 if candidate[i] != original_codon[i] else 0 for i in range(3))
+            usage = self.utils.get_codon_usage(
+                str(candidate), amino_acid, self.codon_usage_dict)
+
             valid_alternatives.append({
                 "seq": candidate,
                 "usage": usage,
@@ -151,7 +153,6 @@ class MutationAnalyzer:
             )
 
         return valid_alternatives
-
 
     def _create_mutation_entry(self, site_sequence: str, site_start: int, codon_start: int, codon_pos: int,
                                original_codon: str, new_codon: str, frequency: float, enzyme: str, strand: str) -> Optional[Dict]:
@@ -184,6 +185,6 @@ class MutationAnalyzer:
         }
 
         mutation_id = f"{mutation_position}_{original_base}_{new_base}"
-        self.mutation_dict[mutation_id]=mutation_entry
+        self.mutation_dict[mutation_id] = mutation_entry
 
         return mutation_entry

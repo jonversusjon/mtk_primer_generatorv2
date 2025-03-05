@@ -1,14 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import RestrictionSiteSummary from "./RestrictionSiteSummary";
 import PrimerAnatomy from "./PrimerAnatomy";
 import "../../styles/Results.css";
 
 function Results({ data }) {
+  const [activeTab, setActiveTab] = useState(0);
   const [showPrimerAnatomy, setShowPrimerAnatomy] = useState(false);
 
-  if (!data) return null;
+  if (!data || Object.keys(data).length === 0) return null;
 
-  const { restriction_sites, primers, mutations, sequence_analysis } = data;
+  // Convert data object to array for use with ResultTabs
+  const resultsArray = Object.entries(data).map(
+    ([sequenceNumber, sequenceData]) => ({
+      sequenceNumber,
+      ...sequenceData,
+    })
+  );
 
   return (
     <div className="protocol-results">
@@ -24,92 +31,171 @@ function Results({ data }) {
         </button>
       </div>
 
-      {/* Show Primer Anatomy if toggled */}
       {showPrimerAnatomy && (
         <div className="primer-anatomy-container">
           <PrimerAnatomy />
         </div>
       )}
 
-      {/* Show Restriction Site Summary if available */}
-      {restriction_sites && restriction_sites.length > 0 && (
-        <RestrictionSiteSummary sites={restriction_sites} />
-      )}
+      <ResultTabs
+        results={resultsArray}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        removeResult={() => {}}
+        addResult={() => {}}
+      />
+    </div>
+  );
+}
 
-      {/* Show Primers if available */}
-      {primers && primers.length > 0 && (
-        <div className="primers-summary">
-          <h3>Designed Primers</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Sequence</th>
-                <th>Length</th>
-              </tr>
-            </thead>
-            <tbody>
-              {primers.map((primer, index) => (
-                <tr key={index}>
-                  <td>{primer[0]}</td>
-                  <td className="primer-sequence">{primer[1]}</td>
-                  <td>{primer[1].length} bp</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+function ResultTabs({
+  results,
+  activeTab,
+  setActiveTab,
+  removeResult,
+  addResult,
+}) {
+  // Ensure active tab is valid after removing results
+  useEffect(() => {
+    if (activeTab >= results.length && results.length > 0) {
+      setActiveTab(results.length - 1);
+    }
+  }, [results.length, activeTab, setActiveTab]);
+
+  return (
+    <div className="results-section">
+      <div className="section-header">
+        <div className="section-title">
+          <h3>Sequence Results</h3>
+        </div>
+      </div>
+
+      <div className="result-tabs-container">
+        {/* Tab Navigation */}
+        <div className="tab-buttons">
+          {results.map((result, index) => (
+            <button
+              key={index}
+              type="button"
+              className={`tab-button ${activeTab === index ? "active" : ""}`}
+              onClick={() => setActiveTab(index)}
+              role="tab"
+              aria-selected={activeTab === index}
+              aria-controls={`result-tab-${index}`}
+              id={`result-tab-button-${index}`}
+            >
+              Sequence {result.sequenceNumber}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content Panels */}
+        <div className="tab-content">
+          {results.map((result, index) => (
+            <div
+              key={index}
+              className={`tab-pane ${activeTab === index ? "active" : ""}`}
+              id={`result-tab-${index}`}
+              role="tabpanel"
+              aria-labelledby={`result-tab-button-${index}`}
+              hidden={activeTab !== index}
+            >
+              <ResultTab result={result} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ResultTab({ result }) {
+  return (
+    <div className="sequence-results">
+      {/* Messages */}
+      {result.messages && result.messages.length > 0 && (
+        <div className="messages">
+          {result.messages.map((msg, index) => (
+            <div key={index}>{msg}</div>
+          ))}
         </div>
       )}
 
-      {/* Show Mutations if available */}
-      {mutations && mutations.length > 0 && (
-        <div className="mutations-summary">
-          <h3>Mutations</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Position</th>
-                <th>Original</th>
-                <th>Mutated</th>
-                <th>Type</th>
-              </tr>
-            </thead>
-            <tbody>
-              {mutations.map((mutation, index) => (
-                <tr key={index}>
-                  <td>{mutation.position}</td>
-                  <td>{mutation.original}</td>
-                  <td>{mutation.mutated}</td>
-                  <td>{mutation.type}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* Restriction Sites */}
+      {result.restriction_sites && result.restriction_sites.length > 0 && (
+        <RestrictionSiteSummary sites={result.restriction_sites} />
       )}
 
-      {/* Show any additional analysis data */}
-      {sequence_analysis && sequence_analysis.length > 0 && (
-        <div className="sequence-analysis-summary">
-          <h3>Sequence Analysis</h3>
-          <div className="analysis-details">
-            {sequence_analysis.map((analysis, index) => (
-              <div key={index} className="analysis-item">
-                <h4>Sequence {index + 1}</h4>
-                <p>
-                  <strong>Processed Length:</strong>{" "}
-                  {analysis.processed_sequence?.length || 0} bp
-                </p>
-                {analysis.restriction_sites &&
-                  analysis.restriction_sites.length > 0 && (
-                    <p>
-                      <strong>Restriction Sites:</strong>{" "}
-                      {analysis.restriction_sites.length}
-                    </p>
-                  )}
-              </div>
-            ))}
+      {/* Mutations */}
+      {result.mutations &&
+        result.mutations.all_mutation_options &&
+        result.mutations.all_mutation_options.length > 0 && (
+          <div className="mutations-summary">
+            <h4>Mutations</h4>
+            <table>
+              <thead>
+                <tr>
+                  <th>Position</th>
+                  <th>Original</th>
+                  <th>Mutated</th>
+                  <th>Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                {result.mutations.all_mutation_options.map(
+                  (mutation, index) => (
+                    <tr key={index}>
+                      <td>{mutation.position}</td>
+                      <td>{mutation.original_sequence}</td>
+                      <td>{mutation.mutated_sequence}</td>
+                      <td>{mutation.type}</td>
+                    </tr>
+                  )
+                )}
+              </tbody>
+            </table>
           </div>
+        )}
+
+      {/* PCR Reactions */}
+      {result.PCR_reactions && Object.keys(result.PCR_reactions).length > 0 && (
+        <div className="pcr-summary">
+          <h4>PCR Reactions</h4>
+          <table>
+            <thead>
+              <tr>
+                <th>Reaction</th>
+                <th>Mutation Primers</th>
+                <th>Edge Primers</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(result.PCR_reactions).map(
+                ([reaction, primers], index) => (
+                  <tr key={index}>
+                    <td>{reaction}</td>
+                    <td>
+                      {primers.mutation_primers
+                        ? primers.mutation_primers.join(", ")
+                        : "None"}
+                    </td>
+                    <td>
+                      {primers.edge_primers
+                        ? primers.edge_primers.join(", ")
+                        : "None"}
+                    </td>
+                  </tr>
+                )
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Errors */}
+      {result.errors && (
+        <div className="error-message">
+          <strong>Error:</strong> {result.errors}
         </div>
       )}
     </div>

@@ -30,7 +30,7 @@ const MTK_PART_NUMS = [
 ];
 
 function SequenceTabs({
-  sequences,
+  sequencesToDomesticate,
   updateSequence,
   addSequence,
   removeSequence,
@@ -39,10 +39,13 @@ function SequenceTabs({
 
   // Ensure active tab is valid after removing sequences
   React.useEffect(() => {
-    if (activeTab >= sequences.length && sequences.length > 0) {
-      setActiveTab(sequences.length - 1);
+    if (
+      activeTab >= sequencesToDomesticate.length &&
+      sequencesToDomesticate.length > 0
+    ) {
+      setActiveTab(sequencesToDomesticate.length - 1);
     }
-  }, [sequences.length, activeTab]);
+  }, [sequencesToDomesticate.length, activeTab]);
 
   return (
     <div className="sequences-section">
@@ -56,7 +59,7 @@ function SequenceTabs({
             type="button"
             className="btn btn-sm btn-outline-danger"
             onClick={removeSequence}
-            disabled={sequences.length <= 1}
+            disabled={sequencesToDomesticate.length <= 1}
             aria-label="Remove sequence"
           >
             –
@@ -65,7 +68,7 @@ function SequenceTabs({
             type="button"
             className="btn btn-sm btn-outline-success"
             onClick={addSequence}
-            disabled={sequences.length >= 10}
+            disabled={sequencesToDomesticate.length >= 10}
             aria-label="Add sequence"
           >
             +
@@ -76,7 +79,7 @@ function SequenceTabs({
       <div className="sequence-tabs-container">
         {/* Tab Navigation */}
         <div className="tab-buttons">
-          {sequences.map((_, index) => (
+          {sequencesToDomesticate.map((_, index) => (
             <button
               key={index}
               type="button"
@@ -94,7 +97,7 @@ function SequenceTabs({
 
         {/* Tab Content Panels */}
         <div className="tab-content">
-          {sequences.map((sequence, index) => (
+          {sequencesToDomesticate.map((sequence, index) => (
             <div
               key={index}
               className={`tab-pane ${activeTab === index ? "active" : ""}`}

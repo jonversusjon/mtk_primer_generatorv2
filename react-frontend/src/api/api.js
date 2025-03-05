@@ -40,64 +40,16 @@ export const generateProtocol = async (formData) => {
     JSON.stringify(formData, null, 2)
   );
 
-  // Create FormData object for file uploads
-  const form = new FormData();
-
-  // Convert sequences array to the format expected by the server
-  console.log(`Processing ${formData.sequences.length} sequences:`);
-  formData.sequences.forEach((seq, index) => {
-    console.log(`Sequence #${index + 1}:`, {
-      primerName: seq.primerName,
-      mtkPart: seq.mtkPart,
-      sequenceLength: seq.sequence.length,
-      sequencePreview:
-        seq.sequence.substring(0, 30) + (seq.sequence.length > 30 ? "..." : ""),
-    });
-
-    form.append(`sequences[${index}][sequence]`, seq.sequence);
-    form.append(`sequences[${index}][primerName]`, seq.primerName);
-    form.append(`sequences[${index}][mtkPart]`, seq.mtkPart);
-  });
-
-  // Add other form fields
-  console.log("Adding form parameters:");
-  console.log(`- numSequences: ${formData.numSequences}`);
-  console.log(`- templateSequence length: ${formData.templateSequence.length}`);
-  console.log(`- species: ${formData.species}`);
-  console.log(`- kozak: ${formData.kozak}`);
-  console.log(`- max_mut_per_site: ${formData.max_mut_per_site}`);
-  console.log(`- verbose_mode: ${formData.verbose_mode ? "on" : "off"}`);
-
-  form.append("numSequences", formData.numSequences);
-  form.append("templateSequence", formData.templateSequence);
-  form.append("species", formData.species);
-  form.append("kozak", formData.kozak);
-  form.append("max_mut_per_site", formData.max_mut_per_site);
-
-  if (formData.verbose_mode) {
-    form.append("verbose_mode", "on");
-    console.log("Verbose mode enabled for server-side logging");
-  }
-
-  // Debug FormData contents
-  console.log("FormData entries:");
-  for (let pair of form.entries()) {
-    const value = pair[1];
-    // For sequence values, just log the length to avoid console clutter
-    const displayValue =
-      typeof value === "string" && value.length > 50
-        ? `${value.substring(0, 50)}... (${value.length} chars)`
-        : value;
-    console.log(`- ${pair[0]}: ${displayValue}`);
-  }
-
   try {
     console.log(`Sending request to ${API_BASE_URL}/generate_protocol`);
     console.time("Protocol generation request");
 
     const response = await fetch(`${API_BASE_URL}/generate_protocol`, {
       method: "POST",
-      body: form,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
     });
 
     console.timeEnd("Protocol generation request");

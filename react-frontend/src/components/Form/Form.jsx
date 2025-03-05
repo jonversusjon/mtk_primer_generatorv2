@@ -8,35 +8,53 @@ import { defaultParameters } from "../../config/defaultParameters";
 import useValidateForm from "../../hooks/useValidateForm";
 import "../../styles/form.css";
 
-function getDefaultFormData() {
-  const initialSequences = [];
+// formSchema.js - Define your data structure clearly in one place
+export const formSchema = {
+  templateSequence: {
+    type: "string",
+    description: "The template DNA sequence",
+  },
+  species: { type: "string", description: "Species selection" },
+  kozak: { type: "string", description: "Kozak sequence type" },
+  max_mut_per_site: {
+    type: "number",
+    description: "Maximum mutations per site",
+  },
+  verbose_mode: { type: "boolean", description: "Enable verbose output" },
+  sequencesToDomesticate: {
+    type: "array",
+    items: {
+      sequence: { type: "string", description: "DNA sequence" },
+      primerName: { type: "string", description: "Name of the primer" },
+      mtkPartLeft: { type: "string", description: "Left MTK part number" },
+      mtkPartRight: { type: "string", description: "Right MTK part number" },
+    },
+  },
+};
 
-  if (
-    defaultParameters.sequencesToDomesticate &&
-    defaultParameters.sequencesToDomesticate.length > 0
-  ) {
-    defaultParameters.sequencesToDomesticate.forEach((seq, index) => {
-      initialSequences.push({
-        sequence: seq,
-        primerName: defaultParameters.primerNames[index] || "",
-        mtkPart: defaultParameters.mtkPartNums[index] || "",
-      });
-    });
-  } else {
-    // Default to one empty sequence
-    initialSequences.push({ sequence: "", primerName: "", mtkPart: "" });
-  }
-
-  return {
-    templateSequence: defaultParameters.templateSequence || "",
-    numSequences: initialSequences.length,
-    species: "", // We'll set this later once species is fetched
-    kozak: "MTK",
-    max_mut_per_site: 1,
-    verbose_mode: true,
-    sequences: initialSequences,
-  };
-}
+export const getDefaultValues = () => ({
+  templateSequence: defaultParameters.templateSequence || "",
+  species: "",
+  kozak: "MTK",
+  max_mut_per_site: 1,
+  verbose_mode: true,
+  sequencesToDomesticate:
+    defaultParameters.sequencesToDomesticate?.length > 0
+      ? defaultParameters.sequencesToDomesticate.map((seq, index) => ({
+          sequence: seq,
+          primerName: defaultParameters.primerNames[index] || "",
+          mtkPartLeft: defaultParameters.mtkPartNums[index] || "",
+          mtkPartRight: defaultParameters.mtkPartNums[index] || "",
+        }))
+      : [
+          {
+            sequence: "",
+            primerName: "",
+            mtkPartLeft: "",
+            mtkPartRight: "",
+          },
+        ],
+});
 
 function Form({ onSubmit, isSubmitting }) {
   // State for species loading and errors
@@ -45,7 +63,7 @@ function Form({ onSubmit, isSubmitting }) {
   const [species, setSpecies] = useState([]);
 
   // Initialize form state with defaults
-  const [formData, setFormData] = useState(getDefaultFormData());
+  const [formData, setFormData] = useState(getDefaultValues());
 
   // Settings panel state
   const [showSettings, setShowSettings] = useState(false);
@@ -82,6 +100,7 @@ function Form({ onSubmit, isSubmitting }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (isValid && !isSubmitting) {
+      console.log("Form data being sent:", formData);
       onSubmit(formData);
     }
   };
@@ -92,12 +111,12 @@ function Form({ onSubmit, isSubmitting }) {
 
   const updateSequence = (index, field, value) => {
     setFormData((prev) => {
-      const updatedSequences = [...prev.sequences];
+      const updatedSequences = [...prev.sequencesToDomesticate];
       updatedSequences[index] = {
         ...updatedSequences[index],
         [field]: value,
       };
-      return { ...prev, sequences: updatedSequences };
+      return { ...prev, sequencesToDomesticate: updatedSequences };
     });
   };
 
@@ -106,7 +125,7 @@ function Form({ onSubmit, isSubmitting }) {
       setFormData((prev) => ({
         ...prev,
         numSequences: prev.numSequences + 1,
-        sequences: [
+        sequencesToDomesticate: [
           ...prev.sequences,
           { sequence: "", primerName: "", mtkPart: "" },
         ],
@@ -119,14 +138,14 @@ function Form({ onSubmit, isSubmitting }) {
       setFormData((prev) => ({
         ...prev,
         numSequences: prev.numSequences - 1,
-        sequences: prev.sequences.slice(0, -1),
+        sequencesToDomesticate: prev.sequencesToDomesticate.slice(0, -1),
       }));
     }
   };
 
   // Reset form to defaults (while preserving species)
   const resetForm = () => {
-    const defaults = getDefaultFormData();
+    const defaults = getDefaultValues();
     setFormData({
       ...defaults,
       species: formData.species,
@@ -166,7 +185,7 @@ function Form({ onSubmit, isSubmitting }) {
 
       {/* Sequences to Domesticate Section */}
       <SequenceTabs
-        sequences={formData.sequences}
+        sequencesToDomesticate={formData.sequencesToDomesticate}
         updateSequence={updateSequence}
         addSequence={addSequence}
         removeSequence={removeSequence}

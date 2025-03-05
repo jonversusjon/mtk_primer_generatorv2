@@ -251,8 +251,8 @@ cursor: not-allowed;
 
 .btn-outline-success {
 background-color: transparent;
-color: var(--success-color);
-border: 1px solid var(--success-color);
+color: var(--border-color);
+border: 1px solid var(--border-color);
 }
 .btn-outline-success:hover {
 background-color: var(--success-color);

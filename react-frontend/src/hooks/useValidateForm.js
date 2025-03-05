@@ -30,32 +30,45 @@ const useValidateForm = (formData) => {
       }
     }
 
-    // Validate sequences array
-    if (!formData.sequences || formData.sequences.length === 0) {
-      newErrors.sequences = "At least one sequence is required.";
+    // Validate sequencesToDomesticate array
+    if (
+      !formData.sequencesToDomesticate ||
+      formData.sequencesToDomesticate.length === 0
+    ) {
+      newErrors.sequencesToDomesticate = "At least one sequence is required.";
     } else {
-      formData.sequences.forEach((seq, index) => {
+      formData.sequencesToDomesticate.forEach((seq, index) => {
         // Validate sequence: non-empty and passes custom DNA rules
         if (!seq.sequence || seq.sequence.trim() === "") {
-          newErrors[`sequences[${index}].sequence`] =
+          newErrors[`sequencesToDomesticate[${index}].sequence`] =
             "Sequence cannot be empty.";
         } else {
           const seqValidation = validateDnaSequence(seq.sequence, true, true);
           if (!seqValidation.isValid && !seqValidation.isAdvisory) {
-            newErrors[`sequences[${index}].sequence`] = seqValidation.message;
+            newErrors[`sequencesToDomesticate[${index}].sequence`] =
+              seqValidation.message;
           } else if (seqValidation.isAdvisory) {
-            newAdvisories[`sequences[${index}].sequence`] =
+            newAdvisories[`sequencesToDomesticate[${index}].sequence`] =
               seqValidation.message;
           }
         }
+
         // Validate primer name (required)
         if (!seq.primerName || seq.primerName.trim() === "") {
-          newErrors[`sequences[${index}].primerName`] =
+          newErrors[`sequencesToDomesticate[${index}].primerName`] =
             "Primer name is required.";
         }
-        // Validate MTK Part (required)
-        if (!seq.mtkPart || seq.mtkPart.trim() === "") {
-          newErrors[`sequences[${index}].mtkPart`] = "MTK Part is required.";
+
+        // Validate MTK Part Left (required)
+        if (!seq.mtkPartLeft || seq.mtkPartLeft.trim() === "") {
+          newErrors[`sequencesToDomesticate[${index}].mtkPartLeft`] =
+            "MTK Part Left is required.";
+        }
+
+        // Validate MTK Part Right (required)
+        if (!seq.mtkPartRight || seq.mtkPartRight.trim() === "") {
+          newErrors[`sequencesToDomesticate[${index}].mtkPartRight`] =
+            "MTK Part Right is required.";
         }
       });
     }

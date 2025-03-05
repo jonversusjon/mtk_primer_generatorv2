@@ -28,52 +28,30 @@ def get_species():
 def generate_protocol():
     """Generate a Golden Gate protocol based on the provided sequences"""
     try:
-        # Handle form data submitted by React
-        form_data = request.form.to_dict()
+        # Parse JSON data from request
+        data = request.json
+        print(f"Form data received: {data}")
 
-        # Process sequences data - form data is flattened so we need to restructure it
-        sequences = []
-        num_sequences = int(form_data.get("numSequences", 0))
-
-        for i in range(num_sequences):
-            seq_key = f"sequences[{i}][sequence]"
-            name_key = f"sequences[{i}][primerName]"
-            part_key = f"sequences[{i}][mtkPart]"
-
-            if seq_key in form_data:
-                sequences.append({
-                    "sequence": form_data.get(seq_key, "").strip(),
-                    "primerName": form_data.get(name_key, "").strip(),
-                    "mtkPart": form_data.get(part_key, "").strip()
-                })
-
-        # Extract other form fields
-        species = form_data.get("species", "")
-        kozak = form_data.get("kozak", "MTK")
-        max_mut_per_site = int(form_data.get("max_mut_per_site", 3))
-        verbose_mode = "verbose_mode" in form_data
-        template_sequence = form_data.get("templateSequence", "").strip()
+        # Extract main parameters
+        sequencesToDomesticate = data.get("sequencesToDomesticate", [])
+        species = data.get("species", "")
+        kozak = data.get("kozak", "MTK")
+        max_mut_per_site = data.get("max_mut_per_site", 3)
+        verbose_mode = data.get("verbose_mode", True)
+        template_sequence = data.get("templateSequence", "")
 
         # Validate input
         if not species:
             return jsonify({"error": "Species not specified"}), 400
 
-        if not sequences:
+        if not sequencesToDomesticate:
             return jsonify({"error": "No sequences provided"}), 400
 
-        # Extract list data for protocol generation
-        seq_list = [seq["sequence"] for seq in sequences]
-        primer_names = [seq["primerName"] for seq in sequences]
-        mtk_parts = [seq["mtkPart"] for seq in sequences]
-
-        # Create protocol
+        # Create protocol with the new parameter structure
         protocol_maker = GoldenGateProtocol(
-            seq=seq_list,
+            sequencesToDomesticate=sequencesToDomesticate,
             codon_usage_dict=utils.get_codon_usage_dict(species),
-            part_num_left=mtk_parts,
-            part_num_right=["" for _ in sequences],
             max_mutations=max_mut_per_site,
-            primer_name=primer_names,
             template_seq=template_sequence,
             kozak=kozak,
             verbose=verbose_mode

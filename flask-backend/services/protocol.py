@@ -1,5 +1,5 @@
 # services/protocol.py
-import json
+
 from typing import List, Dict, Optional
 from .sequence_prep import SequencePreparator
 from .primer_design import PrimerDesigner
@@ -19,12 +19,9 @@ class GoldenGateProtocol:
 
     def __init__(
         self,
-        seq: List[str],
+        sequencesToDomesticate: List[Dict[str, str]],
         codon_usage_dict: Dict[str, Dict[str, float]],
-        part_num_left: List[str],
-        part_num_right: List[str],
         max_mutations: int,
-        primer_name: Optional[List[str]] = None,
         template_seq: Optional[str] = None,
         kozak: str = "MTK",
         output_tsv_path: str = "designed_primers.tsv",
@@ -33,12 +30,7 @@ class GoldenGateProtocol:
         self.logger = logger.getChild("GoldenGateProtocol")
         self.utils = GoldenGateUtils()
         self.sequence_preparator = SequencePreparator()
-        self.primer_designer = PrimerDesigner(
-            part_num_left=part_num_left,
-            part_num_right=part_num_right,
-            kozak=kozak,
-            verbose=verbose
-        )
+        self.primer_designer = PrimerDesigner(kozak=kozak, verbose=verbose)
         self.primer_selector = PrimerSelector()
         self.mutation_optimizer = MutationOptimizer(verbose=verbose)
         self.logger.debug(
@@ -46,22 +38,20 @@ class GoldenGateProtocol:
         if verbose:
             self.logger.info("GoldenGateProtocol is running in verbose mode.")
         self.mutation_analyzer = MutationAnalyzer(
-            sequence=seq,
             codon_usage_dict=codon_usage_dict,
             max_mutations=max_mutations,
             verbose=verbose
         )
 
-        self.seq = seq
-        self.primer_name = primer_name
+        self.sequencesToDomesticate = sequencesToDomesticate
         self.template_seq = template_seq
+        self.kozak = kozak
         self.verbose = verbose
         self.codon_usage_dict = codon_usage_dict
         self.max_mutations = max_mutations
         self.output_tsv_path = output_tsv_path
-        self.part_num_left = part_num_left
-        self.part_num_right = part_num_right
 
+        self.mtk_partend_sequences = self.utils.get_mtk_partend_sequences()
         self.state = {
             'current_sequence_index': 0,
             'current_step': '',
@@ -76,102 +66,116 @@ class GoldenGateProtocol:
             dict: A dictionary containing protocol details.
         """
         logger.info("Starting Golden Gate protocol creation...")
-        result_data = {
-            'primers': [],
-            'restriction_sites': [],
-            'mutations': [],
-            'sequence_analysis': [],
-            'has_errors': False,
-            'sequence_errors': {}
-        }
 
-        for i, single_seq in enumerate(self.seq):
+        result_data = {}
+
+        for i, seq_object in enumerate(self.sequencesToDomesticate):
+            sequence_number = str(i + 1)
+            single_seq = seq_object["sequence"]
+
             sequence_data = {
-                'sequence_index': i,
-                'processed_sequence': None,
-                'restriction_sites': [],
-                'mutations': None,
-                'primers': None,
-                'preprocessing_message': None
+                "sequence_index": i,
+                "processed_sequence": None,
+                "restriction_sites": [],
+                "mutations": None,
+                "PCR_reactions": {},
+                "messages": [],
+                "errors": None
             }
 
             try:
-                print(f"Processing sequence {i+1}/{len(self.seq)}")
+                print(
+                    f"Processing sequence {sequence_number}/{len(self.sequencesToDomesticate)}")
 
                 # 1. Preprocess sequence (remove start/stop codons, etc.)
                 with debug_context("Preprocessing sequence"):
-                    processed_seq, message, success = self.sequence_preparator.preprocess_sequence(
+                    processed_seq, message, _ = self.sequence_preparator.preprocess_sequence(
                         single_seq)
+
                     if message:
-                        sequence_data['preprocessing_message'] = message
-                    # If preprocessing returns None, fallback to the original sequence.
-                    if processed_seq is None:
-                        processed_seq = single_seq
-                    # Always convert Seq object to string when storing in result
-                    sequence_data['processed_sequence'] = str(
-                        processed_seq) if processed_seq is not None else None
+                        sequence_data["messages"].append(message)
+
+                    sequence_data["processed_sequence"] = str(
+                        processed_seq) if processed_seq else str(single_seq)
 
                 # 2. Find restriction sites
                 with debug_context("Finding restriction sites"):
                     sites_to_mutate = self.sequence_preparator.find_and_summarize_sites(
                         processed_seq, i)
-                    sequence_data['restriction_sites'] = sites_to_mutate
+                    sequence_data["restriction_sites"] = sites_to_mutate
 
-                # 3. Mutation analysis and primer design
+                # 3. Mutation analysis and mutation primer design
+                mutation_primers = {}
+
                 if sites_to_mutate:
                     with debug_context("Mutation analysis"):
                         mutation_options = self.mutation_analyzer.get_all_mutations(
-                            sites_to_mutate=sites_to_mutate
-                        )
+                            sites_to_mutate)
                         if mutation_options:
                             optimized_mutations, compatibility_matrices = self.mutation_optimizer.optimize_mutations(
                                 sequence=processed_seq, mutation_options=mutation_options
                             )
-                            sequence_data['mutations'] = {
-                                'all_mutation_options': optimized_mutations,
-                                'compatibility': compatibility_matrices
+                            sequence_data["mutations"] = {
+                                "all_mutation_options": optimized_mutations,
+                                "compatibility": compatibility_matrices
                             }
                         else:
                             optimized_mutations, compatibility_matrices = None, None
 
-                    with debug_context("Primer design"):
-                        primers = self.primer_designer.design_primers(
-                            sequence=processed_seq,
-                            seq_index=i,
-                            mutations=optimized_mutations,
-                            compatibility_matrices=compatibility_matrices,
-                            template_seq=self.template_seq
+                    with debug_context("Mutation primer design"):
+                        mutation_primers = self.primer_designer.design_mutation_primers(
+                            full_sequence=processed_seq,
+                            mutation_sets=optimized_mutations,
+                            comp_matrices=compatibility_matrices,
+                            primer_name=seq_object.get(
+                                "primerName", f"Sequence_{i}")
                         )
-                else:
-                    logger.info(f"No restriction sites found in sequence {i}")
-                    try:
-                        overhang_5_prime = self.part_num_left[i]
-                        overhang_3_prime = self.part_num_right[i]
-                        primers = self.primer_designer.generate_GG_edge_primers(
-                            i, processed_seq, overhang_5_prime, overhang_3_prime
-                        )
-                    except Exception as e:
-                        logger.error(
-                            f"Error generating edge primers for sequence {i}: {e}")
-                        primers = []
 
-                sequence_data['primers'] = primers
-                result_data['sequence_analysis'].append(sequence_data)
-                result_data['primers'].extend(primers)
+                # 4. Generate edge primers
+                try:
+                    mtk_part_left = seq_object.get("mtkPartLeft", "")
+                    mtk_part_right = seq_object.get("mtkPartRight", "")
+                    print(
+                        f"self.mtk_partend_sequences: {self.mtk_partend_sequences}")
+
+                    # Use the extracted MTK parts directly
+                    overhang_5_prime = self.utils.get_mtk_partend_sequence(
+                        mtk_part_left, "forward", self.kozak)
+                    overhang_3_prime = self.utils.get_mtk_partend_sequence(
+                        mtk_part_right, "reverse", self.kozak)
+
+                    print(f"overhang_5_prime: {overhang_5_prime}")
+                    print(f"overhang_3_prime: {overhang_3_prime}")
+
+                    # Get the primer name from the sequence object if available
+                    primer_name = seq_object.get("primerName", f"Sequence_{i}")
+
+                    edge_primers = self.primer_designer.generate_GG_edge_primers(
+                        i, processed_seq, overhang_5_prime, overhang_3_prime, primer_name
+                    )
+
+                except Exception as e:
+                    logger.error(
+                        f"Error generating edge primers for sequence {i}: {e}")
+                    sequence_data["errors"] = str(e)
+                    edge_primers = {}
+
+                # 5. Group primers into PCR reactions
+                print(f"Edge primers: {edge_primers}")
+                print(f"Mutation primers: {mutation_primers}")
+                primers = {**edge_primers, **mutation_primers}
+                print(f"Primers: {primers}")
+                sequence_data["PCR_reactions"] = self.group_primers_into_pcr_reactions(
+                    primers)
+
+                # Store the processed sequence data for this sequence number
+                result_data[sequence_number] = sequence_data
 
             except Exception as e:
                 logger.exception(
                     f"Unhandled error processing sequence {i}: {str(e)}")
-                sequence_data['error'] = str(e)
-                result_data['sequence_analysis'].append(sequence_data)
-                result_data['has_errors'] = True
-                result_data['sequence_errors'][i] = str(e)
-                continue
-
-        # Save primers to TSV if no critical errors occurred
-        if not result_data['has_errors']:
-            self._save_primers_to_tsv(
-                result_data['primers'], self.output_tsv_path)
+                sequence_data["errors"] = str(e)
+                result_data[sequence_number] = sequence_data
 
         # Convert any remaining non-serializable objects and return the dictionary
         return self.utils.convert_non_serializable(result_data)
@@ -192,5 +196,49 @@ class GoldenGateProtocol:
                 logger.error(f"Error writing to file {output_tsv_path}: {e}")
                 raise
 
-    def generate_GG_edge_primers(self, processed_seq: str, i: int):
-        return []
+    def group_primers_into_pcr_reactions(self, primers: Dict[str, List[str]]) -> Dict[str, Dict[str, List[str]]]:
+        """
+        Organizes primers into PCR reactions following these rules:
+        - First mutation reverse primer pairs with edge forward primer (Reaction_1).
+        - Each subsequent mutation primer pair forms a new reaction.
+        - If no mutation primers exist, only an edge primer reaction is created.
+
+        Args:
+            primers (dict): Dictionary containing mutation primers and edge primers.
+
+        Returns:
+            dict: PCR reactions grouped properly.
+        """
+        pcr_reactions = {}
+        reaction_counter = 1
+
+        mutation_primers = primers.get("mutation_primers", [])
+        edge_primers = primers.get("edge_primers", [])
+
+        if not edge_primers:  # Edge primers are always expected, but handle edge cases
+            logger.warning(
+                "No edge primers found; PCR reaction assignment may be incomplete.")
+
+        # If no mutations, just assign edge primers to one reaction
+        if not mutation_primers:
+            pcr_reactions[f"Reaction_{reaction_counter}"] = {
+                "edge_primers": edge_primers
+            }
+            return pcr_reactions
+
+        # First reaction: Mutation reverse primer + Edge forward primer
+        pcr_reactions[f"Reaction_{reaction_counter}"] = {
+            # First mutation reverse primer
+            "mutation_primers": [mutation_primers[0]],
+            "edge_primers": [edge_primers[0]]  # Edge forward primer
+        }
+        reaction_counter += 1
+
+        # Subsequent reactions: Mutation forward + Next mutation reverse
+        for i in range(1, len(mutation_primers) - 1, 2):  # Step through pairs
+            pcr_reactions[f"Reaction_{reaction_counter}"] = {
+                "mutation_primers": [mutation_primers[i], mutation_primers[i + 1]]
+            }
+            reaction_counter += 1
+
+        return pcr_reactions

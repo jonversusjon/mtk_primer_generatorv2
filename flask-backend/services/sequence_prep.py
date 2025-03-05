@@ -77,7 +77,7 @@ class SequencePreparator:
                 elif trim_stop_codon:
                     message = "Provided sequence does not appear to be in frame, using provided stop codon to infer frame. Stop codon has been removed."
                 else:
-                    message = "Provided sequence does not appear to be in frame, please check your sequence and try again"
+                    message = "Provided sequence does not appear to be in frame. If this is not intended, please check the sequence."
                     return None, message, False
             else:
                 if trim_start_codon and trim_stop_codon:
