@@ -4,21 +4,28 @@ import { validateDnaSequence } from "../../utils/dnaUtils";
 import "../../styles/SequenceTab.css";
 
 function SequenceTab({ sequence, index, updateSequence, mtkPartOptions }) {
-  const [validationMessage, setValidationMessage] = useState("");
+  // Instead of just a string, we store both the message and whether it's advisory
+  const [validation, setValidation] = useState({ message: "", isAdvisory: false });
   const [charCount, setCharCount] = useState(0);
 
   useEffect(() => {
     // Update character count
     setCharCount(sequence.sequence.length);
 
-    // Validate DNA sequence
+    // Validate DNA sequence if one is provided
     if (sequence.sequence) {
-      const validationResult = validateDnaSequence(sequence.sequence, true); // true for mandatory validation
-      setValidationMessage(
-        validationResult.isValid ? "" : validationResult.message
-      );
+      const validationResult = validateDnaSequence(sequence.sequence, true); // true for required validation
+      if (validationResult.isValid) {
+        setValidation({ message: "", isAdvisory: false });
+      } else {
+        // Store the message and its advisory status
+        setValidation({ 
+          message: validationResult.message, 
+          isAdvisory: validationResult.isAdvisory 
+        });
+      }
     } else {
-      setValidationMessage("");
+      setValidation({ message: "", isAdvisory: false });
     }
   }, [sequence.sequence]);
 
@@ -50,9 +57,10 @@ function SequenceTab({ sequence, index, updateSequence, mtkPartOptions }) {
         placeholder="Paste your DNA sequence here"
       />
 
-      {validationMessage && (
-        <div className="validation-message error">
-          {validationMessage}
+      {/* Display the message with a conditional className */}
+      {validation.message && (
+        <div className={`validation-message ${validation.isAdvisory ? "advisory" : "error"}`}>
+          {validation.message}
         </div>
       )}
 

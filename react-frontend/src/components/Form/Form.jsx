@@ -9,7 +9,6 @@ import useValidateForm from "../../hooks/useValidateForm";
 import "../../styles/form.css";
 
 function getDefaultFormData() {
-  console.log("Loading defaults with parameters:", defaultParameters);
   const initialSequences = [];
 
   if (
@@ -136,7 +135,9 @@ function Form({ onSubmit, isSubmitting }) {
 
   return (
     <form id="primer-form" onSubmit={handleSubmit}>
-      {loading && <div className="loading-overlay">Loading species data...</div>}
+      {loading && (
+        <div className="loading-overlay">Loading species data...</div>
+      )}
       {error && <div className="error-message">{error}</div>}
 
       {/* Settings Card */}
@@ -196,11 +197,7 @@ function Form({ onSubmit, isSubmitting }) {
             "Generate Protocol"
           )}
         </button>
-        <button
-          type="button"
-          className="btn btn-warning"
-          onClick={resetForm}
-        >
+        <button type="button" className="btn btn-warning" onClick={resetForm}>
           Clear Form
         </button>
       </div>

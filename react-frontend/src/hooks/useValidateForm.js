@@ -4,11 +4,13 @@ import { validateDnaSequence } from "../utils/dnaUtils";
 
 const useValidateForm = (formData) => {
   const [errors, setErrors] = useState({});
+  const [advisories, setAdvisories] = useState({});
 
   useEffect(() => {
     const newErrors = {};
+    const newAdvisories = {};
 
-    // Validate species selection
+    // Validate species selection (required)
     if (!formData.species || formData.species.trim() === "") {
       newErrors.species = "Species is required.";
     }
@@ -20,8 +22,11 @@ const useValidateForm = (formData) => {
         false,
         false
       );
-      if (!tempValidation.isValid) {
+      // If not valid and not advisory, it's an error.
+      if (!tempValidation.isValid && !tempValidation.isAdvisory) {
         newErrors.templateSequence = tempValidation.message;
+      } else if (tempValidation.isAdvisory) {
+        newAdvisories.templateSequence = tempValidation.message;
       }
     }
 
@@ -36,8 +41,11 @@ const useValidateForm = (formData) => {
             "Sequence cannot be empty.";
         } else {
           const seqValidation = validateDnaSequence(seq.sequence, true, true);
-          if (!seqValidation.isValid) {
+          if (!seqValidation.isValid && !seqValidation.isAdvisory) {
             newErrors[`sequences[${index}].sequence`] = seqValidation.message;
+          } else if (seqValidation.isAdvisory) {
+            newAdvisories[`sequences[${index}].sequence`] =
+              seqValidation.message;
           }
         }
         // Validate primer name (required)
@@ -53,11 +61,12 @@ const useValidateForm = (formData) => {
     }
 
     setErrors(newErrors);
+    setAdvisories(newAdvisories);
   }, [formData]);
 
-  // The form is valid if there are no errors
+  // Overall form is valid if there are no required errors.
   const isValid = Object.keys(errors).length === 0;
-  return { errors, isValid };
+  return { errors, advisories, isValid };
 };
 
 export default useValidateForm;

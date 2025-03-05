@@ -1,27 +1,6 @@
 import { API_BASE_URL } from "../config/config.js";
 
-/**
- * API functions for communicating with the Flask backend
- */
 
-/**
- * Helper function to handle fetch requests
- * @param {string} endpoint - API endpoint to call
- * @param {Object} options - Fetch options (method, headers, body)
- * @returns {Promise} Promise that resolves to the JSON response
- */
-export const fetchWithErrorHandling = async (url, options = {}) => {
-  try {
-    const response = await fetch(url, options);
-    if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
-    }
-    return await response.json();
-  } catch (error) {
-    console.error("API request failed:", error);
-    throw error;
-  }
-};
 
 /**
  * Fetch available species for the dropdown
@@ -57,17 +36,36 @@ export const validateSequence = async (sequence) => {
  * @returns {Promise<Object>} Protocol results
  */
 export const generateProtocol = async (formData) => {
+  console.group('Protocol Generation Process');
+  console.log('Starting protocol generation with data:', JSON.stringify(formData, null, 2));
+  
   // Create FormData object for file uploads
   const form = new FormData();
-
+  
   // Convert sequences array to the format expected by the server
+  console.log(`Processing ${formData.sequences.length} sequences:`);
   formData.sequences.forEach((seq, index) => {
+    console.log(`Sequence #${index + 1}:`, { 
+      primerName: seq.primerName, 
+      mtkPart: seq.mtkPart,
+      sequenceLength: seq.sequence.length,
+      sequencePreview: seq.sequence.substring(0, 30) + (seq.sequence.length > 30 ? '...' : '')
+    });
+    
     form.append(`sequences[${index}][sequence]`, seq.sequence);
     form.append(`sequences[${index}][primerName]`, seq.primerName);
     form.append(`sequences[${index}][mtkPart]`, seq.mtkPart);
   });
 
   // Add other form fields
+  console.log('Adding form parameters:');
+  console.log(`- numSequences: ${formData.numSequences}`);
+  console.log(`- templateSequence length: ${formData.templateSequence.length}`);
+  console.log(`- species: ${formData.species}`);
+  console.log(`- kozak: ${formData.kozak}`);
+  console.log(`- max_mut_per_site: ${formData.max_mut_per_site}`);
+  console.log(`- verbose_mode: ${formData.verbose_mode ? 'on' : 'off'}`);
+  
   form.append("numSequences", formData.numSequences);
   form.append("templateSequence", formData.templateSequence);
   form.append("species", formData.species);
@@ -76,40 +74,55 @@ export const generateProtocol = async (formData) => {
 
   if (formData.verbose_mode) {
     form.append("verbose_mode", "on");
+    console.log('Verbose mode enabled for server-side logging');
+  }
+
+  // Debug FormData contents
+  console.log('FormData entries:');
+  for (let pair of form.entries()) {
+    const value = pair[1];
+    // For sequence values, just log the length to avoid console clutter
+    const displayValue = typeof value === 'string' && value.length > 50 
+      ? `${value.substring(0, 50)}... (${value.length} chars)` 
+      : value;
+    console.log(`- ${pair[0]}: ${displayValue}`);
   }
 
   try {
+    console.log(`Sending request to ${API_BASE_URL}/generate_protocol`);
+    console.time('Protocol generation request');
+    
     const response = await fetch(`${API_BASE_URL}/generate_protocol`, {
       method: "POST",
       body: form,
     });
+    
+    console.timeEnd('Protocol generation request');
+    console.log(`Response status: ${response.status} ${response.statusText}`);
+    
+    // Log response headers
+    const headers = {};
+    response.headers.forEach((value, key) => {
+      headers[key] = value;
+    });
+    console.log('Response headers:', headers);
 
-    // Check if the response is JSON
-    const contentType = response.headers.get("content-type");
-    if (contentType && contentType.includes("application/json")) {
-      const data = await response.json();
+    console.log('Processing JSON response');
+    const data = await response.json();
+    console.log('Response data:', data);
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to generate protocol");
-      }
-
-      return data;
-    } else {
-      // Handle HTML response (error page)
-      const text = await response.text();
-
-      // Extract error message from HTML if possible
-      const errorMatch = text.match(
-        /<div class="alert alert-danger">(.*?)<\/div>/
-      );
-      if (errorMatch && errorMatch[1]) {
-        throw new Error(errorMatch[1].trim());
-      } else {
-        throw new Error("Server returned an unexpected response");
-      }
+    if (!response.ok) {
+      console.error('Server returned error:', data);
+      throw new Error(data.error || "Failed to generate protocol");
     }
+
+    console.log('Protocol generation successful');
+    console.groupEnd();
+    return data;
   } catch (error) {
     console.error("Protocol generation failed:", error);
+    console.error("Error stack:", error.stack);
+    console.groupEnd();
     throw error;
   }
 };
@@ -120,10 +133,80 @@ export const generateProtocol = async (formData) => {
  * @returns {Promise<Object>} Response with download URL
  */
 export const exportProtocolAsTsv = async (protocolData) => {
-  const data = await fetchWithErrorHandling("/export_protocol", {
-    method: "POST",
-    body: JSON.stringify(protocolData),
-  });
+  console.group('Protocol Export Process');
+  console.log('Exporting protocol data:', JSON.stringify(protocolData, null, 2));
+  
+  try {
+    console.time('Protocol export request');
+    const data = await fetchWithErrorHandling("/export_protocol", {
+      method: "POST",
+      body: JSON.stringify(protocolData),
+    });
+    console.timeEnd('Protocol export request');
+    
+    console.log('Export successful, response:', data);
+    console.groupEnd();
+    return data;
+  } catch (error) {
+    console.error('Protocol export failed:', error);
+    console.error('Error stack:', error.stack);
+    console.groupEnd();
+    throw error;
+  }
+};
 
-  return data;
+// Utility function to add logging to the fetchWithErrorHandling function
+// Note: If fetchWithErrorHandling is defined elsewhere, you may want to modify it directly instead
+const fetchWithErrorHandling = async (url, options = {}) => {
+  console.group(`API Request: ${options.method || 'GET'} ${url}`);
+  console.log('Request options:', options);
+  
+  try {
+    console.time('Request execution');
+    const response = await fetch(url, options);
+    console.timeEnd('Request execution');
+    
+    console.log(`Response status: ${response.status} ${response.statusText}`);
+    
+    // Log headers
+    const headers = {};
+    response.headers.forEach((value, key) => {
+      headers[key] = value;
+    });
+    console.log('Response headers:', headers);
+    
+    // Clone the response for logging (since response body can only be read once)
+    const responseClone = response.clone();
+    
+    // Process response based on content type
+    const contentType = response.headers.get('content-type');
+    console.log(`Response content type: ${contentType}`);
+    
+    if (contentType && contentType.includes('application/json')) {
+      const responseData = await response.json();
+      console.log('Response data:', responseData);
+      
+      if (!response.ok) {
+        throw new Error(responseData.error || `Request failed with status ${response.status}`);
+      }
+      
+      console.groupEnd();
+      return responseData;
+    } else {
+      const text = await responseClone.text();
+      console.log(`Non-JSON response (${text.length} chars)`);
+      
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+      
+      console.groupEnd();
+      return text;
+    }
+  } catch (error) {
+    console.error('Request failed:', error);
+    console.error('Error stack:', error.stack);
+    console.groupEnd();
+    throw error;
+  }
 };

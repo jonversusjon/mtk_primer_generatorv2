@@ -1,14 +1,18 @@
 # services/protocol.py
-from typing import List, Dict, Optional, Union
+import json
+from typing import List, Dict, Optional
 from .sequence_prep import SequencePreparator
 from .primer_design import PrimerDesigner
 from .primer_select import PrimerSelector
 from .mutation_analyzer import MutationAnalyzer
 from .mutation_optimizer import MutationOptimizer
 from .utils import GoldenGateUtils
-from itertools import product
 from config.logging_config import logger
 from .base import debug_context
+
+# Define a minimum sequence length if desired
+MIN_SEQUENCE_LENGTH = 50  # Adjust as needed
+
 
 class GoldenGateProtocol:
     """
@@ -40,7 +44,10 @@ class GoldenGateProtocol:
         )
         self.primer_selector = PrimerSelector()
         self.mutation_optimizer = MutationOptimizer(verbose=verbose)
-        print(f"GoldenGateProtocol initialized with codon_usage_dict: {codon_usage_dict}")
+        self.logger.debug(
+            f"GoldenGateProtocol initialized with codon_usage_dict: {codon_usage_dict}")
+        if verbose:
+            self.logger.info("GoldenGateProtocol is running in verbose mode.")
         self.mutation_analyzer = MutationAnalyzer(
             sequence=seq,
             codon_usage_dict=codon_usage_dict,
@@ -48,21 +55,6 @@ class GoldenGateProtocol:
             verbose=verbose
         )
 
-        """
-        Initialize GoldenGateProtocol with provided sequences and parameters.
-        
-        Args:
-            seq (List[str]): List of sequences to process.
-            codon_usage_dict (Dict[str, Dict[str, float]]): Codon usage table.
-            part_num_left (List[str]): Left part numbers for assembly.
-            part_num_right (List[str]): Right part numbers for assembly.
-            max_mutations (int): Maximum mutations allowed per site.
-            primer_name (Optional[List[str]]): Names of primers.
-            template_seq (Optional[str]): Template sequence for primer design.
-            kozak (str): Kozak sequence type, default is "MTK".
-            output_tsv_path (str): Path to output TSV file.
-            verbose (bool): If True, provides user-facing logs in production.
-        """
         self.seq = seq
         self.primer_name = primer_name
         self.template_seq = template_seq
@@ -80,13 +72,11 @@ class GoldenGateProtocol:
             'primers_designed': []
         }
 
-        self.logger.debug(f"GoldenGateProtocol initialized with verbose={verbose}")
-        if self.verbose:
-            self.logger.info("GoldenGateProtocol is running in verbose mode.")
-
-    def create_gg_protocol(self) -> Dict:
+    def create_gg_protocol(self) -> str:
         """
         Main function to orchestrate the Golden Gate protocol creation.
+        Returns:
+            str: A JSON string containing protocol details.
         """
         logger.info("Starting Golden Gate protocol creation...")
         result_data = {
@@ -99,40 +89,49 @@ class GoldenGateProtocol:
         }
 
         for i, single_seq in enumerate(self.seq):
+            sequence_data = {
+                'sequence_index': i,
+                'processed_sequence': None,
+                'restriction_sites': [],
+                'mutations': None,
+                'primers': None,
+                'preprocessing_message': None
+            }
+
             try:
                 print(f"Processing sequence {i+1}/{len(self.seq)}")
-                sequence_data = {
-                    'sequence_index': i,
-                    'processed_sequence': None,
-                    'restriction_sites': [],
-                    'mutations': None,
-                    'primers': None
-                }
 
-                # 1. Remove start/stop codons and find restriction sites
+                # Early check: skip sequences that are too short
+                if len(single_seq.strip()) < MIN_SEQUENCE_LENGTH:
+                    message = f"Sequence length {len(single_seq.strip())} is too short for processing."
+                    sequence_data['preprocessing_message'] = message
+                    result_data['sequence_analysis'].append(sequence_data)
+                    logger.warning(f"Skipping sequence {i}: {message}")
+                    continue
+
+                # 1. Preprocess sequence (remove start/stop codons, etc.)
                 with debug_context("Preprocessing sequence"):
                     processed_seq, message, success = self.sequence_preparator.preprocess_sequence(
                         single_seq)
-                    
-                    if not success:
-                        result_data['has_errors'] = True
-                        result_data['sequence_errors'][i] = message
-                        logger.error(f"Preprocessing failed for sequence {i}: {message}")
-                        continue
-                    
-                with debug_context("Finding restriction sites"):  
+                    if message:
+                        sequence_data['preprocessing_message'] = message
+                    # If preprocessing returns None, fallback to the original sequence.
+                    if processed_seq is None:
+                        processed_seq = single_seq
+                    sequence_data['processed_sequence'] = processed_seq
+
+                # 2. Find restriction sites
+                with debug_context("Finding restriction sites"):
                     sites_to_mutate = self.sequence_preparator.find_and_summarize_sites(
                         processed_seq, i)
-                    sequence_data['processed_sequence'] = processed_seq
                     sequence_data['restriction_sites'] = sites_to_mutate
-                        
+
+                # 3. Mutation analysis and primer design
                 if sites_to_mutate:
                     with debug_context("Mutation analysis"):
-                        # 2. Generate all possible silent mutations using MutationAnalyzer
                         mutation_options = self.mutation_analyzer.get_all_mutations(
-                            sites_to_mutate=sites_to_mutate)
-
-                        # 3. Optimize and prioritize mutations if there are valid options
+                            sites_to_mutate=sites_to_mutate
+                        )
                         if mutation_options:
                             optimized_mutations, compatibility_matrices = self.mutation_optimizer.optimize_mutations(
                                 sequence=processed_seq, mutation_options=mutation_options
@@ -141,12 +140,10 @@ class GoldenGateProtocol:
                                 'all_mutation_options': optimized_mutations,
                                 'compatibility': compatibility_matrices
                             }
-                            
                         else:
                             optimized_mutations, compatibility_matrices = None, None
 
                     with debug_context("Primer design"):
-                        # 4. Design primers using PrimerDesigner
                         primers = self.primer_designer.design_primers(
                             sequence=processed_seq,
                             seq_index=i,
@@ -155,31 +152,37 @@ class GoldenGateProtocol:
                             template_seq=self.template_seq
                         )
                 else:
-
-                    logger.info(
-                        f"No restriction sites found in sequence {i}")
-                    primers = self.primer_designer.generate_GG_edge_primers(
-                        processed_seq, i,
-                    )
-                    continue
+                    logger.info(f"No restriction sites found in sequence {i}")
+                    try:
+                        overhang_5_prime = self.part_num_left[i]
+                        overhang_3_prime = self.part_num_right[i]
+                        primers = self.primer_designer.generate_GG_edge_primers(
+                            i, processed_seq, overhang_5_prime, overhang_3_prime
+                        )
+                    except Exception as e:
+                        logger.error(
+                            f"Error generating edge primers for sequence {i}: {e}")
+                        primers = []
 
                 sequence_data['primers'] = primers
                 result_data['sequence_analysis'].append(sequence_data)
                 result_data['primers'].extend(primers)
-            
+
             except Exception as e:
-                logger.error(f"Unhandled error processing sequence {i}: {str(e)}")
+                logger.exception(
+                    f"Unhandled error processing sequence {i}: {str(e)}")
                 sequence_data['error'] = str(e)
                 result_data['sequence_analysis'].append(sequence_data)
                 result_data['has_errors'] = True
                 result_data['sequence_errors'][i] = str(e)
                 continue
 
-        # Step 3: Save results and return
+        # Save primers to TSV if no critical errors occurred
         if not result_data['has_errors']:
-            self._save_primers_to_tsv(result_data['primers'], self.output_tsv_path)
-                  
-        return result_data
+            self._save_primers_to_tsv(
+                result_data['primers'], self.output_tsv_path)
+
+        return json.dumps(result_data)
 
     def _save_primers_to_tsv(self, primer_data: List[List[str]], output_tsv_path: str) -> None:
         """Saves primer data to a TSV file."""
@@ -194,9 +197,8 @@ class GoldenGateProtocol:
                     for row in primer_data:
                         tsv_file.write("\t".join(map(str, row)) + "\n")
             except IOError as e:
-                logger.error(
-                    f"Error writing to file {output_tsv_path}: {e}")
+                logger.error(f"Error writing to file {output_tsv_path}: {e}")
                 raise
-            
-    def generate_GG_edge_primers(self, processed_seq: str, i: int,):
+
+    def generate_GG_edge_primers(self, processed_seq: str, i: int):
         return []

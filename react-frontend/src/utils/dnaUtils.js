@@ -60,7 +60,8 @@ export const validateDnaSequence = (
     if (!inFrame) {
       return {
         isValid: false,
-        message: "Sequence length must be divisible by 3 (in frame)",
+        message:
+          "Sequence appears to be out of frame (not divisible by 3). Double-check your sequence if this is meant to be entirely a coding sequence.",
         isAdvisory: true,
       };
     }

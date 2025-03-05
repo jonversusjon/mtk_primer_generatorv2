@@ -3,7 +3,6 @@ from config.logging_config import logger
 from flask import Flask, send_from_directory
 from routes.main import main
 from routes.api import api
-from routes.validation import validation
 from config.settings import Config, TestConfig
 import os
 
@@ -39,15 +38,14 @@ def create_app():
 
     # Register blueprints
     app.register_blueprint(main)
-    app.register_blueprint(validation, url_prefix='/validation')
     app.register_blueprint(api, url_prefix="/api")
-    
+
     @app.route('/species', methods=['GET', 'OPTIONS'])
     def species_redirect():
         # You can either redirect or implement the same functionality here
         from flask import redirect
         return redirect('/api/species')
-    
+
     # Make test settings available to Jinja templates
     @app.context_processor
     def utility_processor():

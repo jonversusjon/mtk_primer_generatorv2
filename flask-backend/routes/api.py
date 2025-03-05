@@ -2,7 +2,6 @@ from flask import Blueprint, request, jsonify, current_app
 from config.logging_config import logger
 from services.utils import GoldenGateUtils
 from services.protocol import GoldenGateProtocol
-from validators.protocol_validator import ProtocolValidator
 from flask_cors import CORS
 import json
 
@@ -10,7 +9,6 @@ api = Blueprint("api", __name__, url_prefix="/api")
 CORS(api)  # Enable CORS for all routes in this blueprint
 
 utils = GoldenGateUtils()
-validator = ProtocolValidator()
 
 
 @api.route("/species", methods=["GET"])
@@ -26,7 +24,7 @@ def get_species():
         return jsonify({'error': 'Failed to fetch species'}), 500
 
 
-@api.route("/protocol", methods=["POST"])
+@api.route("/generate_protocol", methods=["POST"])
 def generate_protocol():
     """Generate a Golden Gate protocol based on the provided sequences"""
     try:
@@ -83,9 +81,7 @@ def generate_protocol():
 
         # Generate the protocol
         result = protocol_maker.create_gg_protocol()
-
-        # Process any non-JSON serializable objects in the result
-        result = json.loads(json.dumps(result, default=lambda o: str(o)))
+        serializable_result = utils.convert_non_serializable(result)
 
         # Check for errors
         if result.get('has_errors', False):
@@ -95,7 +91,7 @@ def generate_protocol():
             }), 422
 
         # Success - return the result
-        return jsonify(result)
+        return jsonify(serializable_result)
 
     except Exception as e:
         logger.error(f"Error in generate_protocol: {str(e)}", exc_info=True)

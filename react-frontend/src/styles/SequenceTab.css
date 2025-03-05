@@ -95,3 +95,17 @@
       min-width: 100%;
     }
   }
+
+  .validation-message {
+    margin-top: 5px;
+    font-size: 0.9em;
+  }
+  
+  .validation-message.error {
+    color: red;
+  }
+  
+  .validation-message.advisory {
+    color: grey;
+  }
+  
