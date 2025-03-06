@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
+import ResultTab from "./ResultTab";
 
-function ResultTabs({ results, removeResult, addResult }) {
+function ResultTabs({ results }) {
   const [activeTab, setActiveTab] = useState(0);
 
-  // Ensure active tab is valid after removing results
+  // Ensure active tab is valid after changes in results
   useEffect(() => {
     if (activeTab >= results.length && results.length > 0) {
       setActiveTab(results.length - 1);
@@ -21,7 +22,7 @@ function ResultTabs({ results, removeResult, addResult }) {
       <div className="result-tabs-container">
         {/* Tab Navigation */}
         <div className="tab-buttons">
-          {results.map((_, index) => (
+          {results.map((result, index) => (
             <button
               key={index}
               type="button"
@@ -32,7 +33,7 @@ function ResultTabs({ results, removeResult, addResult }) {
               aria-controls={`result-tab-${index}`}
               id={`result-tab-button-${index}`}
             >
-              {index + 1}
+              Sequence {parseInt(result.sequenceNumber, 10) + 1}
             </button>
           ))}
         </div>
@@ -48,20 +49,11 @@ function ResultTabs({ results, removeResult, addResult }) {
               aria-labelledby={`result-tab-button-${index}`}
               hidden={activeTab !== index}
             >
-              <ResultTab result={result} index={index} />
+              <ResultTab result={result} />
             </div>
           ))}
         </div>
       </div>
-    </div>
-  );
-}
-
-function ResultTab({ result, index }) {
-  return (
-    <div className="result-content">
-      <h4>Result {index + 1}</h4>
-      <pre>{JSON.stringify(result, null, 2)}</pre>
     </div>
   );
 }

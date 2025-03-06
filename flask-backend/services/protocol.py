@@ -141,16 +141,16 @@ class GoldenGateProtocol:
             sequence_data["edge_primers"] = edge_primers
 
             # 5. Group primers into PCR reactions
-            print(f" ****** sequence_data ****** : {sequence_data}")
-
-            # sequence_data["PCR_reactions"] = self.group_primers_into_pcr_reactions(
-            # primers)
+            sequence_data["PCR_reactions"] = self.group_primers_into_pcr_reactions(
+                sequence_data)
 
             # Store the processed sequence data for this sequence number
             result_data[idx] = sequence_data
 
         # Convert any remaining non-serializable objects and return the dictionary
-        print(f"result_data: {result_data}")
+        for key, value in result_data.items():
+            for k, v in value.items():
+                print(f"\n\n{k}: {v}")
         return self.utils.convert_non_serializable(result_data)
 
     def _save_primers_to_tsv(self, primer_data: List[List[str]], output_tsv_path: str) -> None:
@@ -169,7 +169,7 @@ class GoldenGateProtocol:
                 logger.error(f"Error writing to file {output_tsv_path}: {e}")
                 raise
 
-    def group_primers_into_pcr_reactions(primer_set: PrimerSet) -> Dict[str, Dict[str, Primer]]:
+    def group_primers_into_pcr_reactions(self, sequence_data: Dict) -> Dict[str, Dict[str, Primer]]:
         """
         Groups primers into PCR reactions using chaining logic.
 
@@ -183,12 +183,19 @@ class GoldenGateProtocol:
         """
         reactions = {}
         reaction_num = 1
+        for key in sequence_data:
+            print(f"{key}: {sequence_data[key]}")
 
-        edge_fw = primer_set.edge.forward
-        edge_rv = primer_set.edge.reverse
+        edge_fw = sequence_data["edge_primers"]["forward_primer"]["sequence"]
+        edge_rv = sequence_data["edge_primers"]["reverse_primer"]["sequence"]
+        print(f"edge_fw: {edge_fw}")
+        print(f"edge_rv: {edge_rv}")
+
+        # Extract mutation sets from the sequence data
+        mutation_sets = sequence_data.get("mutation_primers", {})
 
         # Sort mutations by position (ascending order)
-        mutations = sorted(primer_set.mutations, key=lambda m: m.position)
+        mutations = sorted(mutation_sets, key=lambda m: m.position)
 
         # Case with no mutations:
         if not mutations:
