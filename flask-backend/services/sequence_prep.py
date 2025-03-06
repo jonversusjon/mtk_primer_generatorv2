@@ -78,7 +78,7 @@ class SequencePreparator:
                     message = "Provided sequence does not appear to be in frame, using provided stop codon to infer frame. Stop codon has been removed."
                 else:
                     message = "Provided sequence does not appear to be in frame. If this is not intended, please check the sequence."
-                    return sequence, message, False
+                    return str(sequence), message, False
             else:
                 if trim_start_codon and trim_stop_codon:
                     message = "Start and stop codons detected and removed."
@@ -89,7 +89,7 @@ class SequencePreparator:
                 else:
                     message = "Sequence is in frame, no codon adjustments needed."
 
-        return cleaned_sequence, message, True
+        return str(cleaned_sequence), message, True
 
     def find_bsmbi_bsai_sites(self, sequence, verbose):
         """

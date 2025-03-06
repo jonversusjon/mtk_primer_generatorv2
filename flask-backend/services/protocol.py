@@ -9,6 +9,7 @@ from .mutation_optimizer import MutationOptimizer
 from .utils import GoldenGateUtils
 from config.logging_config import logger
 from .base import debug_context
+from models.primer import Primer, PrimerSet
 
 
 class GoldenGateProtocol:
@@ -101,7 +102,6 @@ class GoldenGateProtocol:
             with debug_context("Finding restriction sites"):
                 sites_to_mutate = self.sequence_preparator.find_and_summarize_sites(
                     processed_seq, idx)
-                print(f"sites_to_mutate: {sites_to_mutate}")
                 sequence_data["restriction_sites"] = sites_to_mutate
 
             # 3. Mutation analysis and mutation primer design
@@ -141,7 +141,7 @@ class GoldenGateProtocol:
             sequence_data["edge_primers"] = edge_primers
 
             # 5. Group primers into PCR reactions
-            print(f"sequence_data: {sequence_data}")
+            print(f" ****** sequence_data ****** : {sequence_data}")
 
             # sequence_data["PCR_reactions"] = self.group_primers_into_pcr_reactions(
             # primers)
@@ -169,52 +169,51 @@ class GoldenGateProtocol:
                 logger.error(f"Error writing to file {output_tsv_path}: {e}")
                 raise
 
-    def group_primers_into_pcr_reactions(self, primers: Dict[str, List[str]]) -> Dict[str, Dict[str, List[str]]]:
+    def group_primers_into_pcr_reactions(primer_set: PrimerSet) -> Dict[str, Dict[str, Primer]]:
         """
-        Organizes primers into PCR reactions following these rules:
-        - First mutation reverse primer pairs with edge forward primer (Reaction_1).
-        - Each subsequent mutation primer pair forms a new reaction.
-        - If no mutation primers exist, only an edge primer reaction is created.
+        Groups primers into PCR reactions using chaining logic.
 
-        Args:
-            primers (dict): Dictionary containing mutation primers and edge primers.
+        If no mutation primers exist, a single reaction is created:
+        Reaction 1: edge.forward + edge.reverse.
 
-        Returns:
-            dict: PCR reactions grouped properly.
+        If mutation primers exist (assumed sorted by position), then:
+        Reaction 1: edge.forward + first mutation's reverse
+        Reaction 2..n: previous mutation's forward + current mutation's reverse
+        Final Reaction: last mutation's forward + edge.reverse
         """
-        pcr_reactions = {}
-        reaction_counter = 1
+        reactions = {}
+        reaction_num = 1
 
-        mutation_primers = primers.get("mutation_primers", [])
-        edge_primers = primers.get("edge_primers", [])
+        edge_fw = primer_set.edge.forward
+        edge_rv = primer_set.edge.reverse
 
-        if not edge_primers:  # Edge primers are always expected, but handle edge cases
-            logger.warning(
-                "No edge primers found; PCR reaction assignment may be incomplete.")
+        # Sort mutations by position (ascending order)
+        mutations = sorted(primer_set.mutations, key=lambda m: m.position)
 
-        # If no mutations, just assign edge primers to one reaction
-        if not mutation_primers:
-            pcr_reactions[f"Reaction_{reaction_counter}"] = {
-                "edge_primers": edge_primers
+        # Case with no mutations:
+        if not mutations:
+            reactions[f"Reaction_{reaction_num}"] = {
+                "forward": edge_fw, "reverse": edge_rv}
+            return reactions
+
+        # Reaction 1: edge forward with the first mutation's reverse primer
+        reactions[f"Reaction_{reaction_num}"] = {
+            "forward": edge_fw, "reverse": mutations[0].reverse}
+        reaction_num += 1
+
+        # Intermediate reactions: chain mutation primers
+        for i in range(1, len(mutations)):
+            reactions[f"Reaction_{reaction_num}"] = {
+                "forward": mutations[i - 1].forward,
+                "reverse": mutations[i].reverse
             }
-            return pcr_reactions
+            reaction_num += 1
 
-        # First reaction: Mutation reverse primer + Edge forward primer
-        pcr_reactions[f"Reaction_{reaction_counter}"] = {
-            # First mutation reverse primer
-            "mutation_primers": [mutation_primers[0]],
-            "edge_primers": [edge_primers[0]]  # Edge forward primer
-        }
-        reaction_counter += 1
+        # Final Reaction: last mutation's forward primer with edge reverse primer
+        reactions[f"Reaction_{reaction_num}"] = {
+            "forward": mutations[-1].forward, "reverse": edge_rv}
 
-        # Subsequent reactions: Mutation forward + Next mutation reverse
-        for i in range(1, len(mutation_primers) - 1, 2):  # Step through pairs
-            pcr_reactions[f"Reaction_{reaction_counter}"] = {
-                "mutation_primers": [mutation_primers[i], mutation_primers[i + 1]]
-            }
-            reaction_counter += 1
-
-        return pcr_reactions
+        return reactions
 
 
 def getSequenceData(seq_object, i):

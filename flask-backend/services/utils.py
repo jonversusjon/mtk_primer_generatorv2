@@ -79,7 +79,7 @@ class GoldenGateUtils:
 
         # Default behavior (MTK)
         return mtk_sequences.get(base_key, None)
-    
+
     def get_available_species(self) -> List[str]:
         """Gets list of available species from codon usage tables."""
         with debug_context("get_available_species"):
@@ -224,7 +224,7 @@ class GoldenGateUtils:
         return default_usage
 
     def convert_non_serializable(self, obj):
-        """Convert non-serializable objects (Seq, ndarray) to JSON-compatible types."""
+        """Convert non-serializable objects (Seq, ndarray, tuple) to JSON-compatible types."""
         if isinstance(obj, Seq):
             return str(obj)  # Convert BioPython Seq to string
         elif isinstance(obj, np.ndarray):
@@ -232,5 +232,8 @@ class GoldenGateUtils:
         elif isinstance(obj, dict):
             return {k: self.convert_non_serializable(v) for k, v in obj.items()}
         elif isinstance(obj, list):
+            return [self.convert_non_serializable(v) for v in obj]
+        elif isinstance(obj, tuple):
+            # Convert tuple to list for JSON
             return [self.convert_non_serializable(v) for v in obj]
         return obj  # Return as-is if it's already JSON serializable

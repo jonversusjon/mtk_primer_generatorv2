@@ -7,6 +7,10 @@ import numpy as np
 from config.logging_config import logger
 from services.base import debug_context
 
+from dataclasses import dataclass, field
+from typing import Optional, List, Dict
+from models.primer import Primer, MutationPrimer
+
 
 class PrimerDesigner:
     """
@@ -52,9 +56,10 @@ class PrimerDesigner:
         mutation_sets: List[Dict],
         comp_matrices: List[np.ndarray],
         primer_name: Optional[str] = None
-    ) -> Optional[Dict[str, Dict[str, str]]]:
+    ) -> Optional[List[MutationPrimer]]:
         """
         Design primers for mutation sets based on compatibility matrices.
+        Returns a list of MutationPrimer objects.
         """
         with debug_context("design_mutation_primers"):
             for set_index, mutation_set in enumerate(mutation_sets):
@@ -65,39 +70,37 @@ class PrimerDesigner:
                 if valid_coords.size == 0:
                     continue
 
-                # Apply mutations to sequence
+                # Apply mutations to the sequence
                 mutated_seq = self._apply_mutations(
                     full_sequence, mutation_set)
 
-                # Design primers using first valid combination
-                primers = self._construct_mutation_primers(
+                # Construct MutationPrimer objects using the first valid combination
+                mutation_primers = self._construct_mutation_primers(
                     mutated_seq,
                     mutation_set,
                     valid_coords[0],
                     primer_name
                 )
 
-                if primers:
-                    return primers
+                if mutation_primers:
+                    return mutation_primers
 
             return None
 
     def _apply_mutations(self, target_seq: str, mutation_set: Dict) -> str:
-        """Apply a set of mutations to the target sequence."""
+        """
+        Apply a set of mutations to the target sequence.
+        """
         with debug_context("apply_mutations"):
             mutated_seq = list(target_seq)
-
             for mut in mutation_set.values():
                 pos = mut["position"] - 1
                 alt_seq = mut["alternative_sequence"]
                 orig_seq = mut["original_sequence"]
-
                 mutated_seq[pos:pos + len(orig_seq)] = alt_seq
-
                 if self.verbose:
                     self._log_mutation(target_seq, ''.join(
                         mutated_seq), pos, len(orig_seq))
-
             return ''.join(mutated_seq)
 
     def _construct_mutation_primers(
@@ -107,16 +110,17 @@ class PrimerDesigner:
         selected_coord: np.ndarray,
         primer_name: Optional[str] = None,
         annealing_length: int = 18
-    ) -> Optional[Dict[str, Dict[str, Dict[str, str]]]]:
-        """Construct primers for a mutation set using selected coordinates."""
+    ) -> List[MutationPrimer]:
+        """
+        Construct MutationPrimer objects for a mutation set using selected coordinates.
+        """
         with debug_context("construct_mutation_primers"):
-            primers = {}
-
+            mutation_primers = []
             for mut in mutation_set.values():
                 position = mut["position"] - 1
 
-                # Design forward and reverse primers
-                forward = self._construct_primer(
+                # Design forward and reverse primers using the new helper
+                forward_tuple = self._construct_primer(
                     mutated_seq,
                     position,
                     mut,
@@ -125,8 +129,7 @@ class PrimerDesigner:
                     is_reverse=False,
                     primer_name=primer_name
                 )
-
-                reverse = self._construct_primer(
+                reverse_tuple = self._construct_primer(
                     mutated_seq,
                     position,
                     mut,
@@ -136,20 +139,21 @@ class PrimerDesigner:
                     primer_name=primer_name
                 )
 
-                if forward and reverse:
-                    primers[mut["site"]] = {
-                        "forward_primer": {
-                            "name": forward[0],
-                            "sequence": forward[1]
-                        },
-                        "reverse_primer": {
-                            "name": reverse[0],
-                            "sequence": reverse[1]
-                        },
-                        "mutation_info": mut
-                    }
+                if forward_tuple and reverse_tuple:
+                    forward_primer = Primer(
+                        name=forward_tuple[0], sequence=forward_tuple[1])
+                    reverse_primer = Primer(
+                        name=reverse_tuple[0], sequence=reverse_tuple[1])
+                    mutation_primer = MutationPrimer(
+                        site=mut["site"],
+                        position=mut["position"],
+                        forward=forward_primer,
+                        reverse=reverse_primer,
+                        mutation_info=mut
+                    )
+                    mutation_primers.append(mutation_primer)
 
-            return primers
+            return mutation_primers
 
     def _construct_primer(
         self,
@@ -161,13 +165,14 @@ class PrimerDesigner:
         is_reverse: bool,
         primer_name: Optional[str] = None
     ) -> Optional[Tuple[str, str]]:
-        """Construct a single primer with proper components and return (name, sequence)."""
+        """
+        Construct a single primer with proper components and return (name, sequence).
+        """
         mutation_length = len(mut["original_sequence"])
 
         # Set default primer name if none provided
         if not primer_name:
             primer_name = f"Mut_{mut['site']}"
-
         # Add suffix based on direction
         primer_suffix = "_RV" if is_reverse else "_FW"
         primer_name = f"{primer_name}{primer_suffix}"
