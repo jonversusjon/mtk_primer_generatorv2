@@ -77,7 +77,23 @@ function SequenceTab({ sequence, index, updateSequence, mtkPartOptions }) {
 
   return (
     <div className="sequence-tab-content">
-      <div className="sequence-header">
+      {/* Row 1: Primer name label and input */}
+      <div className="form-row primer-name-row">
+        <label htmlFor={`primer-name-${index}`} className="primer-name-label">
+          Primer Name:
+        </label>
+        <input
+          type="text"
+          id={`primer-name-${index}`}
+          value={sequence.primerName}
+          onChange={handlePrimerNameChange}
+          className="form-control primer-name-input"
+          placeholder="Enter primer name"
+        />
+      </div>
+
+      {/* Row 2: Sequence # left justified and charcount right justified */}
+      <div className="form-row sequence-header">
         <label htmlFor={`sequence-${index}`}>Sequence {index + 1}:</label>
         <div
           className="char-count"
@@ -87,57 +103,60 @@ function SequenceTab({ sequence, index, updateSequence, mtkPartOptions }) {
         </div>
       </div>
 
-      <SequenceInput
-        id={`sequence-${index}`}
-        value={sequence.sequence}
-        onChange={handleSequenceChange}
-        placeholder="Paste your DNA sequence here"
-      />
+      {/* Row 3: Textarea */}
+      <div className="form-row">
+        <SequenceInput
+          id={`sequence-${index}`}
+          value={sequence.sequence}
+          onChange={handleSequenceChange}
+          placeholder="Paste your DNA sequence here"
+        />
+        {validation.message && (
+          <div
+            className={`validation-message ${
+              validation.isAdvisory ? "advisory" : "error"
+            }`}
+          >
+            {validation.message}
+          </div>
+        )}
+      </div>
 
-      {/* Display the message with a conditional className */}
-      {validation.message && (
-        <div
-          className={`validation-message ${
-            validation.isAdvisory ? "advisory" : "error"
-          }`}
-        >
-          {validation.message}
-        </div>
-      )}
-
-      <div className="sequence-metadata">
-        <div className="form-group">
-          <label htmlFor={`primer-name-${index}`}>Primer Name:</label>
-          <input
-            type="text"
-            id={`primer-name-${index}`}
-            value={sequence.primerName}
-            onChange={handlePrimerNameChange}
-            className="form-control"
-            placeholder="Enter primer name"
-          />
-        </div>
-
-        <div className="form-group toggle-container">
-          <label className="toggle-label">
-            <input
-              type="checkbox"
-              checked={useSeparateParts}
-              onChange={handleToggleChange}
-            />
-            Use separate left/right part numbers
+      {/* Row 4: MTK part numbers - horizontal layout */}
+      <div className="form-row mtk-parts-row">
+        {/* Left part always visible - label and select side by side */}
+        <div className="mtk-part-container">
+          <label htmlFor={`mtk-part-left-${index}`} className="mtk-part-label">
+            {useSeparateParts ? "MTK Part Number Left:" : "MTK Part Number:"}
           </label>
+          <select
+            id={`mtk-part-left-${index}`}
+            value={sequence.mtkPartLeft || ""}
+            onChange={handleMtkPartChange("mtkPartLeft")}
+            className="form-control mtk-part-select"
+          >
+            {mtkPartOptions.map((part) => (
+              <option key={part} value={part}>
+                {part}
+              </option>
+            ))}
+          </select>
         </div>
 
-        {!useSeparateParts ? (
-          // Single MTK part number selector (but updates both left/right internally)
-          <div className="form-group">
-            <label htmlFor={`mtk-part-${index}`}>MTK Part Number:</label>
+        {/* Right part only visible when toggle is on - label and select side by side */}
+        {useSeparateParts && (
+          <div className="mtk-part-container">
+            <label
+              htmlFor={`mtk-part-right-${index}`}
+              className="mtk-part-label"
+            >
+              MTK Part Number Right:
+            </label>
             <select
-              id={`mtk-part-${index}`}
-              value={sequence.mtkPartLeft || ""}
-              onChange={handleMtkPartChange("mtkPartLeft")}
-              className="form-control"
+              id={`mtk-part-right-${index}`}
+              value={sequence.mtkPartRight || ""}
+              onChange={handleMtkPartChange("mtkPartRight")}
+              className="form-control mtk-part-select"
             >
               {mtkPartOptions.map((part) => (
                 <option key={part} value={part}>
@@ -146,45 +165,19 @@ function SequenceTab({ sequence, index, updateSequence, mtkPartOptions }) {
               ))}
             </select>
           </div>
-        ) : (
-          // Two MTK part number selectors
-          <>
-            <div className="form-group">
-              <label htmlFor={`mtk-part-left-${index}`}>
-                MTK Part Number Left:
-              </label>
-              <select
-                id={`mtk-part-left-${index}`}
-                value={sequence.mtkPartLeft || ""}
-                onChange={handleMtkPartChange("mtkPartLeft")}
-                className="form-control"
-              >
-                {mtkPartOptions.map((part) => (
-                  <option key={part} value={part}>
-                    {part}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label htmlFor={`mtk-part-right-${index}`}>
-                MTK Part Number Right:
-              </label>
-              <select
-                id={`mtk-part-right-${index}`}
-                value={sequence.mtkPartRight || ""}
-                onChange={handleMtkPartChange("mtkPartRight")}
-                className="form-control"
-              >
-                {mtkPartOptions.map((part) => (
-                  <option key={part} value={part}>
-                    {part}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </>
         )}
+      </div>
+
+      {/* Row 5: Toggle for separate left/right */}
+      <div className="form-row toggle-container">
+        <label className="toggle-label">
+          <input
+            type="checkbox"
+            checked={useSeparateParts}
+            onChange={handleToggleChange}
+          />
+          Use separate left/right part numbers
+        </label>
       </div>
     </div>
   );

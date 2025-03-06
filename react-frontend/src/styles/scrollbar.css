@@ -1,0 +1,95 @@
+/* Define scrollbar color variables for light and dark modes */
+:root {
+    --scrollbar-track: #f1f1f1;
+    --scrollbar-thumb: rgba(213, 213, 213, 0.8);
+    --scrollbar-thumb-hover: rgba(170, 170, 170, 0.8);
+  }
+  
+  .dark-mode {
+    --scrollbar-track: #1a1727;
+    --scrollbar-thumb: rgba(75, 73, 95, 0.8);
+    --scrollbar-thumb-hover: rgba(110, 106, 140, 0.8);
+  }
+  
+  /* Global WebKit Scrollbar Styling */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+    border-radius: 10px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 10px;
+    transition: background 0.3s ease;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+  }
+  
+  ::-webkit-scrollbar-corner {
+    background: var(--scrollbar-track);
+  }
+  
+  /* FORM CONTAINER - Left-side scrollbar with no visible track */
+  .form-container {
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    direction: rtl; /* Moves scrollbar to the left */
+  }
+  
+  /* Reset inner content direction to normal */
+  .form-container > * {
+    direction: ltr;
+  }
+  
+  /* Hide scrollbar track in form container */
+  .form-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  /* RESULTS CONTAINER & TEXTAREAS - Standard right-side scrollbar */
+  .results-container,
+  textarea {
+    overflow-y: auto;
+    scroll-behavior: smooth;
+  }
+  
+  /* Mobile adjustments: hide scrollbar while retaining scroll functionality */
+  @media (max-width: 768px) {
+    .form-container,
+    .results-container,
+    textarea {
+      -ms-overflow-style: none; /* Hide scrollbar in IE/Edge */
+      overflow: hidden;
+      overflow-y: auto;
+    }
+  
+    .form-container::-webkit-scrollbar,
+    .results-container::-webkit-scrollbar,
+    textarea::-webkit-scrollbar {
+      display: none;
+    }
+  }
+  
+  /* Subtle scrollbar indicators for touch devices */
+  @media (pointer: coarse) {
+    .form-container:after,
+    .output-container:after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 100%;
+      height: 10px;
+      background: linear-gradient(to top, var(--scrollbar-track), transparent);
+      opacity: 0.5;
+      pointer-events: none;
+    }
+  }
+  

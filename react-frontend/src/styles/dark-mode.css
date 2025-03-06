@@ -91,7 +91,6 @@
   background-color: var(--background-color);
   color: var(--foreground-color);
   box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
-  border-bottom: 1px solid var(--border-color);
 }
 
 .dark-mode .sequence-input,
@@ -121,22 +120,20 @@
 
 .dark-mode .sequence-tab-btn.active,
 .dark-mode .tab-button.active {
-  color: var(--primary-color) !important;
+  color: var(--text-dark) !important;
   background: none !important;
-  font-weight: 600;
 }
 
 /* Underline indicator for active tab */
 .dark-mode .sequence-tab-btn::after,
 .dark-mode .tab-button::after {
-  background-color: var(--primary-color);
+  background-color: var(--text-dark);
 }
 
 /* Tab Content Area */
 .dark-mode .sequence-tabs-content,
 .dark-mode .tab-content {
   background-color: #1F1C35;
-  border: 1px solid var(--border-color);
   border-top: none;
 }
 
@@ -263,15 +260,6 @@
   background-color: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--border-color);
   color: var(--foreground-color);
-}
-
-.dark-mode-btn {
-  align-items: center;
-  gap: 5px;
-  font-size: 14px;
-  padding: 8px 12px;
-  background: none;
-  color: inherit;
 }
 
 /* Close & toggle buttons in settings card */

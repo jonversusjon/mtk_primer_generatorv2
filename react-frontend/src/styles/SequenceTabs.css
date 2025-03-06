@@ -8,7 +8,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
 }
 
 .section-title {
@@ -28,16 +27,13 @@
   gap: 10px;
 }
 
-.sequence-tabs-container {
-  margin-top: 20px;
-}
-
 /* Modern Tab Buttons */
 .tab-buttons {
   display: flex;
-  gap: 24px;
+  gap: 16px;
   margin-bottom: 20px;
   padding: 0;
+  font-size: 0.85rem;
 }
 
 .tab-button {
@@ -78,7 +74,6 @@
 .tab-content {
   border: none;
   border-radius: 0;
-  padding: 20px 0;
   background: transparent;
 }
 

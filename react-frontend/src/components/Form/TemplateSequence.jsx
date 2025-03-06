@@ -31,15 +31,12 @@ function TemplateSequence({ value, onChange }) {
 
   return (
     <div className="template-sequence-section">
-      <div className="section-header">
+      <div className="form-row sequence-header">
         <div className="section-title">
           <h3>Template Sequence</h3>
           <span className="optional-badge">(optional)</span>
         </div>
-      </div>
 
-      <div className="sequence-input-container">
-        <label htmlFor="templateSequence">Paste Template Sequence:</label>
         <div className="char-count">Length: {charCount} bp</div>
       </div>
 

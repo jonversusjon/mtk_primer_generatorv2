@@ -1,12 +1,8 @@
 /* TemplateSequence.css */
 
 .template-sequence-section {
-    padding: 32px;
+    padding: 16px;
     border-bottom: 1px solid #ddd;
-  }
-  
-  .section-header {
-    margin-bottom: 15px;
   }
   
   .section-title {
@@ -73,7 +69,7 @@
   /* Responsive */
   @media (max-width: 768px) {
     .template-sequence-section {
-      padding: 20px;
+      padding: 10px;
     }
   }
   

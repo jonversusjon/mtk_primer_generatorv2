@@ -1,12 +1,10 @@
 import React from "react";
 import "../styles/AppHeader.css";
 
-function AppHeader({ darkMode, toggleDarkMode }) {
+function AppHeader({ darkMode, toggleDarkMode, toggleSettings }) {
   return (
-    <div className="app-header">
-      <h1>MTK Primer Domesticator</h1>
-
-      <div className="header-controls">
+    <header className="app-header">
+      <div className="header-left">
         <button
           className="dark-mode-btn"
           onClick={toggleDarkMode}
@@ -18,7 +16,20 @@ function AppHeader({ darkMode, toggleDarkMode }) {
           </span>
         </button>
       </div>
-    </div>
+      <div className="header-center">
+        <h1>MTK Primer Domesticator</h1>
+      </div>
+      <div className="header-right">
+        <button
+          className="settings-toggle"
+          onClick={toggleSettings}
+          aria-label="Open settings"
+        >
+          <span className="icon">⚙️</span>
+          <span className="button-text">Settings</span>
+        </button>
+      </div>
+    </header>
   );
 }
 

@@ -69,12 +69,12 @@ class GoldenGateProtocol:
 
         result_data = {}
 
-        for i, seq_object in enumerate(self.sequencesToDomesticate):
-            sequence_number = str(i + 1)
-            single_seq = seq_object["sequence"]
+        for idx, seq_object in enumerate(self.sequencesToDomesticate):
+            single_seq, mtk_part_left, mtk_part_right, primer_name = getSequenceData(
+                seq_object, idx+1)
 
             sequence_data = {
-                "sequence_index": i,
+                "sequence_index": idx,
                 "processed_sequence": None,
                 "restriction_sites": [],
                 "mutations": None,
@@ -83,99 +83,75 @@ class GoldenGateProtocol:
                 "errors": None
             }
 
-            try:
-                print(
-                    f"Processing sequence {sequence_number}/{len(self.sequencesToDomesticate)}")
+            print(
+                f"Processing sequence {idx+1}/{len(self.sequencesToDomesticate)}")
 
-                # 1. Preprocess sequence (remove start/stop codons, etc.)
-                with debug_context("Preprocessing sequence"):
-                    processed_seq, message, _ = self.sequence_preparator.preprocess_sequence(
-                        single_seq)
+            # 1. Preprocess sequence (remove start/stop codons, etc.)
+            with debug_context("Preprocessing sequence"):
+                processed_seq, message, _ = self.sequence_preparator.preprocess_sequence(
+                    single_seq)
 
-                    if message:
-                        sequence_data["messages"].append(message)
+                if message:
+                    sequence_data["messages"].append(message)
 
-                    sequence_data["processed_sequence"] = str(
-                        processed_seq) if processed_seq else str(single_seq)
+                sequence_data["processed_sequence"] = str(
+                    processed_seq) if processed_seq else str(single_seq)
 
-                # 2. Find restriction sites
-                with debug_context("Finding restriction sites"):
-                    sites_to_mutate = self.sequence_preparator.find_and_summarize_sites(
-                        processed_seq, i)
-                    sequence_data["restriction_sites"] = sites_to_mutate
+            # 2. Find restriction sites
+            with debug_context("Finding restriction sites"):
+                sites_to_mutate = self.sequence_preparator.find_and_summarize_sites(
+                    processed_seq, idx)
+                sequence_data["restriction_sites"] = sites_to_mutate
 
-                # 3. Mutation analysis and mutation primer design
-                mutation_primers = {}
+            # 3. Mutation analysis and mutation primer design
+            mutation_primers = {}
 
-                if sites_to_mutate:
-                    with debug_context("Mutation analysis"):
-                        mutation_options = self.mutation_analyzer.get_all_mutations(
-                            sites_to_mutate)
-                        if mutation_options:
-                            optimized_mutations, compatibility_matrices = self.mutation_optimizer.optimize_mutations(
-                                sequence=processed_seq, mutation_options=mutation_options
-                            )
-                            sequence_data["mutations"] = {
-                                "all_mutation_options": optimized_mutations,
-                                "compatibility": compatibility_matrices
-                            }
-                        else:
-                            optimized_mutations, compatibility_matrices = None, None
+            if sites_to_mutate:
+                with debug_context("Mutation analysis"):
+                    mutation_options = self.mutation_analyzer.get_all_mutations(
+                        sites_to_mutate)
+                    optimized_mutations, compatibility_matrices = None, None
 
-                    with debug_context("Mutation primer design"):
-                        mutation_primers = self.primer_designer.design_mutation_primers(
-                            full_sequence=processed_seq,
-                            mutation_sets=optimized_mutations,
-                            comp_matrices=compatibility_matrices,
-                            primer_name=seq_object.get(
-                                "primerName", f"Sequence_{i}")
+                    if mutation_options:
+                        optimized_mutations, compatibility_matrices = self.mutation_optimizer.optimize_mutations(
+                            sequence=processed_seq, mutation_options=mutation_options
                         )
 
-                # 4. Generate edge primers
-                try:
-                    mtk_part_left = seq_object.get("mtkPartLeft", "")
-                    mtk_part_right = seq_object.get("mtkPartRight", "")
-                    print(
-                        f"self.mtk_partend_sequences: {self.mtk_partend_sequences}")
+                        sequence_data["mutations"] = {
+                            "all_mutation_options": optimized_mutations,
+                            "compatibility": compatibility_matrices
+                        }
 
-                    # Use the extracted MTK parts directly
-                    overhang_5_prime = self.utils.get_mtk_partend_sequence(
-                        mtk_part_left, "forward", self.kozak)
-                    overhang_3_prime = self.utils.get_mtk_partend_sequence(
-                        mtk_part_right, "reverse", self.kozak)
-
-                    print(f"overhang_5_prime: {overhang_5_prime}")
-                    print(f"overhang_3_prime: {overhang_3_prime}")
-
-                    # Get the primer name from the sequence object if available
-                    primer_name = seq_object.get("primerName", f"Sequence_{i}")
-
-                    edge_primers = self.primer_designer.generate_GG_edge_primers(
-                        i, processed_seq, overhang_5_prime, overhang_3_prime, primer_name
+                with debug_context("Mutation primer design"):
+                    mutation_primers = self.primer_designer.design_mutation_primers(
+                        full_sequence=processed_seq,
+                        mutation_sets=optimized_mutations,
+                        comp_matrices=compatibility_matrices,
+                        primer_name=seq_object.get(
+                            "primerName", f"Sequence_{idx+1}")
                     )
 
-                except Exception as e:
-                    logger.error(
-                        f"Error generating edge primers for sequence {i}: {e}")
-                    sequence_data["errors"] = str(e)
-                    edge_primers = {}
+                    sequence_data["mutation_primers"] = mutation_primers
 
-                # 5. Group primers into PCR reactions
-                print(f"Edge primers: {edge_primers}")
-                print(f"Mutation primers: {mutation_primers}")
-                primers = {**edge_primers, **mutation_primers}
-                print(f"Primers: {primers}")
-                sequence_data["PCR_reactions"] = self.group_primers_into_pcr_reactions(
-                    primers)
+                    print(f"Mutation primers: {mutation_primers}")
 
-                # Store the processed sequence data for this sequence number
-                result_data[sequence_number] = sequence_data
+            # 4. Generate edge primers
+            edge_primers = self.primer_designer.generate_GG_edge_primers(
+                idx, processed_seq, mtk_part_left, mtk_part_right, primer_name
+            )
+            sequence_data["edge_primers"] = edge_primers
 
-            except Exception as e:
-                logger.exception(
-                    f"Unhandled error processing sequence {i}: {str(e)}")
-                sequence_data["errors"] = str(e)
-                result_data[sequence_number] = sequence_data
+            print(
+                f"Type of edge_primers: {type(edge_primers)}, Content: {edge_primers}")
+
+            # 5. Group primers into PCR reactions
+            print(f"sequence_data: {sequence_data}")
+
+            # sequence_data["PCR_reactions"] = self.group_primers_into_pcr_reactions(
+            # primers)
+
+            # Store the processed sequence data for this sequence number
+            result_data[idx] = sequence_data
 
         # Convert any remaining non-serializable objects and return the dictionary
         return self.utils.convert_non_serializable(result_data)
@@ -242,3 +218,13 @@ class GoldenGateProtocol:
             reaction_counter += 1
 
         return pcr_reactions
+
+
+def getSequenceData(seq_object, i):
+    """Extracts sequence data from the provided dictionary."""
+    single_seq = seq_object.get("sequence", "")
+    mtk_part_left = seq_object.get("mtkPartLeft", "")
+    mtk_part_right = seq_object.get("mtkPartRight", "")
+    primer_name = seq_object.get("primerName", f"Sequence_{i}")
+
+    return single_seq, mtk_part_left, mtk_part_right, primer_name

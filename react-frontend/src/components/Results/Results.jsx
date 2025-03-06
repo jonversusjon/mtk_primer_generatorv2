@@ -64,11 +64,6 @@ function ResultTabs({
 
   return (
     <div className="results-section">
-      <div className="section-header">
-        <div className="section-title">
-          <h3>Sequence Results</h3>
-        </div>
-      </div>
 
       <div className="result-tabs-container">
         {/* Tab Navigation */}

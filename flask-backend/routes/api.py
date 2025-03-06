@@ -60,6 +60,7 @@ def generate_protocol():
         # Generate the protocol
         result = protocol_maker.create_gg_protocol()
         serializable_result = utils.convert_non_serializable(result)
+        print(f"Generated protocol: {serializable_result}")
 
         # Check for errors
         if serializable_result.get('has_errors', False):

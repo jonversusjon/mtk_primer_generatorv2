@@ -89,8 +89,8 @@
 /* Active state */
 .sequence-tab-btn.active,
 .tab-button.active {
-    color: var(--color-indigo);
-    font-weight: 600;
+    color: var(--text-color);
+    font-weight: bold;
 }
 
 /* Underline indicator */

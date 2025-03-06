@@ -1,25 +1,5 @@
 /* Settings Toggle Button */
-.settings-toggle {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 1000;
-  padding: 8px 12px;
-  background-color: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 5px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 16px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
 
-.settings-toggle:hover {
-  background-color: #e9ecef;
-}
 
 /* Settings Modal */
 .settings-modal {
@@ -77,15 +57,7 @@
 }
 
 /* Dark Mode Styles for Settings */
-.dark-mode .settings-toggle {
-  background-color: #333;
-  color: white;
-  border-color: #555;
-}
 
-.dark-mode .settings-toggle:hover {
-  background-color: #444;
-}
 
 .dark-mode .settings-modal {
   background-color: #222;

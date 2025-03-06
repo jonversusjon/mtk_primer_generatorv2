@@ -33,7 +33,7 @@
   --text-muted: #414d5a;
   --background-color: #ffffff;
   --shadow-color: rgba(0, 0, 0, 0.1);
-  --form-bg: #f8f9fa;
+  --form-bg: #EFEFEF;
 }
 
 /* Dark mode colors */
@@ -78,7 +78,6 @@ textarea, input, select {
   border-radius: 6px;
   background-color: var(--background-color);
   color: var(--text-dark);
-  margin-bottom: 15px;
 }
 
 textarea {
@@ -95,12 +94,16 @@ box-shadow: 5px 5px 10px var(--shadow-color);
 max-width: 600px;
 }
 
+.primer-form-title {
+  text-align: center;
+}
+
 /* Form Row: Align Inputs Properly */
 .form-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
   align-items: center;
+  margin-bottom: 8px;
 }
 
 .form-row input, 
@@ -108,24 +111,7 @@ max-width: 600px;
   flex: 1;
 }
 
-.settings-toggle {
-position: absolute;
-top: 10px;
-right: 10px;
-background-color: var(--form-bg);
-border: 1px solid var(--border-color);
-border-radius: 4px;
-padding: 5px 10px;
-font-size: 0.85em;
-cursor: pointer;
-transition: background-color 0.3s;
-color: var(--text-dark);
-}
 
-.settings-toggle:hover {
-background-color: var(--primary-hover);
-color: white;
-}
 
 .button-container {
 display: flex;
@@ -317,16 +303,6 @@ width: 200px;
 .dark-mode #primer-form {
 background-color: var(--form-bg);
 box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.5);
-}
-
-.dark-mode .settings-toggle {
-background-color: #222;
-border-color: var(--border-color);
-color: var(--foreground-color);
-}
-
-.dark-mode .settings-toggle:hover {
-background-color: var(--primary-hover);
 }
 
 .dark-mode .spinner {

@@ -1,0 +1,109 @@
+:root {
+    /* Primary Colors */
+    --color-indigo: #541388;
+    --color-dogwood-rose: #D90368;
+    --color-eggshell: #F9F6F0;
+    --color-space-cadet: #2E294E;
+    --color-gold: #FFD400;
+  
+    /* Functional Colors - Light Mode */
+    --primary-color: var(--color-dogwood-rose);
+    --primary-hover: #b80258;
+    --primary-active: #a1024d;
+    --primary-inactive: rgba(217, 3, 104, 0.5);
+    
+    --warning-color: var(--color-gold);
+    --warning-hover: #e6bf00;
+    --warning-active: #cca900;
+    --warning-inactive: rgba(255, 212, 0, 0.5);
+    
+    --error-color: var(--color-dogwood-rose);
+    --error-hover: #b80258;
+    --error-active: #a1024d;
+    --error-inactive: rgba(217, 3, 104, 0.5);
+    
+    --success-color: var(--color-indigo);
+    --success-hover: #47107a;
+    --success-active: #3a0e64;
+    --success-inactive: rgba(84, 19, 136, 0.5);
+    
+    --border-color: var(--color-space-cadet);
+    --text-dark: black;
+    --text-muted: #414d5a;
+    --background-color: #ffffff;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --form-bg: #EFEFEF;
+  }
+  
+  /* Light Mode Version of Dark Mode Coloring */
+  :root.light-mode-darkstyle {
+    /* Swap the dark background and light foreground */
+    --background-color: #F9F6F0;   /* From dark mode’s foreground */
+    --foreground-color: #100E1B;   /* Dark tone for text */
+  
+    /* Keep the same vibrant primary/warning/error/success hues */
+    --primary-color: #D90368;
+    --primary-hover: #f0157e;
+    --primary-active: #ff2a90;
+    --primary-inactive: rgba(217, 3, 104, 0.6);
+  
+    --warning-color: #FFD400;
+    --warning-hover: #ffe040;
+    --warning-active: #ffea73;
+    --warning-inactive: rgba(255, 212, 0, 0.6);
+  
+    --error-color: #D90368;
+    --error-hover: #f0157e;
+    --error-active: #ff2a90;
+    --error-inactive: rgba(217, 3, 104, 0.6);
+  
+    --success-color: #541388;
+    --success-hover: #6a17ac;
+    --success-active: #7e1ccb;
+    --success-inactive: rgba(84, 19, 136, 0.6);
+  
+    /* For a stronger contrast on light backgrounds, choose a darker border */
+    --border-color: #2E294E;
+    
+    /* Dark text to maintain readability */
+    --text-dark: #100E1B;
+    --text-muted: #414d5a;
+    
+    /* A light form background that harmonizes with the overall palette */
+    --form-bg: #EFEFEF;
+    
+    /* Lighter shadow for light mode */
+    --shadow-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Dark mode colors */
+  .dark-mode {
+    --background-color: #100E1B;
+    --foreground-color: #F9F6F0;
+    
+    --primary-color: #D90368;
+    --primary-hover: #f0157e;
+    --primary-active: #ff2a90;
+    --primary-inactive: rgba(217, 3, 104, 0.6);
+    
+    --warning-color: #FFD400;
+    --warning-hover: #ffe040;
+    --warning-active: #ffea73;
+    --warning-inactive: rgba(255, 212, 0, 0.6);
+    
+    --error-color: #D90368;
+    --error-hover: #f0157e;
+    --error-active: #ff2a90;
+    --error-inactive: rgba(217, 3, 104, 0.6);
+    
+    --success-color: #541388;
+    --success-hover: #6a17ac;
+    --success-active: #7e1ccb;
+    --success-inactive: rgba(84, 19, 136, 0.6);
+    
+    --border-color: #BFAFDE;
+    --text-dark: #F1E9DA;
+    --text-muted: #d8d2c8;
+    --form-bg: #1F1C35;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+  }

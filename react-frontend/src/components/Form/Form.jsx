@@ -1,4 +1,4 @@
-// Form.js
+// Form.jsx
 import React, { useState, useEffect } from "react";
 import TemplateSequence from "./TemplateSequence";
 import SequenceTabs from "./SequenceTabs";
@@ -56,7 +56,7 @@ export const getDefaultValues = () => ({
         ],
 });
 
-function Form({ onSubmit, isSubmitting }) {
+function Form({ onSubmit, isSubmitting, showSettings, setShowSettings }) {
   // State for species loading and errors
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -64,9 +64,6 @@ function Form({ onSubmit, isSubmitting }) {
 
   // Initialize form state with defaults
   const [formData, setFormData] = useState(getDefaultValues());
-
-  // Settings panel state
-  const [showSettings, setShowSettings] = useState(false);
 
   // Load available species when the component mounts
   useEffect(() => {
@@ -121,23 +118,24 @@ function Form({ onSubmit, isSubmitting }) {
   };
 
   const addSequence = () => {
-    if (formData.numSequences < 10) {
-      setFormData((prev) => ({
-        ...prev,
-        numSequences: prev.numSequences + 1,
-        sequencesToDomesticate: [
-          ...prev.sequences,
-          { sequence: "", primerName: "", mtkPart: "" },
-        ],
-      }));
-    }
+    setFormData((prev) => ({
+      ...prev,
+      sequencesToDomesticate: [
+        ...prev.sequencesToDomesticate,
+        { 
+          sequence: "", 
+          primerName: "", 
+          mtkPartLeft: "", 
+          mtkPartRight: "" 
+        },
+      ],
+    }));
   };
 
   const removeSequence = () => {
-    if (formData.numSequences > 1) {
+    if (formData.sequencesToDomesticate.length > 1) {
       setFormData((prev) => ({
         ...prev,
-        numSequences: prev.numSequences - 1,
         sequencesToDomesticate: prev.sequencesToDomesticate.slice(0, -1),
       }));
     }
@@ -154,6 +152,7 @@ function Form({ onSubmit, isSubmitting }) {
 
   return (
     <form id="primer-form" onSubmit={handleSubmit}>
+      <h2 className="primer-form-title">Primer Design Form</h2>
       {loading && (
         <div className="loading-overlay">Loading species data...</div>
       )}
@@ -167,15 +166,6 @@ function Form({ onSubmit, isSubmitting }) {
         updateFormData={updateFormData}
         availableSpecies={species}
       />
-
-      {/* Settings Toggle Button */}
-      <button
-        type="button"
-        className="settings-toggle"
-        onClick={() => setShowSettings(!showSettings)}
-      >
-        ⚙️ Settings
-      </button>
 
       {/* Template Sequence Section */}
       <TemplateSequence

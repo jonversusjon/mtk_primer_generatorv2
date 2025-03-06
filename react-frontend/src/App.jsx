@@ -1,16 +1,26 @@
 import React, { useState } from "react";
 import AppHeader from "./components/AppHeader";
+import Banner from "./components/Banner";
 import Form from "./components/Form/Form";
 import Results from "./components/Results/Results";
 import { useDarkMode } from "./hooks/useDarkMode";
 import { generateProtocol } from "./api/api";
 import "./styles/app.css";
+import "./styles/base.css";
+import "./styles/dark-mode.css";
+import "./styles/scrollbar.css";
+import "./styles/theme.css";
 
 function App() {
   const [darkMode, toggleDarkMode] = useDarkMode();
+  const [showSettings, setShowSettings] = useState(false);
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const toggleSettings = () => {
+    setShowSettings(!showSettings);
+  };
 
   const handleFormSubmit = async (formData) => {
     setLoading(true);
@@ -32,11 +42,20 @@ function App() {
 
   return (
     <div className={`app ${darkMode ? "dark-mode" : ""}`}>
-      <AppHeader darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-
+      <AppHeader
+        darkMode={darkMode}
+        toggleDarkMode={toggleDarkMode}
+        toggleSettings={toggleSettings}
+      />
+      <Banner />
       <div className="app-container">
         <div className="form-container">
-          <Form onSubmit={handleFormSubmit} isSubmitting={loading} />
+          <Form
+            onSubmit={handleFormSubmit}
+            isSubmitting={loading}
+            showSettings={showSettings}
+            setShowSettings={setShowSettings}
+          />
         </div>
 
         <div className="output-container">

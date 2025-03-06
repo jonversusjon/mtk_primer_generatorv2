@@ -275,27 +275,45 @@ class PrimerDesigner:
             tm = 64.9 + (41 * (g_count + c_count - 16.4)) / length
         return round(tm, 2)
 
-    def generate_GG_edge_primers(self, idx, sequence, overhang_5_prime, overhang_3_prime, primer_name):
+    def generate_GG_edge_primers(self, idx, sequence, mtk_part_left, mtk_part_right, primer_name):
         """
-        Generate Golden Gate edge primers for a sequence.
+        Generate Golden Gate edge primers for a sequence with optimal primer length calculation.
+
+        Args:
+            idx: Index or identifier for the sequence
+            sequence: DNA sequence for which primers are to be designed
+            overhang_5_prime: 5' overhang sequence
+            overhang_3_prime: 3' overhang sequence
+            primer_name: Base name for the primers
+
+        Returns:
+            Dictionary containing primer information
         """
         # Convert to string for consistent handling
         seq_str = str(sequence)
         seq_length = len(seq_str)
 
-        # Default primer length
-        primer_length = 20  # Excluding overhangs and recognition site
-
         # Define enzyme recognition sequences
         enzyme_rec_seq = "GGTCTC"  # BsaI
 
+        # Calculate optimal primer lengths instead of using fixed length
+        forward_length = self._calculate_optimal_primer_length(
+            seq_str, 0, 'forward')
+        reverse_length = self._calculate_optimal_primer_length(
+            seq_str, len(seq_str), 'reverse')
+
+        overhang_5_prime = self.utils.get_mtk_partend_sequence(
+            mtk_part_left, "forward", kozak=self.kozak)
+        overhang_3_prime = self.utils.get_mtk_partend_sequence(
+            mtk_part_right, "reverse", kozak=self.kozak)
+
         # 5' Primer (forward)
-        forward_primer_binding = seq_str[:primer_length]
+        forward_primer_binding = seq_str[:forward_length]
         forward_primer = overhang_5_prime + enzyme_rec_seq + "A" + forward_primer_binding
 
         # 3' Primer (reverse)
         reverse_primer_binding = str(
-            Seq(seq_str[-primer_length:]).reverse_complement())
+            Seq(seq_str[-reverse_length:]).reverse_complement())
         reverse_primer = overhang_3_prime + enzyme_rec_seq + "A" + reverse_primer_binding
 
         # Calculate properties
@@ -308,6 +326,7 @@ class PrimerDesigner:
         # Create result dictionary
         primers = {
             "forward_primer": {
+                "name": f"{primer_name}_F",
                 "sequence": forward_primer,
                 "binding_region": forward_primer_binding,
                 "tm": forward_tm,
@@ -315,6 +334,7 @@ class PrimerDesigner:
                 "length": len(forward_primer)
             },
             "reverse_primer": {
+                "name": f"{primer_name}_R",
                 "sequence": reverse_primer,
                 "binding_region": reverse_primer_binding,
                 "tm": reverse_tm,
@@ -325,3 +345,45 @@ class PrimerDesigner:
         }
 
         return primers
+
+    def _calculate_optimal_primer_length(self, sequence, position, direction='forward'):
+        """
+        Calculate the optimal primer length based on sequence properties.
+
+        Args:
+            sequence: The DNA sequence
+            position: Start position for calculation (0 for forward, len(seq) for reverse)
+            direction: 'forward' or 'reverse'
+
+        Returns:
+            Optimal primer length
+        """
+        # Implementation of calculate_optimal_primer_length logic
+        # Set minimum and maximum primer lengths
+        min_length = 18
+        max_length = 30
+        target_tm = 60  # Target melting temperature in °C
+
+        # Initialize with minimum length
+        optimal_length = min_length
+
+        if direction == 'forward':
+            # For forward primers, start from position and extend right
+            for length in range(min_length, min(max_length + 1, len(sequence) - position)):
+                primer_seq = sequence[position:position + length]
+                tm = self._calculate_tm(primer_seq)
+                if tm >= target_tm:
+                    optimal_length = length
+                    break
+        else:  # reverse
+            # For reverse primers, start from position and extend left
+            for length in range(min_length, min(max_length + 1, position + 1)):
+                if position - length < 0:
+                    break
+                primer_seq = sequence[position - length:position]
+                tm = self._calculate_tm(primer_seq)
+                if tm >= target_tm:
+                    optimal_length = length
+                    break
+
+        return optimal_length
