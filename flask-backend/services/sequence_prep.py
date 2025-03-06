@@ -78,7 +78,7 @@ class SequencePreparator:
                     message = "Provided sequence does not appear to be in frame, using provided stop codon to infer frame. Stop codon has been removed."
                 else:
                     message = "Provided sequence does not appear to be in frame. If this is not intended, please check the sequence."
-                    return None, message, False
+                    return sequence, message, False
             else:
                 if trim_start_codon and trim_stop_codon:
                     message = "Start and stop codons detected and removed."
@@ -151,11 +151,13 @@ class SequencePreparator:
         """Helper method to find sites for a specific enzyme."""
         site_details = []
         seq_str = str(seq)
-
+        print(f"seq_str: {seq_str}")
+        print(f"recognition_seq: {recognition_seq}")
         # Forward strand matches
         forward_matches = list(re.finditer(
             re.escape(recognition_seq), seq_str))
 
+        print(f"forward_matches: {forward_matches}")
         for match in forward_matches:
             index = match.start()
             frame = index % 3
@@ -171,7 +173,7 @@ class SequencePreparator:
         # Reverse strand matches
         rev_comp = str(Seq(recognition_seq).reverse_complement())
         reverse_matches = list(re.finditer(re.escape(rev_comp), seq_str))
-
+        print(f"reverse_matches: {reverse_matches}")
         for match in reverse_matches:
             index = match.start()
             frame = index % 3

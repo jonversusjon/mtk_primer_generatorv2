@@ -78,7 +78,6 @@ class PrimerDesigner:
                 )
 
                 if primers:
-                    self.state['primers_designed'] += len(primers)
                     return primers
 
             return None
@@ -108,7 +107,7 @@ class PrimerDesigner:
         selected_coord: np.ndarray,
         primer_name: Optional[str] = None,
         annealing_length: int = 18
-    ) -> Optional[Dict[str, Dict[str, str]]]:
+    ) -> Optional[Dict[str, Dict[str, Dict[str, str]]]]:
         """Construct primers for a mutation set using selected coordinates."""
         with debug_context("construct_mutation_primers"):
             primers = {}
@@ -139,8 +138,14 @@ class PrimerDesigner:
 
                 if forward and reverse:
                     primers[mut["site"]] = {
-                        "forward": forward,
-                        "reverse": reverse,
+                        "forward_primer": {
+                            "name": forward[0],
+                            "sequence": forward[1]
+                        },
+                        "reverse_primer": {
+                            "name": reverse[0],
+                            "sequence": reverse[1]
+                        },
                         "mutation_info": mut
                     }
 
@@ -155,9 +160,17 @@ class PrimerDesigner:
         annealing_length: int,
         is_reverse: bool,
         primer_name: Optional[str] = None
-    ) -> Optional[str]:
-        """Construct a single primer with proper components."""
+    ) -> Optional[Tuple[str, str]]:
+        """Construct a single primer with proper components and return (name, sequence)."""
         mutation_length = len(mut["original_sequence"])
+
+        # Set default primer name if none provided
+        if not primer_name:
+            primer_name = f"Mut_{mut['site']}"
+
+        # Add suffix based on direction
+        primer_suffix = "_RV" if is_reverse else "_FW"
+        primer_name = f"{primer_name}{primer_suffix}"
 
         if is_reverse:
             # For the reverse primer, anneal immediately downstream of the mutation.
@@ -184,11 +197,7 @@ class PrimerDesigner:
         # Construct the complete primer: spacer + BsmbI site + extended (overhang) + binding region
         primer_seq = self.spacer + self.bsmbi_site + extended_seq + binding
 
-        if primer_name:
-            suffix = "_RV" if is_reverse else "_FW"
-            return (f"{primer_name}{suffix}", primer_seq)
-
-        return primer_seq
+        return (primer_name, primer_seq)
 
     def _analyze_off_targets_for_all_primers(
         self,

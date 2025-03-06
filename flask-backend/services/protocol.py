@@ -101,12 +101,14 @@ class GoldenGateProtocol:
             with debug_context("Finding restriction sites"):
                 sites_to_mutate = self.sequence_preparator.find_and_summarize_sites(
                     processed_seq, idx)
+                print(f"sites_to_mutate: {sites_to_mutate}")
                 sequence_data["restriction_sites"] = sites_to_mutate
 
             # 3. Mutation analysis and mutation primer design
             mutation_primers = {}
 
             if sites_to_mutate:
+
                 with debug_context("Mutation analysis"):
                     mutation_options = self.mutation_analyzer.get_all_mutations(
                         sites_to_mutate)
@@ -130,19 +132,13 @@ class GoldenGateProtocol:
                         primer_name=seq_object.get(
                             "primerName", f"Sequence_{idx+1}")
                     )
-
                     sequence_data["mutation_primers"] = mutation_primers
-
-                    print(f"Mutation primers: {mutation_primers}")
 
             # 4. Generate edge primers
             edge_primers = self.primer_designer.generate_GG_edge_primers(
                 idx, processed_seq, mtk_part_left, mtk_part_right, primer_name
             )
             sequence_data["edge_primers"] = edge_primers
-
-            print(
-                f"Type of edge_primers: {type(edge_primers)}, Content: {edge_primers}")
 
             # 5. Group primers into PCR reactions
             print(f"sequence_data: {sequence_data}")
@@ -154,6 +150,7 @@ class GoldenGateProtocol:
             result_data[idx] = sequence_data
 
         # Convert any remaining non-serializable objects and return the dictionary
+        print(f"result_data: {result_data}")
         return self.utils.convert_non_serializable(result_data)
 
     def _save_primers_to_tsv(self, primer_data: List[List[str]], output_tsv_path: str) -> None:
