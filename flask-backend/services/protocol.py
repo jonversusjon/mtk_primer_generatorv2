@@ -31,9 +31,11 @@ class GoldenGateProtocol:
         self.logger = logger.getChild("GoldenGateProtocol")
         self.utils = GoldenGateUtils()
         self.sequence_preparator = SequencePreparator()
-        self.primer_designer = PrimerDesigner(kozak=kozak, verbose=verbose)
+        self.primer_designer = PrimerDesigner(
+            kozak=kozak, verbose=verbose, debug=True)
         self.primer_selector = PrimerSelector()
-        self.mutation_optimizer = MutationOptimizer(verbose=verbose)
+        self.mutation_optimizer = MutationOptimizer(
+            verbose=verbose, debug=True)
         self.logger.debug(
             f"GoldenGateProtocol initialized with codon_usage_dict: {codon_usage_dict}")
         if verbose:
@@ -124,46 +126,6 @@ class GoldenGateProtocol:
                             "compatibility": compatibility_matrices
                         }
 
-                        # Print overhang information for debugging
-                        print("\n=== OVERHANG DEBUG INFORMATION ===")
-                        for i, mutation_set in enumerate(optimized_mutations):
-                            print(f"\nMutation Set {i+1}:")
-                            for site_key, mut in mutation_set.items():
-                                print(
-                                    f"  Site: {site_key}, Position: {mut['position']}")
-                                print(
-                                    f"  Original: {mut['original_sequence']} -> Alternative: {mut['alternative_sequence']}")
-
-                                if 'overhangs' in mut and mut['overhangs']:
-                                    # Print top strand overhangs (forward primers)
-                                    if 'top_strand_overhangs' in mut['overhangs']:
-                                        for j, overhang in enumerate(mut['overhangs']['top_strand_overhangs']):
-                                            print(
-                                                f"    Forward overhang {j+1}: {overhang}")
-
-                                            # Print extended sequence if available
-                                            if 'top_extended_sequences' in mut['overhangs'] and j < len(mut['overhangs']['top_extended_sequences']):
-                                                ext_seq = mut['overhangs']['top_extended_sequences'][j]
-
-                                    # Print bottom strand overhangs (reverse primers)
-                                    if 'bottom_strand_overhangs' in mut['overhangs']:
-                                        for j, overhang in enumerate(mut['overhangs']['bottom_strand_overhangs']):
-                                            print(
-                                                f"    Reverse overhang {j+1}: {overhang}")
-
-                                            # Print extended sequence if available
-                                            if 'bottom_extended_sequences' in mut['overhangs'] and j < len(mut['overhangs']['bottom_extended_sequences']):
-                                                ext_seq = mut['overhangs']['bottom_extended_sequences'][j]
-
-                                    # Print mutation overlap information if available
-                                    if 'mutation_overlaps' in mut['overhangs']:
-                                        for j, overlap in enumerate(mut['overhangs']['mutation_overlaps']):
-                                            print(
-                                                f"    Mutation overlap {j+1}: {overlap} nucleotides")
-                                else:
-                                    print("    No overhang information available")
-                        print("=== END OVERHANG DEBUG INFORMATION ===\n")
-
                 with debug_context("Mutation primer design"):
                     mutation_primers = self.primer_designer.design_mutation_primers(
                         full_sequence=processed_seq,
@@ -175,18 +137,18 @@ class GoldenGateProtocol:
                     sequence_data["mutation_primers"] = mutation_primers
 
                     # Print designed primers
-                    if mutation_primers:
-                        print("\n=== DESIGNED PRIMERS ===")
-                        for i, primer in enumerate(mutation_primers):
-                            print(
-                                f"Mutation Primer {i+1} for site {primer.site} at position {primer.position}:")
-                            print(f"  Forward: {primer.forward.name}")
-                            print(
-                                f"  Forward Sequence: {primer.forward.sequence}")
-                            print(f"  Reverse: {primer.reverse.name}")
-                            print(
-                                f"  Reverse Sequence: {primer.reverse.sequence}")
-                        print("=== END DESIGNED PRIMERS ===\n")
+                    # if mutation_primers:
+                    #     print("\n=== DESIGNED PRIMERS ===")
+                    #     for i, primer in enumerate(mutation_primers):
+                    #         print(
+                    #             f"Mutation Primer {i+1} for site {primer.site} at position {primer.position}:")
+                    #         print(f"  Forward: {primer.forward.name}")
+                    #         print(
+                    #             f"  Forward Sequence: {primer.forward.sequence}")
+                    #         print(f"  Reverse: {primer.reverse.name}")
+                    #         print(
+                    #             f"  Reverse Sequence: {primer.reverse.sequence}")
+                    #     print("=== END DESIGNED PRIMERS ===\n")
 
             # 4. Generate edge primers
             edge_primers = self.primer_designer.generate_GG_edge_primers(
@@ -195,15 +157,15 @@ class GoldenGateProtocol:
             sequence_data["edge_primers"] = edge_primers
 
             # Print edge primers
-            if edge_primers:
-                print("\n=== EDGE PRIMERS ===")
-                print(f"Forward: {edge_primers['forward_primer']['name']}")
-                print(
-                    f"Forward Sequence: {edge_primers['forward_primer']['sequence']}")
-                print(f"Reverse: {edge_primers['reverse_primer']['name']}")
-                print(
-                    f"Reverse Sequence: {edge_primers['reverse_primer']['sequence']}")
-                print("=== END EDGE PRIMERS ===\n")
+            # if edge_primers:
+            #     print("\n=== EDGE PRIMERS ===")
+            #     print(f"Forward: {edge_primers['forward_primer']['name']}")
+            #     print(
+            #         f"Forward Sequence: {edge_primers['forward_primer']['sequence']}")
+            #     print(f"Reverse: {edge_primers['reverse_primer']['name']}")
+            #     print(
+            #         f"Reverse Sequence: {edge_primers['reverse_primer']['sequence']}")
+            #     print("=== END EDGE PRIMERS ===\n")
 
             # 5. Group primers into PCR reactions
             sequence_data["PCR_reactions"] = self.group_primers_into_pcr_reactions(
@@ -248,13 +210,9 @@ class GoldenGateProtocol:
         """
         reactions = {}
         reaction_num = 1
-        for key in sequence_data:
-            print(f"{key}: {sequence_data[key]}")
 
         edge_fw = sequence_data["edge_primers"]["forward_primer"]["sequence"]
         edge_rv = sequence_data["edge_primers"]["reverse_primer"]["sequence"]
-        print(f"edge_fw: {edge_fw}")
-        print(f"edge_rv: {edge_rv}")
 
         # Extract mutation sets from the sequence data
         mutation_sets = sequence_data.get("mutation_primers", {})

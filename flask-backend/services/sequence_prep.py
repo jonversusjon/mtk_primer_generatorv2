@@ -151,8 +151,8 @@ class SequencePreparator:
         """Helper method to find sites for a specific enzyme."""
         site_details = []
         seq_str = str(seq)
-        print(f"seq_str: {seq_str}")
-        print(f"recognition_seq: {recognition_seq}")
+        # print(f"seq_str: {seq_str}")
+        # print(f"recognition_seq: {recognition_seq}")
         # Forward strand matches
         forward_matches = list(re.finditer(
             re.escape(recognition_seq), seq_str))
@@ -173,7 +173,7 @@ class SequencePreparator:
         # Reverse strand matches
         rev_comp = str(Seq(recognition_seq).reverse_complement())
         reverse_matches = list(re.finditer(re.escape(rev_comp), seq_str))
-        print(f"reverse_matches: {reverse_matches}")
+        # print(f"reverse_matches: {reverse_matches}")
         for match in reverse_matches:
             index = match.start()
             frame = index % 3

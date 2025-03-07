@@ -13,11 +13,9 @@ utils = GoldenGateUtils()
 
 @api.route("/species", methods=["GET"])
 def get_species():
-    print("get species route called")
     """Return available species as JSON"""
     try:
         species = utils.get_available_species()
-        print(f"Available species: {species}")
         return jsonify({"species": species})
     except Exception as e:
         logger.error(f"Error fetching species: {str(e)}", exc_info=True)
@@ -30,7 +28,6 @@ def generate_protocol():
     try:
         # Parse JSON data from request
         data = request.json
-        # print(f"Form data received: {data}")
 
         # Extract main parameters
         sequencesToDomesticate = data.get("sequencesToDomesticate", [])
@@ -60,9 +57,7 @@ def generate_protocol():
         # Generate the protocol
         result = protocol_maker.create_gg_protocol()
         serializable_result = utils.convert_non_serializable(result)
-        print(f"\n\n ****** Generated protocol ****** \n")
-        print(serializable_result)
-        print(f" **************************************************** ")
+
         # Check for errors
         if serializable_result.get('has_errors', False):
             return jsonify({
