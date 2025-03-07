@@ -9,6 +9,7 @@ import logging
 from config.logging_config import logger
 from services.base import debug_context
 
+
 class MutationOptimizer:
     """
     Optimizes mutations for Golden Gate assembly by balancing codon usage,
@@ -18,7 +19,7 @@ class MutationOptimizer:
     def __init__(self, verbose: bool = False):
         self.logger = logger.getChild("MutationOptimizer")
         self.utils = GoldenGateUtils()
-        
+
         """
         Initialize the optimizer with a precomputed compatibility table.
         
@@ -29,13 +30,14 @@ class MutationOptimizer:
 
         # Load compatibility table
         self.compatibility_table_path = 'static/data/compatibility_table.bin'
-        self.compatibility_table = self.utils._load_compatibility_table(self.compatibility_table_path)
+        self.compatibility_table = self.utils._load_compatibility_table(
+            self.compatibility_table_path)
 
-        self.logger.debug("MutationOptimizer initialized with compatibility table.")
+        self.logger.debug(
+            "MutationOptimizer initialized with compatibility table.")
 
         if self.verbose:
             self.logger.info("MutationOptimizer is running in verbose mode.")
-
 
     def optimize_mutations(
         self,
@@ -54,94 +56,116 @@ class MutationOptimizer:
             List[Dict]: A list of optimized mutation sets.
         """
         with debug_context("mutation_optimization"):
-            logger.info("Step 1: Predicting BsmBI reassembly overhangs for each mutation option...")
-            mutation_options_with_overhangs = self.add_predicted_overhangs(sequence, mutation_options)
-            
-            logger.info("Step 2: Generating possible mutation sets...")
-            mutation_sets = self.generate_mutation_sets(mutation_options_with_overhangs)
-            logger.debug(f"Generated {len(mutation_sets)} mutation sets.")
-            
-            logger.info("Step 3: Computing compatibility matrices...")
-            compatibility_matrices = self.create_compatibility_matrices(mutation_sets)
+            logger.info(
+                "Step 1: Predicting BsmBI reassembly overhangs for each mutation option...")
+            mutation_options_with_overhangs = self.add_predicted_overhangs(
+                sequence, mutation_options)
 
-            logger.info("Step 4: Filtering mutation sets based on compatibility...")
-            optimized_mutations = self.filter_compatible_mutations(mutation_sets, compatibility_matrices)
-            
-            logger.debug(f"\nFinal number of optimized mutation sets: {len(optimized_mutations)}")
+            logger.info("Step 2: Generating possible mutation sets...")
+            mutation_sets = self.generate_mutation_sets(
+                mutation_options_with_overhangs)
+            logger.debug(f"Generated {len(mutation_sets)} mutation sets.")
+
+            logger.info("Step 3: Computing compatibility matrices...")
+            compatibility_matrices = self.create_compatibility_matrices(
+                mutation_sets)
+
+            logger.info(
+                "Step 4: Filtering mutation sets based on compatibility...")
+            optimized_mutations = self.filter_compatible_mutations(
+                mutation_sets, compatibility_matrices)
+
+            logger.debug(
+                f"\nFinal number of optimized mutation sets: {len(optimized_mutations)}")
 
             return optimized_mutations, compatibility_matrices
 
-
     def add_predicted_overhangs(self, sequence: str, mutation_options: Dict) -> Dict:
         """
-        Captures four possible BsmBI reassembly overhangs for each proposed alternative codon.
-        Each alternative codon contributes four different overhangs based on where the mutated base is positioned.
-
-        This version extracts the exact 4-bp overhang while also tracking an extended 6-bp sequence
-        that includes one base on either side of the overhang.
+        Captures BsmBI reassembly overhangs for each proposed alternative codon,
+        ensuring the mutation is positioned within the overhang.
         """
-        
-        def calculate_overhangs(sequence, position, offset, utils):
+
+        def calculate_overhangs(
+            original_seq: str,
+            mutated_seq: str,
+            mutation_start: int,
+            mutation_length: int,
+            utils
+        ) -> Dict:
             """
-            Extracts predicted overhangs from a given sequence at a specified mutation position.
-            Ensures correct 4-bp overhang determination and maintains top/bottom strand consistency.
+            Extract predicted overhangs from the mutated sequence, ensuring the mutation
+            is placed within the 4-nt BsmBI overhang.
 
             Args:
-                sequence (str): The full sequence being analyzed.
-                position (int): The base position of the codon in the sequence.
-                offset (int): The relative index of the mutation within the codon.
-                utils: Utility functions for sequence manipulation.
+                original_seq (str): The original sequence (unused here, but kept for consistency).
+                mutated_seq (str): The sequence after applying the mutation.
+                mutation_start (int): 0-based index of where the mutation begins in mutated_seq.
+                mutation_length (int): Number of nucleotides changed (could be 1 for a point mutation).
+                utils: Utility class with a reverse_complement function, etc.
 
             Returns:
-                Dict: Contains extracted overhangs and extended sequences for both strands.
+                Dict: Contains lists of possible top/bottom overhangs and extended sequences.
+                    Keys:
+                        - top_strand_overhangs
+                        - bottom_strand_overhangs
+                        - top_extended_sequences
+                        - bottom_extended_sequences
             """
-            mutation_position = position + offset
-
-            # Define base slicing parameters
             OVERHANG_LENGTH = 4
-            EXTENDED_LENGTH = 6  # Overhang + 1 nt on either side
+            EXTENDED_LENGTH = 6  # 4-nt overhang + 1 extra nt on each side
 
-            # Ensure valid slicing boundaries
-            start_index = max(0, mutation_position - 2)
-            end_index = min(mutation_position, len(sequence) - OVERHANG_LENGTH)
-
-            if start_index < 1:
-                start_index = 1
-
-            if end_index < start_index:
-                return {}
-
-            # Storage for different overhang possibilities
             top_strand_overhangs = []
             bottom_strand_overhangs = []
             top_extended_sequences = []
             bottom_extended_sequences = []
 
-            # Loop over possible positions to extract overhangs
-            for i in range(start_index, end_index + 1):
-                chunk_start = i - 1  # 1 nt before the overhang
-                chunk_end = i + OVERHANG_LENGTH + 1  # 1 nt after the overhang
-                full_top = sequence[chunk_start:chunk_end]
+            # For the entire mutation (range: mutation_start to mutation_start + mutation_length - 1),
+            # we want it to fall within [i, i+4).
+            # That implies:
+            #   i <= mutation_start
+            #   (mutation_start + mutation_length - 1) < i + OVERHANG_LENGTH
+            #
+            # => i >= (mutation_start + mutation_length - OVERHANG_LENGTH)
+            # => i <= mutation_start
+            #
+            # We'll clamp i to valid sequence boundaries, and ensure chunk extraction is valid.
 
-                # Skip invalid sequences (boundary issues)
+            i_min = max(0, mutation_start + mutation_length - OVERHANG_LENGTH)
+            i_max = min(mutation_start, len(mutated_seq) - OVERHANG_LENGTH)
+
+            for i in range(i_min, i_max + 1):
+                # Check if the entire mutated region is in the 4-nt window [i, i+4)
+                # i.e., i <= mutation_start and (mutation_start + mutation_length - 1) < i+4
+                if not (i <= mutation_start <= i + (OVERHANG_LENGTH - 1)):
+                    continue
+                if not ((mutation_start + mutation_length - 1) < i + OVERHANG_LENGTH):
+                    continue
+
+                # Now define the 6-nt "extended" region: 1 base before + 4-nt overhang + 1 base after
+                chunk_start = i - 1
+                chunk_end = i + OVERHANG_LENGTH + 1  # exclusive
+
+                # Check boundaries
+                if chunk_start < 0 or chunk_end > len(mutated_seq):
+                    continue
+
+                full_top = mutated_seq[chunk_start:chunk_end]
                 if len(full_top) != EXTENDED_LENGTH:
                     continue
 
-                # Reverse complement for bottom strand
+                # Reverse complement for the bottom strand
                 full_bottom = utils.reverse_complement(full_top)
 
-                # Slice out the overhang and extended sequences
-                t_overhang = full_top[1:1 + OVERHANG_LENGTH]  # Middle 4 bases
-                t_extended = full_top  # Full 6 bases
-
+                # Overhang is the middle 4 bases, e.g. full_top[1:5]
+                t_overhang = full_top[1:1 + OVERHANG_LENGTH]
                 b_overhang = full_bottom[1:1 + OVERHANG_LENGTH]
-                b_extended = full_bottom
 
-                # Append results
+                # Append to lists
                 top_strand_overhangs.append(t_overhang)
                 bottom_strand_overhangs.append(b_overhang)
-                top_extended_sequences.append(t_extended)
-                bottom_extended_sequences.append(b_extended)
+                top_extended_sequences.append(full_top)
+                bottom_extended_sequences.append(full_bottom)
 
             return {
                 "top_strand_overhangs": top_strand_overhangs,
@@ -154,17 +178,50 @@ class MutationOptimizer:
         for site_key, site_data in mutation_options.items():
             for codon in site_data["codons"]:
                 position = codon["position"]
+                original_codon = codon["original_sequence"]
+
                 for idx, alternative in enumerate(codon["alternative_codons"]):
+                    # Create the mutated sequence
+                    alt_codon = alternative["seq"]
+                    mutation_length = len(alt_codon)
+
+                    # Apply the mutation to the sequence
+                    mutated_seq = sequence[:position] + alt_codon + \
+                        sequence[position + len(original_codon):]
+
+                    # Try to find where in the codon the mutation occurs
                     try:
-                        offset = alternative["mutations"].index(1)
-                    except ValueError:
+                        # Get indices of nucleotides that differ between original and alternative
+                        mutations = []
+                        for i in range(min(len(original_codon), len(alt_codon))):
+                            if i < len(original_codon) and i < len(alt_codon):
+                                if original_codon[i] != alt_codon[i]:
+                                    mutations.append(i)
+
+                        # If no mutations found, continue to next alternative
+                        if not mutations:
+                            continue
+
+                        # Generate overhangs ensuring mutation is in the overhang
+                        overhangs = calculate_overhangs(
+                            sequence,
+                            mutated_seq,
+                            position,
+                            mutation_length,
+                            self.utils
+                        )
+
+                        # Only store if we found valid overhangs
+                        if overhangs and all(key in overhangs for key in ["top_strand_overhangs", "bottom_strand_overhangs"]):
+                            if len(overhangs["top_strand_overhangs"]) > 0:
+                                alternative["overhangs"] = overhangs
+
+                    except Exception as e:
+                        self.logger.error(
+                            f"Error calculating overhangs for {site_key}, {alt_codon}: {str(e)}")
                         continue
 
-                    overhangs = calculate_overhangs(sequence, position, offset, self.utils)
-                    alternative["overhangs"] = overhangs
-
         return mutation_options
-
 
     def generate_mutation_sets(self, mutation_options: Dict) -> List[Dict]:
         """
@@ -210,7 +267,6 @@ class MutationOptimizer:
 
         return all_mutation_sets
 
-
     def create_compatibility_matrices(self, mutation_sets: List[Dict]) -> List[np.ndarray]:
         """
         Generates compatibility matrices for a set of mutation sites and their respective overhangs.
@@ -235,28 +291,31 @@ class MutationOptimizer:
         """
 
         compatibility_matrices = []
-        
+
         for mutation_set_idx, mutation_set in enumerate(tqdm(mutation_sets, desc="Processing Mutation Sets", unit="set")):
-            
-            position_keys = list(mutation_set.keys())  # Identify mutation site positions
-            overhang_lists = [mutation_set[pos]["overhangs"]["top_strand_overhangs"] for pos in position_keys]
+
+            # Identify mutation site positions
+            position_keys = list(mutation_set.keys())
+            overhang_lists = [mutation_set[pos]["overhangs"]
+                              ["top_strand_overhangs"] for pos in position_keys]
 
             # Define the shape of the compatibility matrix
             matrix_shape = (4,) * len(position_keys)
             compatibility_matrix = np.zeros(matrix_shape, dtype=int)
-            
+
             all_ones = 0  # Counter for valid combinations
             tested_combos = []  # Store some tested combinations for debug output
 
             for combo in product(*overhang_lists):
                 # Extract the position of each element within its respective group
                 try:
-                    positions = tuple(group.index(combo[i]) for i, group in enumerate(overhang_lists))
+                    positions = tuple(group.index(
+                        combo[i]) for i, group in enumerate(overhang_lists))
                 except ValueError as e:
-                    print(f"Error: {combo[i]} not found in its corresponding overhang group! Overhang lists: {overhang_lists}")
+                    print(
+                        f"Error: {combo[i]} not found in its corresponding overhang group! Overhang lists: {overhang_lists}")
                     raise e
 
-                
                 # Check pairwise compatibility and exit early if any pair is incompatible
                 compatible = True
                 n_sites = len(combo)
@@ -272,27 +331,30 @@ class MutationOptimizer:
 
                 if compatible:
                     all_ones += 1
-                    if all(0 <= pos < 4 for pos in positions):  # Ensure all indices are in range (0-3)
+                    # Ensure all indices are in range (0-3)
+                    if all(0 <= pos < 4 for pos in positions):
                         compatibility_matrix[positions] = 1
                     else:
-                        print(f"Warning: Computed index {positions} is out of range for compatibility_matrix with shape {matrix_shape}.")
+                        print(
+                            f"Warning: Computed index {positions} is out of range for compatibility_matrix with shape {matrix_shape}.")
 
                 else:
-                    tested_combos.append((combo, self.analyze_incompatibility_reason(combo)))
+                    tested_combos.append(
+                        (combo, self.analyze_incompatibility_reason(combo)))
 
             # Append the matrix for this mutation set to the list
             compatibility_matrices.append(compatibility_matrix)
-            
+
         # Debugging: Count how many matrices are composed entirely of zeroes
-        zero_matrices_count = sum(1 for matrix in compatibility_matrices if np.all(matrix == 0))
-        logger.debug(f"\n ⚠️ {zero_matrices_count} out of {len(compatibility_matrices)} compatibility matrices are all zeroes. ⚠️")
-        
+        zero_matrices_count = sum(
+            1 for matrix in compatibility_matrices if np.all(matrix == 0))
+        logger.debug(
+            f"\n ⚠️ {zero_matrices_count} out of {len(compatibility_matrices)} compatibility matrices are all zeroes. ⚠️")
+
         if zero_matrices_count == len(compatibility_matrices):
             logger.warning("❗ No valid combinatations found.")
 
-
         return compatibility_matrices
-
 
     def filter_compatible_mutations(self, mutation_sets: list, compatibility_matrices: list) -> list:
         """
@@ -308,22 +370,24 @@ class MutationOptimizer:
         """
         print(f"self.verbose: {self.verbose}")
         # Identify indices of mutation sets where the compatibility matrix is entirely zero
-        indices_to_remove = [i for i, matrix in enumerate(compatibility_matrices) if np.all(matrix == 0)]
+        indices_to_remove = [i for i, matrix in enumerate(
+            compatibility_matrices) if np.all(matrix == 0)]
 
         # Process in reverse order to avoid index shifting while removing elements
         for idx in reversed(indices_to_remove):
             del mutation_sets[idx]
-            del compatibility_matrices[idx]  # Keep compatibility_matrices in sync if needed later
-        
+            # Keep compatibility_matrices in sync if needed later
+            del compatibility_matrices[idx]
+
         if self.verbose:
             if len(indices_to_remove) == 0:
-                logger.info(f"All mutation sets have at least 1 valid overhang combinations.")
-            else:    
-                logger.info(f"Removed {len(indices_to_remove)} mutation sets that had no valid overhang combinations.")
-                
+                logger.info(
+                    f"All mutation sets have at least 1 valid overhang combinations.")
+            else:
+                logger.info(
+                    f"Removed {len(indices_to_remove)} mutation sets that had no valid overhang combinations.")
+
         return mutation_sets
-
-
 
     def analyze_incompatibility_reason(self, combo):
         """
@@ -356,11 +420,11 @@ class MutationOptimizer:
 
         # Rule 3: Check if any overhang has 0% or 100% GC content
         for seq in combo:
-            gc_content = sum(1 for base in seq if base in "GC") / len(seq) * 100
+            gc_content = sum(
+                1 for base in seq if base in "GC") / len(seq) * 100
             if gc_content == 0:
                 return f"Overhang {seq} has 0% GC content (all A/T)."
             elif gc_content == 100:
                 return f"Overhang {seq} has 100% GC content (all G/C)."
 
         return "Unknown reason (should not happen)."
-

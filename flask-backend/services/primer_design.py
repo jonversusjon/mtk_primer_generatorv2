@@ -166,40 +166,65 @@ class PrimerDesigner:
         primer_name: Optional[str] = None
     ) -> Optional[Tuple[str, str]]:
         """
-        Construct a single primer with proper components and return (name, sequence).
+        Construct a primer that both incorporates the mutation directly and ensures 
+        the mutation is within the BsmBI-generated overhang.
         """
-        mutation_length = len(mut["original_sequence"])
+        original_seq = mut["original_sequence"]
+        alternative_seq = mut["alternative_sequence"]
+        mutation_length = len(original_seq)
 
         # Set default primer name if none provided
         if not primer_name:
             primer_name = f"Mut_{mut['site']}"
-        # Add suffix based on direction
         primer_suffix = "_RV" if is_reverse else "_FW"
         primer_name = f"{primer_name}{primer_suffix}"
 
+        # Get the appropriate extended sequence from overhangs
         if is_reverse:
-            # For the reverse primer, anneal immediately downstream of the mutation.
-            start_pos = position + mutation_length
-            end_pos = start_pos + annealing_length
-            if end_pos > len(sequence):
-                return None
-            binding = sequence[start_pos:end_pos]
-            binding = str(Seq(binding).reverse_complement())
-            # Use bottom extended sequence for reverse primer
             extended_seq = str(
                 mut['overhangs']['bottom_extended_sequences'][selected_coord])
-        else:
-            # For the forward primer, anneal immediately upstream of the mutation.
-            end_pos = position
-            start_pos = end_pos - annealing_length
-            if start_pos < 0:
+
+            # Determine optimal binding site that crosses the mutation
+            # For reverse primers, we want to start binding from a position that includes the mutation
+            binding_start = position - annealing_length // 2  # Start before the mutation
+            binding_end = position + mutation_length + \
+                annealing_length // 2  # End after the mutation
+
+            if binding_start < 0 or binding_end > len(sequence):
                 return None
-            binding = sequence[start_pos:end_pos]
-            # Use top extended sequence for forward primer
+
+            # Create a binding region that spans the mutation
+            # But incorporate the mutated sequence instead of the original
+            binding_before_mutation = sequence[binding_start:position]
+            binding_after_mutation = sequence[position +
+                                              mutation_length:binding_end]
+
+            # Construct binding sequence with the mutation incorporated
+            binding = binding_before_mutation + alternative_seq + binding_after_mutation
+            binding = str(Seq(binding).reverse_complement())
+
+        else:
             extended_seq = str(
                 mut['overhangs']['top_extended_sequences'][selected_coord])
 
-        # Construct the complete primer: spacer + BsmbI site + extended (overhang) + binding region
+            # Determine optimal binding site that crosses the mutation
+            binding_start = position - annealing_length // 2  # Start before the mutation
+            binding_end = position + mutation_length + \
+                annealing_length // 2  # End after the mutation
+
+            if binding_start < 0 or binding_end > len(sequence):
+                return None
+
+            # Create a binding region that spans the mutation
+            # But incorporate the mutated sequence instead of the original
+            binding_before_mutation = sequence[binding_start:position]
+            binding_after_mutation = sequence[position +
+                                              mutation_length:binding_end]
+
+            # Construct binding sequence with the mutation incorporated
+            binding = binding_before_mutation + alternative_seq + binding_after_mutation
+
+        # Construct the complete primer: spacer + BsmbI site + extended sequence (which includes mutation) + binding region
         primer_seq = self.spacer + self.bsmbi_site + extended_seq + binding
 
         return (primer_name, primer_seq)

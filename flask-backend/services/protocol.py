@@ -124,6 +124,46 @@ class GoldenGateProtocol:
                             "compatibility": compatibility_matrices
                         }
 
+                        # Print overhang information for debugging
+                        print("\n=== OVERHANG DEBUG INFORMATION ===")
+                        for i, mutation_set in enumerate(optimized_mutations):
+                            print(f"\nMutation Set {i+1}:")
+                            for site_key, mut in mutation_set.items():
+                                print(
+                                    f"  Site: {site_key}, Position: {mut['position']}")
+                                print(
+                                    f"  Original: {mut['original_sequence']} -> Alternative: {mut['alternative_sequence']}")
+
+                                if 'overhangs' in mut and mut['overhangs']:
+                                    # Print top strand overhangs (forward primers)
+                                    if 'top_strand_overhangs' in mut['overhangs']:
+                                        for j, overhang in enumerate(mut['overhangs']['top_strand_overhangs']):
+                                            print(
+                                                f"    Forward overhang {j+1}: {overhang}")
+
+                                            # Print extended sequence if available
+                                            if 'top_extended_sequences' in mut['overhangs'] and j < len(mut['overhangs']['top_extended_sequences']):
+                                                ext_seq = mut['overhangs']['top_extended_sequences'][j]
+
+                                    # Print bottom strand overhangs (reverse primers)
+                                    if 'bottom_strand_overhangs' in mut['overhangs']:
+                                        for j, overhang in enumerate(mut['overhangs']['bottom_strand_overhangs']):
+                                            print(
+                                                f"    Reverse overhang {j+1}: {overhang}")
+
+                                            # Print extended sequence if available
+                                            if 'bottom_extended_sequences' in mut['overhangs'] and j < len(mut['overhangs']['bottom_extended_sequences']):
+                                                ext_seq = mut['overhangs']['bottom_extended_sequences'][j]
+
+                                    # Print mutation overlap information if available
+                                    if 'mutation_overlaps' in mut['overhangs']:
+                                        for j, overlap in enumerate(mut['overhangs']['mutation_overlaps']):
+                                            print(
+                                                f"    Mutation overlap {j+1}: {overlap} nucleotides")
+                                else:
+                                    print("    No overhang information available")
+                        print("=== END OVERHANG DEBUG INFORMATION ===\n")
+
                 with debug_context("Mutation primer design"):
                     mutation_primers = self.primer_designer.design_mutation_primers(
                         full_sequence=processed_seq,
@@ -134,11 +174,36 @@ class GoldenGateProtocol:
                     )
                     sequence_data["mutation_primers"] = mutation_primers
 
+                    # Print designed primers
+                    if mutation_primers:
+                        print("\n=== DESIGNED PRIMERS ===")
+                        for i, primer in enumerate(mutation_primers):
+                            print(
+                                f"Mutation Primer {i+1} for site {primer.site} at position {primer.position}:")
+                            print(f"  Forward: {primer.forward.name}")
+                            print(
+                                f"  Forward Sequence: {primer.forward.sequence}")
+                            print(f"  Reverse: {primer.reverse.name}")
+                            print(
+                                f"  Reverse Sequence: {primer.reverse.sequence}")
+                        print("=== END DESIGNED PRIMERS ===\n")
+
             # 4. Generate edge primers
             edge_primers = self.primer_designer.generate_GG_edge_primers(
                 idx, processed_seq, mtk_part_left, mtk_part_right, primer_name
             )
             sequence_data["edge_primers"] = edge_primers
+
+            # Print edge primers
+            if edge_primers:
+                print("\n=== EDGE PRIMERS ===")
+                print(f"Forward: {edge_primers['forward_primer']['name']}")
+                print(
+                    f"Forward Sequence: {edge_primers['forward_primer']['sequence']}")
+                print(f"Reverse: {edge_primers['reverse_primer']['name']}")
+                print(
+                    f"Reverse Sequence: {edge_primers['reverse_primer']['sequence']}")
+                print("=== END EDGE PRIMERS ===\n")
 
             # 5. Group primers into PCR reactions
             sequence_data["PCR_reactions"] = self.group_primers_into_pcr_reactions(
@@ -148,9 +213,9 @@ class GoldenGateProtocol:
             result_data[idx] = sequence_data
 
         # Convert any remaining non-serializable objects and return the dictionary
-        for key, value in result_data.items():
-            for k, v in value.items():
-                print(f"\n\n{k}: {v}")
+        # for key, value in result_data.items():
+        #     for k, v in value.items():
+        #         print(f"\n\n{k}: {v}")
         return self.utils.convert_non_serializable(result_data)
 
     def _save_primers_to_tsv(self, primer_data: List[List[str]], output_tsv_path: str) -> None:
