@@ -29,23 +29,25 @@ class GoldenGateProtocol:
         verbose: bool = False
     ):
         self.logger = logger.getChild("GoldenGateProtocol")
+
         self.utils = GoldenGateUtils()
         self.sequence_preparator = SequencePreparator()
-        self.primer_designer = PrimerDesigner(
-            kozak=kozak, verbose=verbose, debug=True)
-        self.primer_selector = PrimerSelector()
-        self.mutation_optimizer = MutationOptimizer(
-            verbose=verbose, debug=True)
-        self.logger.debug(
-            f"GoldenGateProtocol initialized with codon_usage_dict: {codon_usage_dict}")
-        if verbose:
-            self.logger.info("GoldenGateProtocol is running in verbose mode.")
         self.mutation_analyzer = MutationAnalyzer(
             codon_usage_dict=codon_usage_dict,
             max_mutations=max_mutations,
             verbose=verbose,
-            debug=True,
+            debug=False,
         )
+        self.mutation_optimizer = MutationOptimizer(
+            verbose=verbose, debug=True)
+        self.primer_designer = PrimerDesigner(
+            kozak=kozak, verbose=verbose, debug=True)
+        # self.primer_selector = PrimerSelector()
+
+        self.logger.debug(
+            f"GoldenGateProtocol initialized with codon_usage_dict: {codon_usage_dict}")
+        if verbose:
+            self.logger.info("GoldenGateProtocol is running in verbose mode.")
 
         self.sequencesToDomesticate = sequencesToDomesticate
         self.template_seq = template_seq
@@ -137,36 +139,11 @@ class GoldenGateProtocol:
                     )
                     sequence_data["mutation_primers"] = mutation_primers
 
-                    # Print designed primers
-                    # if mutation_primers:
-                    #     print("\n=== DESIGNED PRIMERS ===")
-                    #     for i, primer in enumerate(mutation_primers):
-                    #         print(
-                    #             f"Mutation Primer {i+1} for site {primer.site} at position {primer.position}:")
-                    #         print(f"  Forward: {primer.forward.name}")
-                    #         print(
-                    #             f"  Forward Sequence: {primer.forward.sequence}")
-                    #         print(f"  Reverse: {primer.reverse.name}")
-                    #         print(
-                    #             f"  Reverse Sequence: {primer.reverse.sequence}")
-                    #     print("=== END DESIGNED PRIMERS ===\n")
-
             # 4. Generate edge primers
             edge_primers = self.primer_designer.generate_GG_edge_primers(
                 idx, processed_seq, mtk_part_left, mtk_part_right, primer_name
             )
             sequence_data["edge_primers"] = edge_primers
-
-            # Print edge primers
-            # if edge_primers:
-            #     print("\n=== EDGE PRIMERS ===")
-            #     print(f"Forward: {edge_primers['forward_primer']['name']}")
-            #     print(
-            #         f"Forward Sequence: {edge_primers['forward_primer']['sequence']}")
-            #     print(f"Reverse: {edge_primers['reverse_primer']['name']}")
-            #     print(
-            #         f"Reverse Sequence: {edge_primers['reverse_primer']['sequence']}")
-            #     print("=== END EDGE PRIMERS ===\n")
 
             # 5. Group primers into PCR reactions
             sequence_data["PCR_reactions"] = self.group_primers_into_pcr_reactions(
@@ -175,10 +152,6 @@ class GoldenGateProtocol:
             # Store the processed sequence data for this sequence number
             result_data[idx] = sequence_data
 
-        # Convert any remaining non-serializable objects and return the dictionary
-        # for key, value in result_data.items():
-        #     for k, v in value.items():
-        #         print(f"\n\n{k}: {v}")
         return self.utils.convert_non_serializable(result_data)
 
     def _save_primers_to_tsv(self, primer_data: List[List[str]], output_tsv_path: str) -> None:
@@ -219,6 +192,9 @@ class GoldenGateProtocol:
         mutation_sets = sequence_data.get("mutation_primers", {})
 
         # Sort mutations by position (ascending order)
+        if not mutation_sets:
+            raise ValueError(
+                "No valid mutation sets remaining after filtering. Check filtering criteria.")
         mutations = sorted(mutation_sets, key=lambda m: m.position)
 
         # Case with no mutations:
