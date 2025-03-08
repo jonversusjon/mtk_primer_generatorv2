@@ -1,0 +1,1763 @@
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: MTK part end sequences loaded successfully
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Compatibility table loaded successfully
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Compatibility table is a numpy array
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Codon usage dictionary is valid
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Max mutations set to 1
+2025-03-08 01:09:47 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:47 | INFO     | | STARTING: get_all_mutations('atgaccgagtacaagcccacggtgcgcctcgccacccgcgacgacgt...', [{'position': 477, 'sequence': 'GAGACC', 'frame': 0, 'codons': [{'codon_seq': 'GAG', 'amino_acid': 'E', 'position': 477}, {'codon_seq': 'ACC', 'amino_acid': 'T', 'position': 480}], 'strand': '-', 'context': 'CGCCTTCCTGGAGACCTCCGCGCCCC', 'context_mutated_indices': [10, 11, 12, 13, 14, 15], 'enzyme': 'BsaI'}, {'position': 1203, 'sequence': 'GAGACG', 'frame': 0, 'codons': [{'codon_seq': 'GAG', 'amino_acid': 'E', 'position': 1203}, {'codon_seq': 'ACG', 'amino_acid': 'T', 'position': 1206}], 'strand': '-', 'context': 'GGCCTTCACCGAGACGCTGTACCCCG', 'context_mutated_indices': [10, 11, 12, 13, 14, 15], 'enzyme': 'BsmBI'}, {'position': 1392, 'sequence': 'GAGACC', 'frame': 0, 'codons': [{'codon_seq': 'GAG', 'amino_acid': 'E', 'position': 1392}, {'codon_seq': 'ACC', 'amino_acid': 'T', 'position': 1395}], 'strand': '-', 'context': 'GGCCAACAACGAGACCTACGTCGAGC', 'context_mutated_indices': [10, 11, 12, 13, 14, 15], 'enzyme': 'BsaI'}])
+2025-03-08 01:09:47 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Received 3 sites to mutate
+2025-03-08 01:09:47 | INFO     | | STEP 1: Analysis Start - Starting mutation analysis for 3 sites
+2025-03-08 01:09:47 | INFO     | | STEP 2: Process Site - Analyzing site 1/3
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "position": 477,
+2025-03-08 01:09:47 | INFO     | |     "sequence": "GAGACC",
+2025-03-08 01:09:47 | INFO     | |     "enzyme": "BsaI",
+2025-03-08 01:09:47 | INFO     | |     "codons": 2
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 3: Process Codon - Analyzing codon 1/2
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "codon_seq": "GAG",
+2025-03-08 01:09:47 | INFO     | |     "position": 477,
+2025-03-08 01:09:47 | INFO     | |     "amino_acid": "E"
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 4: Find Alternatives - Finding alternatives for codon GAG (AA: E)
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "codon_idx": 0,
+2025-03-08 01:09:47 | INFO     | |     "frame": 0,
+2025-03-08 01:09:47 | INFO     | |     "max_mutations": 1,
+2025-03-08 01:09:47 | INFO     | |     "site_sequence": "GAGACC",
+2025-03-08 01:09:47 | INFO     | |     "codon_offset": 0,
+2025-03-08 01:09:47 | INFO     | |     "context_sequence": "CGCCTTCCTGGAGACCTCCGCGCCCC",
+2025-03-08 01:09:47 | INFO     | |     "context_mutated_indices": [
+2025-03-08 01:09:47 | INFO     | |       10,
+2025-03-08 01:09:47 | INFO     | |       11,
+2025-03-08 01:09:47 | INFO     | |       12,
+2025-03-08 01:09:47 | INFO     | |       13,
+2025-03-08 01:09:47 | INFO     | |       14,
+2025-03-08 01:09:47 | INFO     | |       15
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 5: Possible Codons - Found 2 synonymous codons for E
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "codons": [
+2025-03-08 01:09:47 | INFO     | |       "GAA",
+2025-03-08 01:09:47 | INFO     | |       "GAG"
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 6: Overlapping Indices - Codon positions that overlap with recognition site
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "indices": [
+2025-03-08 01:09:47 | INFO     | |       0,
+2025-03-08 01:09:47 | INFO     | |       1,
+2025-03-08 01:09:47 | INFO     | |       2
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 7: Calculate Sticky Ends - Calculating sticky ends for mutation at position 2
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "mutation_pos_in_context": 12,
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_positions": [
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         9,
+2025-03-08 01:09:47 | DEBUG    | |         10,
+2025-03-08 01:09:47 | DEBUG    | |         11,
+2025-03-08 01:09:47 | DEBUG    | |         12
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         10,
+2025-03-08 01:09:47 | DEBUG    | |         11,
+2025-03-08 01:09:47 | DEBUG    | |         12,
+2025-03-08 01:09:47 | DEBUG    | |         13
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         11,
+2025-03-08 01:09:47 | DEBUG    | |         12,
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         12,
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15
+2025-03-08 01:09:47 | DEBUG    | |       ]
+2025-03-08 01:09:47 | DEBUG    | |     ]
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 8: Sticky End - Generated sticky end for range [9, 10, 11, 12]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "GGAA",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "TTCC"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 9: Sticky End - Generated sticky end for range [10, 11, 12, 13]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "GAAA",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "TTTC"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 10: Sticky End - Generated sticky end for range [11, 12, 13, 14]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "AAAC",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "GTTT"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 11: Sticky End - Generated sticky end for range [12, 13, 14, 15]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "AACC",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "GGTT"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 12: Valid Alternative - Found valid alternative: GAA
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "usage": 29.0,
+2025-03-08 01:09:47 | DEBUG    | |     "mutations": [
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       1
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "changes_in_site": [
+2025-03-08 01:09:47 | DEBUG    | |       2
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_ends": {
+2025-03-08 01:09:47 | DEBUG    | |       "position_2": {
+2025-03-08 01:09:47 | DEBUG    | |         "top_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "GGAA",
+2025-03-08 01:09:47 | DEBUG    | |           "GAAA",
+2025-03-08 01:09:47 | DEBUG    | |           "AAAC",
+2025-03-08 01:09:47 | DEBUG    | |           "AACC"
+2025-03-08 01:09:47 | DEBUG    | |         ],
+2025-03-08 01:09:47 | DEBUG    | |         "bottom_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "TTCC",
+2025-03-08 01:09:47 | DEBUG    | |           "TTTC",
+2025-03-08 01:09:47 | DEBUG    | |           "GTTT",
+2025-03-08 01:09:47 | DEBUG    | |           "GGTT"
+2025-03-08 01:09:47 | DEBUG    | |         ]
+2025-03-08 01:09:47 | DEBUG    | |       }
+2025-03-08 01:09:47 | DEBUG    | |     }
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Generated 1 valid alternatives
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Found 1 alternative codons
+2025-03-08 01:09:47 | INFO     | | STEP 13: Process Codon - Analyzing codon 2/2
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "codon_seq": "ACC",
+2025-03-08 01:09:47 | INFO     | |     "position": 480,
+2025-03-08 01:09:47 | INFO     | |     "amino_acid": "T"
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 14: Find Alternatives - Finding alternatives for codon ACC (AA: T)
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "codon_idx": 1,
+2025-03-08 01:09:47 | INFO     | |     "frame": 0,
+2025-03-08 01:09:47 | INFO     | |     "max_mutations": 1,
+2025-03-08 01:09:47 | INFO     | |     "site_sequence": "GAGACC",
+2025-03-08 01:09:47 | INFO     | |     "codon_offset": 3,
+2025-03-08 01:09:47 | INFO     | |     "context_sequence": "CGCCTTCCTGGAGACCTCCGCGCCCC",
+2025-03-08 01:09:47 | INFO     | |     "context_mutated_indices": [
+2025-03-08 01:09:47 | INFO     | |       10,
+2025-03-08 01:09:47 | INFO     | |       11,
+2025-03-08 01:09:47 | INFO     | |       12,
+2025-03-08 01:09:47 | INFO     | |       13,
+2025-03-08 01:09:47 | INFO     | |       14,
+2025-03-08 01:09:47 | INFO     | |       15
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 15: Possible Codons - Found 4 synonymous codons for T
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "codons": [
+2025-03-08 01:09:47 | INFO     | |       "ACT",
+2025-03-08 01:09:47 | INFO     | |       "ACC",
+2025-03-08 01:09:47 | INFO     | |       "ACA",
+2025-03-08 01:09:47 | INFO     | |       "ACG"
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 16: Overlapping Indices - Codon positions that overlap with recognition site
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "indices": [
+2025-03-08 01:09:47 | INFO     | |       0,
+2025-03-08 01:09:47 | INFO     | |       1,
+2025-03-08 01:09:47 | INFO     | |       2
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 17: Calculate Sticky Ends - Calculating sticky ends for mutation at position 2
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "mutation_pos_in_context": 15,
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_positions": [
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         12,
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16,
+2025-03-08 01:09:47 | DEBUG    | |         17
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16,
+2025-03-08 01:09:47 | DEBUG    | |         17,
+2025-03-08 01:09:47 | DEBUG    | |         18
+2025-03-08 01:09:47 | DEBUG    | |       ]
+2025-03-08 01:09:47 | DEBUG    | |     ]
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 18: Sticky End - Generated sticky end for range [12, 13, 14, 15]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "GACT",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "AGTC"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 19: Sticky End - Generated sticky end for range [13, 14, 15, 16]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "ACTT",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "AAGT"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 20: Sticky End - Generated sticky end for range [14, 15, 16, 17]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "CTTC",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "GAAG"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 21: Sticky End - Generated sticky end for range [15, 16, 17, 18]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "TTCC",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "GGAA"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 22: Valid Alternative - Found valid alternative: ACT
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "usage": 13.1,
+2025-03-08 01:09:47 | DEBUG    | |     "mutations": [
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       1
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "changes_in_site": [
+2025-03-08 01:09:47 | DEBUG    | |       2
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_ends": {
+2025-03-08 01:09:47 | DEBUG    | |       "position_2": {
+2025-03-08 01:09:47 | DEBUG    | |         "top_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "GACT",
+2025-03-08 01:09:47 | DEBUG    | |           "ACTT",
+2025-03-08 01:09:47 | DEBUG    | |           "CTTC",
+2025-03-08 01:09:47 | DEBUG    | |           "TTCC"
+2025-03-08 01:09:47 | DEBUG    | |         ],
+2025-03-08 01:09:47 | DEBUG    | |         "bottom_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "AGTC",
+2025-03-08 01:09:47 | DEBUG    | |           "AAGT",
+2025-03-08 01:09:47 | DEBUG    | |           "GAAG",
+2025-03-08 01:09:47 | DEBUG    | |           "GGAA"
+2025-03-08 01:09:47 | DEBUG    | |         ]
+2025-03-08 01:09:47 | DEBUG    | |       }
+2025-03-08 01:09:47 | DEBUG    | |     }
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 23: Calculate Sticky Ends - Calculating sticky ends for mutation at position 2
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "mutation_pos_in_context": 15,
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_positions": [
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         12,
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16,
+2025-03-08 01:09:47 | DEBUG    | |         17
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16,
+2025-03-08 01:09:47 | DEBUG    | |         17,
+2025-03-08 01:09:47 | DEBUG    | |         18
+2025-03-08 01:09:47 | DEBUG    | |       ]
+2025-03-08 01:09:47 | DEBUG    | |     ]
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 24: Sticky End - Generated sticky end for range [12, 13, 14, 15]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "GACA",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "TGTC"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 25: Sticky End - Generated sticky end for range [13, 14, 15, 16]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "ACAT",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "ATGT"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 26: Sticky End - Generated sticky end for range [14, 15, 16, 17]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "CATC",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "GATG"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 27: Sticky End - Generated sticky end for range [15, 16, 17, 18]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "ATCC",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "GGAT"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 28: Valid Alternative - Found valid alternative: ACA
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "usage": 15.1,
+2025-03-08 01:09:47 | DEBUG    | |     "mutations": [
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       1
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "changes_in_site": [
+2025-03-08 01:09:47 | DEBUG    | |       2
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_ends": {
+2025-03-08 01:09:47 | DEBUG    | |       "position_2": {
+2025-03-08 01:09:47 | DEBUG    | |         "top_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "GACA",
+2025-03-08 01:09:47 | DEBUG    | |           "ACAT",
+2025-03-08 01:09:47 | DEBUG    | |           "CATC",
+2025-03-08 01:09:47 | DEBUG    | |           "ATCC"
+2025-03-08 01:09:47 | DEBUG    | |         ],
+2025-03-08 01:09:47 | DEBUG    | |         "bottom_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "TGTC",
+2025-03-08 01:09:47 | DEBUG    | |           "ATGT",
+2025-03-08 01:09:47 | DEBUG    | |           "GATG",
+2025-03-08 01:09:47 | DEBUG    | |           "GGAT"
+2025-03-08 01:09:47 | DEBUG    | |         ]
+2025-03-08 01:09:47 | DEBUG    | |       }
+2025-03-08 01:09:47 | DEBUG    | |     }
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 29: Calculate Sticky Ends - Calculating sticky ends for mutation at position 2
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "mutation_pos_in_context": 15,
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_positions": [
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         12,
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16,
+2025-03-08 01:09:47 | DEBUG    | |         17
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16,
+2025-03-08 01:09:47 | DEBUG    | |         17,
+2025-03-08 01:09:47 | DEBUG    | |         18
+2025-03-08 01:09:47 | DEBUG    | |       ]
+2025-03-08 01:09:47 | DEBUG    | |     ]
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 30: Sticky End - Generated sticky end for range [12, 13, 14, 15]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "GACG",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "CGTC"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 31: Sticky End - Generated sticky end for range [13, 14, 15, 16]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "ACGT",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "ACGT"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 32: Sticky End - Generated sticky end for range [14, 15, 16, 17]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "CGTC",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "GACG"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 33: Sticky End - Generated sticky end for range [15, 16, 17, 18]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "GTCC",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "GGAC"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 34: Valid Alternative - Found valid alternative: ACG
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "usage": 6.1,
+2025-03-08 01:09:47 | DEBUG    | |     "mutations": [
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       1
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "changes_in_site": [
+2025-03-08 01:09:47 | DEBUG    | |       2
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_ends": {
+2025-03-08 01:09:47 | DEBUG    | |       "position_2": {
+2025-03-08 01:09:47 | DEBUG    | |         "top_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "GACG",
+2025-03-08 01:09:47 | DEBUG    | |           "ACGT",
+2025-03-08 01:09:47 | DEBUG    | |           "CGTC",
+2025-03-08 01:09:47 | DEBUG    | |           "GTCC"
+2025-03-08 01:09:47 | DEBUG    | |         ],
+2025-03-08 01:09:47 | DEBUG    | |         "bottom_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "CGTC",
+2025-03-08 01:09:47 | DEBUG    | |           "ACGT",
+2025-03-08 01:09:47 | DEBUG    | |           "GACG",
+2025-03-08 01:09:47 | DEBUG    | |           "GGAC"
+2025-03-08 01:09:47 | DEBUG    | |         ]
+2025-03-08 01:09:47 | DEBUG    | |       }
+2025-03-08 01:09:47 | DEBUG    | |     }
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Generated 3 valid alternatives
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Found 3 alternative codons
+2025-03-08 01:09:47 | INFO     | | STEP 35: Site Result - Completed analysis for site at position 477
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "alternatives_found": 4
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 36: Process Site - Analyzing site 2/3
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "position": 1203,
+2025-03-08 01:09:47 | INFO     | |     "sequence": "GAGACG",
+2025-03-08 01:09:47 | INFO     | |     "enzyme": "BsmBI",
+2025-03-08 01:09:47 | INFO     | |     "codons": 2
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 37: Process Codon - Analyzing codon 1/2
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "codon_seq": "GAG",
+2025-03-08 01:09:47 | INFO     | |     "position": 1203,
+2025-03-08 01:09:47 | INFO     | |     "amino_acid": "E"
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 38: Find Alternatives - Finding alternatives for codon GAG (AA: E)
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "codon_idx": 0,
+2025-03-08 01:09:47 | INFO     | |     "frame": 0,
+2025-03-08 01:09:47 | INFO     | |     "max_mutations": 1,
+2025-03-08 01:09:47 | INFO     | |     "site_sequence": "GAGACG",
+2025-03-08 01:09:47 | INFO     | |     "codon_offset": 0,
+2025-03-08 01:09:47 | INFO     | |     "context_sequence": "GGCCTTCACCGAGACGCTGTACCCCG",
+2025-03-08 01:09:47 | INFO     | |     "context_mutated_indices": [
+2025-03-08 01:09:47 | INFO     | |       10,
+2025-03-08 01:09:47 | INFO     | |       11,
+2025-03-08 01:09:47 | INFO     | |       12,
+2025-03-08 01:09:47 | INFO     | |       13,
+2025-03-08 01:09:47 | INFO     | |       14,
+2025-03-08 01:09:47 | INFO     | |       15
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 39: Possible Codons - Found 2 synonymous codons for E
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "codons": [
+2025-03-08 01:09:47 | INFO     | |       "GAA",
+2025-03-08 01:09:47 | INFO     | |       "GAG"
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 40: Overlapping Indices - Codon positions that overlap with recognition site
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "indices": [
+2025-03-08 01:09:47 | INFO     | |       0,
+2025-03-08 01:09:47 | INFO     | |       1,
+2025-03-08 01:09:47 | INFO     | |       2
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 41: Calculate Sticky Ends - Calculating sticky ends for mutation at position 2
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "mutation_pos_in_context": 12,
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_positions": [
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         9,
+2025-03-08 01:09:47 | DEBUG    | |         10,
+2025-03-08 01:09:47 | DEBUG    | |         11,
+2025-03-08 01:09:47 | DEBUG    | |         12
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         10,
+2025-03-08 01:09:47 | DEBUG    | |         11,
+2025-03-08 01:09:47 | DEBUG    | |         12,
+2025-03-08 01:09:47 | DEBUG    | |         13
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         11,
+2025-03-08 01:09:47 | DEBUG    | |         12,
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         12,
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15
+2025-03-08 01:09:47 | DEBUG    | |       ]
+2025-03-08 01:09:47 | DEBUG    | |     ]
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 42: Sticky End - Generated sticky end for range [9, 10, 11, 12]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "CGAA",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "TTCG"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 43: Sticky End - Generated sticky end for range [10, 11, 12, 13]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "GAAA",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "TTTC"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 44: Sticky End - Generated sticky end for range [11, 12, 13, 14]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "AAAC",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "GTTT"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 45: Sticky End - Generated sticky end for range [12, 13, 14, 15]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "AACG",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "CGTT"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 46: Valid Alternative - Found valid alternative: GAA
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "usage": 29.0,
+2025-03-08 01:09:47 | DEBUG    | |     "mutations": [
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       1
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "changes_in_site": [
+2025-03-08 01:09:47 | DEBUG    | |       2
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_ends": {
+2025-03-08 01:09:47 | DEBUG    | |       "position_2": {
+2025-03-08 01:09:47 | DEBUG    | |         "top_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "CGAA",
+2025-03-08 01:09:47 | DEBUG    | |           "GAAA",
+2025-03-08 01:09:47 | DEBUG    | |           "AAAC",
+2025-03-08 01:09:47 | DEBUG    | |           "AACG"
+2025-03-08 01:09:47 | DEBUG    | |         ],
+2025-03-08 01:09:47 | DEBUG    | |         "bottom_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "TTCG",
+2025-03-08 01:09:47 | DEBUG    | |           "TTTC",
+2025-03-08 01:09:47 | DEBUG    | |           "GTTT",
+2025-03-08 01:09:47 | DEBUG    | |           "CGTT"
+2025-03-08 01:09:47 | DEBUG    | |         ]
+2025-03-08 01:09:47 | DEBUG    | |       }
+2025-03-08 01:09:47 | DEBUG    | |     }
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Generated 1 valid alternatives
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Found 1 alternative codons
+2025-03-08 01:09:47 | INFO     | | STEP 47: Process Codon - Analyzing codon 2/2
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "codon_seq": "ACG",
+2025-03-08 01:09:47 | INFO     | |     "position": 1206,
+2025-03-08 01:09:47 | INFO     | |     "amino_acid": "T"
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 48: Find Alternatives - Finding alternatives for codon ACG (AA: T)
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "codon_idx": 1,
+2025-03-08 01:09:47 | INFO     | |     "frame": 0,
+2025-03-08 01:09:47 | INFO     | |     "max_mutations": 1,
+2025-03-08 01:09:47 | INFO     | |     "site_sequence": "GAGACG",
+2025-03-08 01:09:47 | INFO     | |     "codon_offset": 3,
+2025-03-08 01:09:47 | INFO     | |     "context_sequence": "GGCCTTCACCGAGACGCTGTACCCCG",
+2025-03-08 01:09:47 | INFO     | |     "context_mutated_indices": [
+2025-03-08 01:09:47 | INFO     | |       10,
+2025-03-08 01:09:47 | INFO     | |       11,
+2025-03-08 01:09:47 | INFO     | |       12,
+2025-03-08 01:09:47 | INFO     | |       13,
+2025-03-08 01:09:47 | INFO     | |       14,
+2025-03-08 01:09:47 | INFO     | |       15
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 49: Possible Codons - Found 4 synonymous codons for T
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "codons": [
+2025-03-08 01:09:47 | INFO     | |       "ACT",
+2025-03-08 01:09:47 | INFO     | |       "ACC",
+2025-03-08 01:09:47 | INFO     | |       "ACA",
+2025-03-08 01:09:47 | INFO     | |       "ACG"
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 50: Overlapping Indices - Codon positions that overlap with recognition site
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "indices": [
+2025-03-08 01:09:47 | INFO     | |       0,
+2025-03-08 01:09:47 | INFO     | |       1,
+2025-03-08 01:09:47 | INFO     | |       2
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 51: Calculate Sticky Ends - Calculating sticky ends for mutation at position 2
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "mutation_pos_in_context": 15,
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_positions": [
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         12,
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16,
+2025-03-08 01:09:47 | DEBUG    | |         17
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16,
+2025-03-08 01:09:47 | DEBUG    | |         17,
+2025-03-08 01:09:47 | DEBUG    | |         18
+2025-03-08 01:09:47 | DEBUG    | |       ]
+2025-03-08 01:09:47 | DEBUG    | |     ]
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 52: Sticky End - Generated sticky end for range [12, 13, 14, 15]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "GACT",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "AGTC"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 53: Sticky End - Generated sticky end for range [13, 14, 15, 16]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "ACTC",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "GAGT"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 54: Sticky End - Generated sticky end for range [14, 15, 16, 17]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "CTCT",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "AGAG"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 55: Sticky End - Generated sticky end for range [15, 16, 17, 18]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "TCTG",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "CAGA"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 56: Valid Alternative - Found valid alternative: ACT
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "usage": 13.1,
+2025-03-08 01:09:47 | DEBUG    | |     "mutations": [
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       1
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "changes_in_site": [
+2025-03-08 01:09:47 | DEBUG    | |       2
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_ends": {
+2025-03-08 01:09:47 | DEBUG    | |       "position_2": {
+2025-03-08 01:09:47 | DEBUG    | |         "top_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "GACT",
+2025-03-08 01:09:47 | DEBUG    | |           "ACTC",
+2025-03-08 01:09:47 | DEBUG    | |           "CTCT",
+2025-03-08 01:09:47 | DEBUG    | |           "TCTG"
+2025-03-08 01:09:47 | DEBUG    | |         ],
+2025-03-08 01:09:47 | DEBUG    | |         "bottom_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "AGTC",
+2025-03-08 01:09:47 | DEBUG    | |           "GAGT",
+2025-03-08 01:09:47 | DEBUG    | |           "AGAG",
+2025-03-08 01:09:47 | DEBUG    | |           "CAGA"
+2025-03-08 01:09:47 | DEBUG    | |         ]
+2025-03-08 01:09:47 | DEBUG    | |       }
+2025-03-08 01:09:47 | DEBUG    | |     }
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 57: Calculate Sticky Ends - Calculating sticky ends for mutation at position 2
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "mutation_pos_in_context": 15,
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_positions": [
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         12,
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16,
+2025-03-08 01:09:47 | DEBUG    | |         17
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16,
+2025-03-08 01:09:47 | DEBUG    | |         17,
+2025-03-08 01:09:47 | DEBUG    | |         18
+2025-03-08 01:09:47 | DEBUG    | |       ]
+2025-03-08 01:09:47 | DEBUG    | |     ]
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 58: Sticky End - Generated sticky end for range [12, 13, 14, 15]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "GACC",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "GGTC"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 59: Sticky End - Generated sticky end for range [13, 14, 15, 16]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "ACCC",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "GGGT"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 60: Sticky End - Generated sticky end for range [14, 15, 16, 17]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "CCCT",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "AGGG"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 61: Sticky End - Generated sticky end for range [15, 16, 17, 18]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "CCTG",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "CAGG"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 62: Valid Alternative - Found valid alternative: ACC
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "usage": 18.9,
+2025-03-08 01:09:47 | DEBUG    | |     "mutations": [
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       1
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "changes_in_site": [
+2025-03-08 01:09:47 | DEBUG    | |       2
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_ends": {
+2025-03-08 01:09:47 | DEBUG    | |       "position_2": {
+2025-03-08 01:09:47 | DEBUG    | |         "top_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "GACC",
+2025-03-08 01:09:47 | DEBUG    | |           "ACCC",
+2025-03-08 01:09:47 | DEBUG    | |           "CCCT",
+2025-03-08 01:09:47 | DEBUG    | |           "CCTG"
+2025-03-08 01:09:47 | DEBUG    | |         ],
+2025-03-08 01:09:47 | DEBUG    | |         "bottom_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "GGTC",
+2025-03-08 01:09:47 | DEBUG    | |           "GGGT",
+2025-03-08 01:09:47 | DEBUG    | |           "AGGG",
+2025-03-08 01:09:47 | DEBUG    | |           "CAGG"
+2025-03-08 01:09:47 | DEBUG    | |         ]
+2025-03-08 01:09:47 | DEBUG    | |       }
+2025-03-08 01:09:47 | DEBUG    | |     }
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 63: Calculate Sticky Ends - Calculating sticky ends for mutation at position 2
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "mutation_pos_in_context": 15,
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_positions": [
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         12,
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16,
+2025-03-08 01:09:47 | DEBUG    | |         17
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16,
+2025-03-08 01:09:47 | DEBUG    | |         17,
+2025-03-08 01:09:47 | DEBUG    | |         18
+2025-03-08 01:09:47 | DEBUG    | |       ]
+2025-03-08 01:09:47 | DEBUG    | |     ]
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 64: Sticky End - Generated sticky end for range [12, 13, 14, 15]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "GACA",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "TGTC"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 65: Sticky End - Generated sticky end for range [13, 14, 15, 16]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "ACAC",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "GTGT"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 66: Sticky End - Generated sticky end for range [14, 15, 16, 17]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "CACT",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "AGTG"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 67: Sticky End - Generated sticky end for range [15, 16, 17, 18]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "ACTG",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "CAGT"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 68: Valid Alternative - Found valid alternative: ACA
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "usage": 15.1,
+2025-03-08 01:09:47 | DEBUG    | |     "mutations": [
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       1
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "changes_in_site": [
+2025-03-08 01:09:47 | DEBUG    | |       2
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_ends": {
+2025-03-08 01:09:47 | DEBUG    | |       "position_2": {
+2025-03-08 01:09:47 | DEBUG    | |         "top_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "GACA",
+2025-03-08 01:09:47 | DEBUG    | |           "ACAC",
+2025-03-08 01:09:47 | DEBUG    | |           "CACT",
+2025-03-08 01:09:47 | DEBUG    | |           "ACTG"
+2025-03-08 01:09:47 | DEBUG    | |         ],
+2025-03-08 01:09:47 | DEBUG    | |         "bottom_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "TGTC",
+2025-03-08 01:09:47 | DEBUG    | |           "GTGT",
+2025-03-08 01:09:47 | DEBUG    | |           "AGTG",
+2025-03-08 01:09:47 | DEBUG    | |           "CAGT"
+2025-03-08 01:09:47 | DEBUG    | |         ]
+2025-03-08 01:09:47 | DEBUG    | |       }
+2025-03-08 01:09:47 | DEBUG    | |     }
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Generated 3 valid alternatives
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Found 3 alternative codons
+2025-03-08 01:09:47 | INFO     | | STEP 69: Site Result - Completed analysis for site at position 1203
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "alternatives_found": 4
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 70: Process Site - Analyzing site 3/3
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "position": 1392,
+2025-03-08 01:09:47 | INFO     | |     "sequence": "GAGACC",
+2025-03-08 01:09:47 | INFO     | |     "enzyme": "BsaI",
+2025-03-08 01:09:47 | INFO     | |     "codons": 2
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 71: Process Codon - Analyzing codon 1/2
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "codon_seq": "GAG",
+2025-03-08 01:09:47 | INFO     | |     "position": 1392,
+2025-03-08 01:09:47 | INFO     | |     "amino_acid": "E"
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 72: Find Alternatives - Finding alternatives for codon GAG (AA: E)
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "codon_idx": 0,
+2025-03-08 01:09:47 | INFO     | |     "frame": 0,
+2025-03-08 01:09:47 | INFO     | |     "max_mutations": 1,
+2025-03-08 01:09:47 | INFO     | |     "site_sequence": "GAGACC",
+2025-03-08 01:09:47 | INFO     | |     "codon_offset": 0,
+2025-03-08 01:09:47 | INFO     | |     "context_sequence": "GGCCAACAACGAGACCTACGTCGAGC",
+2025-03-08 01:09:47 | INFO     | |     "context_mutated_indices": [
+2025-03-08 01:09:47 | INFO     | |       10,
+2025-03-08 01:09:47 | INFO     | |       11,
+2025-03-08 01:09:47 | INFO     | |       12,
+2025-03-08 01:09:47 | INFO     | |       13,
+2025-03-08 01:09:47 | INFO     | |       14,
+2025-03-08 01:09:47 | INFO     | |       15
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 73: Possible Codons - Found 2 synonymous codons for E
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "codons": [
+2025-03-08 01:09:47 | INFO     | |       "GAA",
+2025-03-08 01:09:47 | INFO     | |       "GAG"
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 74: Overlapping Indices - Codon positions that overlap with recognition site
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "indices": [
+2025-03-08 01:09:47 | INFO     | |       0,
+2025-03-08 01:09:47 | INFO     | |       1,
+2025-03-08 01:09:47 | INFO     | |       2
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 75: Calculate Sticky Ends - Calculating sticky ends for mutation at position 2
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "mutation_pos_in_context": 12,
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_positions": [
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         9,
+2025-03-08 01:09:47 | DEBUG    | |         10,
+2025-03-08 01:09:47 | DEBUG    | |         11,
+2025-03-08 01:09:47 | DEBUG    | |         12
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         10,
+2025-03-08 01:09:47 | DEBUG    | |         11,
+2025-03-08 01:09:47 | DEBUG    | |         12,
+2025-03-08 01:09:47 | DEBUG    | |         13
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         11,
+2025-03-08 01:09:47 | DEBUG    | |         12,
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         12,
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15
+2025-03-08 01:09:47 | DEBUG    | |       ]
+2025-03-08 01:09:47 | DEBUG    | |     ]
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 76: Sticky End - Generated sticky end for range [9, 10, 11, 12]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "CGAA",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "TTCG"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 77: Sticky End - Generated sticky end for range [10, 11, 12, 13]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "GAAA",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "TTTC"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 78: Sticky End - Generated sticky end for range [11, 12, 13, 14]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "AAAC",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "GTTT"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 79: Sticky End - Generated sticky end for range [12, 13, 14, 15]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "AACC",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "GGTT"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 80: Valid Alternative - Found valid alternative: GAA
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "usage": 29.0,
+2025-03-08 01:09:47 | DEBUG    | |     "mutations": [
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       1
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "changes_in_site": [
+2025-03-08 01:09:47 | DEBUG    | |       2
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_ends": {
+2025-03-08 01:09:47 | DEBUG    | |       "position_2": {
+2025-03-08 01:09:47 | DEBUG    | |         "top_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "CGAA",
+2025-03-08 01:09:47 | DEBUG    | |           "GAAA",
+2025-03-08 01:09:47 | DEBUG    | |           "AAAC",
+2025-03-08 01:09:47 | DEBUG    | |           "AACC"
+2025-03-08 01:09:47 | DEBUG    | |         ],
+2025-03-08 01:09:47 | DEBUG    | |         "bottom_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "TTCG",
+2025-03-08 01:09:47 | DEBUG    | |           "TTTC",
+2025-03-08 01:09:47 | DEBUG    | |           "GTTT",
+2025-03-08 01:09:47 | DEBUG    | |           "GGTT"
+2025-03-08 01:09:47 | DEBUG    | |         ]
+2025-03-08 01:09:47 | DEBUG    | |       }
+2025-03-08 01:09:47 | DEBUG    | |     }
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Generated 1 valid alternatives
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Found 1 alternative codons
+2025-03-08 01:09:47 | INFO     | | STEP 81: Process Codon - Analyzing codon 2/2
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "codon_seq": "ACC",
+2025-03-08 01:09:47 | INFO     | |     "position": 1395,
+2025-03-08 01:09:47 | INFO     | |     "amino_acid": "T"
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 82: Find Alternatives - Finding alternatives for codon ACC (AA: T)
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "codon_idx": 1,
+2025-03-08 01:09:47 | INFO     | |     "frame": 0,
+2025-03-08 01:09:47 | INFO     | |     "max_mutations": 1,
+2025-03-08 01:09:47 | INFO     | |     "site_sequence": "GAGACC",
+2025-03-08 01:09:47 | INFO     | |     "codon_offset": 3,
+2025-03-08 01:09:47 | INFO     | |     "context_sequence": "GGCCAACAACGAGACCTACGTCGAGC",
+2025-03-08 01:09:47 | INFO     | |     "context_mutated_indices": [
+2025-03-08 01:09:47 | INFO     | |       10,
+2025-03-08 01:09:47 | INFO     | |       11,
+2025-03-08 01:09:47 | INFO     | |       12,
+2025-03-08 01:09:47 | INFO     | |       13,
+2025-03-08 01:09:47 | INFO     | |       14,
+2025-03-08 01:09:47 | INFO     | |       15
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 83: Possible Codons - Found 4 synonymous codons for T
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "codons": [
+2025-03-08 01:09:47 | INFO     | |       "ACT",
+2025-03-08 01:09:47 | INFO     | |       "ACC",
+2025-03-08 01:09:47 | INFO     | |       "ACA",
+2025-03-08 01:09:47 | INFO     | |       "ACG"
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 84: Overlapping Indices - Codon positions that overlap with recognition site
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "indices": [
+2025-03-08 01:09:47 | INFO     | |       0,
+2025-03-08 01:09:47 | INFO     | |       1,
+2025-03-08 01:09:47 | INFO     | |       2
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 85: Calculate Sticky Ends - Calculating sticky ends for mutation at position 2
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "mutation_pos_in_context": 15,
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_positions": [
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         12,
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16,
+2025-03-08 01:09:47 | DEBUG    | |         17
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16,
+2025-03-08 01:09:47 | DEBUG    | |         17,
+2025-03-08 01:09:47 | DEBUG    | |         18
+2025-03-08 01:09:47 | DEBUG    | |       ]
+2025-03-08 01:09:47 | DEBUG    | |     ]
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 86: Sticky End - Generated sticky end for range [12, 13, 14, 15]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "GACT",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "AGTC"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 87: Sticky End - Generated sticky end for range [13, 14, 15, 16]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "ACTT",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "AAGT"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 88: Sticky End - Generated sticky end for range [14, 15, 16, 17]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "CTTA",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "TAAG"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 89: Sticky End - Generated sticky end for range [15, 16, 17, 18]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "TTAC",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "GTAA"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 90: Valid Alternative - Found valid alternative: ACT
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "usage": 13.1,
+2025-03-08 01:09:47 | DEBUG    | |     "mutations": [
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       1
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "changes_in_site": [
+2025-03-08 01:09:47 | DEBUG    | |       2
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_ends": {
+2025-03-08 01:09:47 | DEBUG    | |       "position_2": {
+2025-03-08 01:09:47 | DEBUG    | |         "top_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "GACT",
+2025-03-08 01:09:47 | DEBUG    | |           "ACTT",
+2025-03-08 01:09:47 | DEBUG    | |           "CTTA",
+2025-03-08 01:09:47 | DEBUG    | |           "TTAC"
+2025-03-08 01:09:47 | DEBUG    | |         ],
+2025-03-08 01:09:47 | DEBUG    | |         "bottom_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "AGTC",
+2025-03-08 01:09:47 | DEBUG    | |           "AAGT",
+2025-03-08 01:09:47 | DEBUG    | |           "TAAG",
+2025-03-08 01:09:47 | DEBUG    | |           "GTAA"
+2025-03-08 01:09:47 | DEBUG    | |         ]
+2025-03-08 01:09:47 | DEBUG    | |       }
+2025-03-08 01:09:47 | DEBUG    | |     }
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 91: Calculate Sticky Ends - Calculating sticky ends for mutation at position 2
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "mutation_pos_in_context": 15,
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_positions": [
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         12,
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16,
+2025-03-08 01:09:47 | DEBUG    | |         17
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16,
+2025-03-08 01:09:47 | DEBUG    | |         17,
+2025-03-08 01:09:47 | DEBUG    | |         18
+2025-03-08 01:09:47 | DEBUG    | |       ]
+2025-03-08 01:09:47 | DEBUG    | |     ]
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 92: Sticky End - Generated sticky end for range [12, 13, 14, 15]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "GACA",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "TGTC"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 93: Sticky End - Generated sticky end for range [13, 14, 15, 16]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "ACAT",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "ATGT"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 94: Sticky End - Generated sticky end for range [14, 15, 16, 17]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "CATA",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "TATG"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 95: Sticky End - Generated sticky end for range [15, 16, 17, 18]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "ATAC",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "GTAT"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 96: Valid Alternative - Found valid alternative: ACA
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "usage": 15.1,
+2025-03-08 01:09:47 | DEBUG    | |     "mutations": [
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       1
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "changes_in_site": [
+2025-03-08 01:09:47 | DEBUG    | |       2
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_ends": {
+2025-03-08 01:09:47 | DEBUG    | |       "position_2": {
+2025-03-08 01:09:47 | DEBUG    | |         "top_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "GACA",
+2025-03-08 01:09:47 | DEBUG    | |           "ACAT",
+2025-03-08 01:09:47 | DEBUG    | |           "CATA",
+2025-03-08 01:09:47 | DEBUG    | |           "ATAC"
+2025-03-08 01:09:47 | DEBUG    | |         ],
+2025-03-08 01:09:47 | DEBUG    | |         "bottom_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "TGTC",
+2025-03-08 01:09:47 | DEBUG    | |           "ATGT",
+2025-03-08 01:09:47 | DEBUG    | |           "TATG",
+2025-03-08 01:09:47 | DEBUG    | |           "GTAT"
+2025-03-08 01:09:47 | DEBUG    | |         ]
+2025-03-08 01:09:47 | DEBUG    | |       }
+2025-03-08 01:09:47 | DEBUG    | |     }
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 97: Calculate Sticky Ends - Calculating sticky ends for mutation at position 2
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "mutation_pos_in_context": 15,
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_positions": [
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         12,
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         13,
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         14,
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16,
+2025-03-08 01:09:47 | DEBUG    | |         17
+2025-03-08 01:09:47 | DEBUG    | |       ],
+2025-03-08 01:09:47 | DEBUG    | |       [
+2025-03-08 01:09:47 | DEBUG    | |         15,
+2025-03-08 01:09:47 | DEBUG    | |         16,
+2025-03-08 01:09:47 | DEBUG    | |         17,
+2025-03-08 01:09:47 | DEBUG    | |         18
+2025-03-08 01:09:47 | DEBUG    | |       ]
+2025-03-08 01:09:47 | DEBUG    | |     ]
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 98: Sticky End - Generated sticky end for range [12, 13, 14, 15]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "GACG",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "CGTC"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 99: Sticky End - Generated sticky end for range [13, 14, 15, 16]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "ACGT",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "ACGT"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 100: Sticky End - Generated sticky end for range [14, 15, 16, 17]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "CGTA",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "TACG"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 101: Sticky End - Generated sticky end for range [15, 16, 17, 18]
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "top_strand": "GTAC",
+2025-03-08 01:09:47 | DEBUG    | |     "bottom_strand": "GTAC"
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 102: Valid Alternative - Found valid alternative: ACG
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "usage": 6.1,
+2025-03-08 01:09:47 | DEBUG    | |     "mutations": [
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       0,
+2025-03-08 01:09:47 | DEBUG    | |       1
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "changes_in_site": [
+2025-03-08 01:09:47 | DEBUG    | |       2
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "sticky_ends": {
+2025-03-08 01:09:47 | DEBUG    | |       "position_2": {
+2025-03-08 01:09:47 | DEBUG    | |         "top_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "GACG",
+2025-03-08 01:09:47 | DEBUG    | |           "ACGT",
+2025-03-08 01:09:47 | DEBUG    | |           "CGTA",
+2025-03-08 01:09:47 | DEBUG    | |           "GTAC"
+2025-03-08 01:09:47 | DEBUG    | |         ],
+2025-03-08 01:09:47 | DEBUG    | |         "bottom_strand": [
+2025-03-08 01:09:47 | DEBUG    | |           "CGTC",
+2025-03-08 01:09:47 | DEBUG    | |           "ACGT",
+2025-03-08 01:09:47 | DEBUG    | |           "TACG",
+2025-03-08 01:09:47 | DEBUG    | |           "GTAC"
+2025-03-08 01:09:47 | DEBUG    | |         ]
+2025-03-08 01:09:47 | DEBUG    | |       }
+2025-03-08 01:09:47 | DEBUG    | |     }
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Generated 3 valid alternatives
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Found 3 alternative codons
+2025-03-08 01:09:47 | INFO     | | STEP 103: Site Result - Completed analysis for site at position 1392
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "alternatives_found": 4
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Generated mutation options for 3 sites
+2025-03-08 01:09:47 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:47 | INFO     | | RESULT: {'mutation_477': {'position': 477, 'sequence': 'GAGACC', 'frame': 0, 'strand': '-', 'enzyme': 'BsaI', 'codons': [{'original_sequence': 'GAG', 'position': 477, 'amino_acid': 'E', 'alternative_codons': [{'seq': 'GAA', 'usage': 29.0, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GGAA', 'GAAA', 'AAAC', 'AACC'], 'bottom_strand': ['TTCC', 'TTTC', 'GTTT', 'GGTT']}}}]}, {'original_sequence': 'ACC', 'position': 480, 'amino_acid': 'T', 'alternative_codons': [{'seq': 'ACT', 'usage': 13.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACT', 'ACTT', 'CTTC', 'TTCC'], 'bottom_strand': ['AGTC', 'AAGT', 'GAAG', 'GGAA']}}}, {'seq': 'ACA', 'usage': 15.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACA', 'ACAT', 'CATC', 'ATCC'], 'bottom_strand': ['TGTC', 'ATGT', 'GATG', 'GGAT']}}}, {'seq': 'ACG', 'usage': 6.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACG', 'ACGT', 'CGTC', 'GTCC'], 'bottom_strand': ['CGTC', 'ACGT', 'GACG', 'GGAC']}}}]}]}, 'mutation_1203': {'position': 1203, 'sequence': 'GAGACG', 'frame': 0, 'strand': '-', 'enzyme': 'BsmBI', 'codons': [{'original_sequence': 'GAG', 'position': 1203, 'amino_acid': 'E', 'alternative_codons': [{'seq': 'GAA', 'usage': 29.0, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['CGAA', 'GAAA', 'AAAC', 'AACG'], 'bottom_strand': ['TTCG', 'TTTC', 'GTTT', 'CGTT']}}}]}, {'original_sequence': 'ACG', 'position': 1206, 'amino_acid': 'T', 'alternative_codons': [{'seq': 'ACT', 'usage': 13.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACT', 'ACTC', 'CTCT', 'TCTG'], 'bottom_strand': ['AGTC', 'GAGT', 'AGAG', 'CAGA']}}}, {'seq': 'ACC', 'usage': 18.9, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACC', 'ACCC', 'CCCT', 'CCTG'], 'bottom_strand': ['GGTC', 'GGGT', 'AGGG', 'CAGG']}}}, {'seq': 'ACA', 'usage': 15.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACA', 'ACAC', 'CACT', 'ACTG'], 'bottom_strand': ['TGTC', 'GTGT', 'AGTG', 'CAGT']}}}]}]}, 'mutation_1392': {'position': 1392, 'sequence': 'GAGACC', 'frame': 0, 'strand': '-', 'enzyme': 'BsaI', 'codons': [{'original_sequence': 'GAG', 'position': 1392, 'amino_acid': 'E', 'alternative_codons': [{'seq': 'GAA', 'usage': 29.0, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['CGAA', 'GAAA', 'AAAC', 'AACC'], 'bottom_strand': ['TTCG', 'TTTC', 'GTTT', 'GGTT']}}}]}, {'original_sequence': 'ACC', 'position': 1395, 'amino_acid': 'T', 'alternative_codons': [{'seq': 'ACT', 'usage': 13.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACT', 'ACTT', 'CTTA', 'TTAC'], 'bottom_strand': ['AGTC', 'AAGT', 'TAAG', 'GTAA']}}}, {'seq': 'ACA', 'usage': 15.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACA', 'ACAT', 'CATA', 'ATAC'], 'bottom_strand': ['TGTC', 'ATGT', 'TATG', 'GTAT']}}}, {'seq': 'ACG', 'usage': 6.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACG', 'ACGT', 'CGTA', 'GTAC'], 'bottom_strand': ['CGTC', 'ACGT', 'TACG', 'GTAC']}}}]}]}}
+2025-03-08 01:09:47 | INFO     | | COMPLETED: get_all_mutations in 0.3133 seconds
+2025-03-08 01:09:47 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:47 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:47 | INFO     | | STARTING: optimize_mutations(mutation_options={'mutation_477': {'position': 477, 'sequence': 'GAGACC', 'frame': 0, 'strand': '-', 'enzyme': 'BsaI', 'codons': [{'original_sequence': 'GAG', 'position': 477, 'amino_acid': 'E', 'alternative_codons': [{'seq': 'GAA', 'usage': 29.0, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GGAA', 'GAAA', 'AAAC', 'AACC'], 'bottom_strand': ['TTCC', 'TTTC', 'GTTT', 'GGTT']}}}]}, {'original_sequence': 'ACC', 'position': 480, 'amino_acid': 'T', 'alternative_codons': [{'seq': 'ACT', 'usage': 13.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACT', 'ACTT', 'CTTC', 'TTCC'], 'bottom_strand': ['AGTC', 'AAGT', 'GAAG', 'GGAA']}}}, {'seq': 'ACA', 'usage': 15.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACA', 'ACAT', 'CATC', 'ATCC'], 'bottom_strand': ['TGTC', 'ATGT', 'GATG', 'GGAT']}}}, {'seq': 'ACG', 'usage': 6.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACG', 'ACGT', 'CGTC', 'GTCC'], 'bottom_strand': ['CGTC', 'ACGT', 'GACG', 'GGAC']}}}]}]}, 'mutation_1203': {'position': 1203, 'sequence': 'GAGACG', 'frame': 0, 'strand': '-', 'enzyme': 'BsmBI', 'codons': [{'original_sequence': 'GAG', 'position': 1203, 'amino_acid': 'E', 'alternative_codons': [{'seq': 'GAA', 'usage': 29.0, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['CGAA', 'GAAA', 'AAAC', 'AACG'], 'bottom_strand': ['TTCG', 'TTTC', 'GTTT', 'CGTT']}}}]}, {'original_sequence': 'ACG', 'position': 1206, 'amino_acid': 'T', 'alternative_codons': [{'seq': 'ACT', 'usage': 13.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACT', 'ACTC', 'CTCT', 'TCTG'], 'bottom_strand': ['AGTC', 'GAGT', 'AGAG', 'CAGA']}}}, {'seq': 'ACC', 'usage': 18.9, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACC', 'ACCC', 'CCCT', 'CCTG'], 'bottom_strand': ['GGTC', 'GGGT', 'AGGG', 'CAGG']}}}, {'seq': 'ACA', 'usage': 15.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACA', 'ACAC', 'CACT', 'ACTG'], 'bottom_strand': ['TGTC', 'GTGT', 'AGTG', 'CAGT']}}}]}]}, 'mutation_1392': {'position': 1392, 'sequence': 'GAGACC', 'frame': 0, 'strand': '-', 'enzyme': 'BsaI', 'codons': [{'original_sequence': 'GAG', 'position': 1392, 'amino_acid': 'E', 'alternative_codons': [{'seq': 'GAA', 'usage': 29.0, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['CGAA', 'GAAA', 'AAAC', 'AACC'], 'bottom_strand': ['TTCG', 'TTTC', 'GTTT', 'GGTT']}}}]}, {'original_sequence': 'ACC', 'position': 1395, 'amino_acid': 'T', 'alternative_codons': [{'seq': 'ACT', 'usage': 13.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACT', 'ACTT', 'CTTA', 'TTAC'], 'bottom_strand': ['AGTC', 'AAGT', 'TAAG', 'GTAA']}}}, {'seq': 'ACA', 'usage': 15.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACA', 'ACAT', 'CATA', 'ATAC'], 'bottom_strand': ['TGTC', 'ATGT', 'TATG', 'GTAT']}}}, {'seq': 'ACG', 'usage': 6.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACG', 'ACGT', 'CGTA', 'GTAC'], 'bottom_strand': ['CGTC', 'ACGT', 'TACG', 'GTAC']}}}]}]}})
+2025-03-08 01:09:47 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Mutation options are valid
+2025-03-08 01:09:47 | INFO     | | STEP 1: Generate Mutation Sets - Creating all possible combinations of mutations
+2025-03-08 01:09:47 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:47 | INFO     | | STARTING: generate_mutation_sets({'mutation_477': {'position': 477, 'sequence': 'GAGACC', 'frame': 0, 'strand': '-', 'enzyme': 'BsaI', 'codons': [{'original_sequence': 'GAG', 'position': 477, 'amino_acid': 'E', 'alternative_codons': [{'seq': 'GAA', 'usage': 29.0, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GGAA', 'GAAA', 'AAAC', 'AACC'], 'bottom_strand': ['TTCC', 'TTTC', 'GTTT', 'GGTT']}}}]}, {'original_sequence': 'ACC', 'position': 480, 'amino_acid': 'T', 'alternative_codons': [{'seq': 'ACT', 'usage': 13.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACT', 'ACTT', 'CTTC', 'TTCC'], 'bottom_strand': ['AGTC', 'AAGT', 'GAAG', 'GGAA']}}}, {'seq': 'ACA', 'usage': 15.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACA', 'ACAT', 'CATC', 'ATCC'], 'bottom_strand': ['TGTC', 'ATGT', 'GATG', 'GGAT']}}}, {'seq': 'ACG', 'usage': 6.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACG', 'ACGT', 'CGTC', 'GTCC'], 'bottom_strand': ['CGTC', 'ACGT', 'GACG', 'GGAC']}}}]}]}, 'mutation_1203': {'position': 1203, 'sequence': 'GAGACG', 'frame': 0, 'strand': '-', 'enzyme': 'BsmBI', 'codons': [{'original_sequence': 'GAG', 'position': 1203, 'amino_acid': 'E', 'alternative_codons': [{'seq': 'GAA', 'usage': 29.0, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['CGAA', 'GAAA', 'AAAC', 'AACG'], 'bottom_strand': ['TTCG', 'TTTC', 'GTTT', 'CGTT']}}}]}, {'original_sequence': 'ACG', 'position': 1206, 'amino_acid': 'T', 'alternative_codons': [{'seq': 'ACT', 'usage': 13.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACT', 'ACTC', 'CTCT', 'TCTG'], 'bottom_strand': ['AGTC', 'GAGT', 'AGAG', 'CAGA']}}}, {'seq': 'ACC', 'usage': 18.9, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACC', 'ACCC', 'CCCT', 'CCTG'], 'bottom_strand': ['GGTC', 'GGGT', 'AGGG', 'CAGG']}}}, {'seq': 'ACA', 'usage': 15.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACA', 'ACAC', 'CACT', 'ACTG'], 'bottom_strand': ['TGTC', 'GTGT', 'AGTG', 'CAGT']}}}]}]}, 'mutation_1392': {'position': 1392, 'sequence': 'GAGACC', 'frame': 0, 'strand': '-', 'enzyme': 'BsaI', 'codons': [{'original_sequence': 'GAG', 'position': 1392, 'amino_acid': 'E', 'alternative_codons': [{'seq': 'GAA', 'usage': 29.0, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['CGAA', 'GAAA', 'AAAC', 'AACC'], 'bottom_strand': ['TTCG', 'TTTC', 'GTTT', 'GGTT']}}}]}, {'original_sequence': 'ACC', 'position': 1395, 'amino_acid': 'T', 'alternative_codons': [{'seq': 'ACT', 'usage': 13.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACT', 'ACTT', 'CTTA', 'TTAC'], 'bottom_strand': ['AGTC', 'AAGT', 'TAAG', 'GTAA']}}}, {'seq': 'ACA', 'usage': 15.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACA', 'ACAT', 'CATA', 'ATAC'], 'bottom_strand': ['TGTC', 'ATGT', 'TATG', 'GTAT']}}}, {'seq': 'ACG', 'usage': 6.1, 'mutations': (0, 0, 1), 'sticky_ends': {'position_2': {'top_strand': ['GACG', 'ACGT', 'CGTA', 'GTAC'], 'bottom_strand': ['CGTC', 'ACGT', 'TACG', 'GTAC']}}}]}]}})
+2025-03-08 01:09:47 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Mutation options are valid
+2025-03-08 01:09:47 | INFO     | | STEP 1: Prepare Mutation Choices - Organizing mutation choices per site
+2025-03-08 01:09:47 | INFO     | | STEP 2: Process Site - Processing site mutation_477 at position 477
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Found 4 valid mutation options for site mutation_477
+2025-03-08 01:09:47 | INFO     | | STEP 3: Process Site - Processing site mutation_1203 at position 1203
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Found 4 valid mutation options for site mutation_1203
+2025-03-08 01:09:47 | INFO     | | STEP 4: Process Site - Processing site mutation_1392 at position 1392
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Found 4 valid mutation options for site mutation_1392
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Created 64 mutation sets (expected: 64)
+2025-03-08 01:09:47 | INFO     | | STEP 5: Sample Mutation Set - Example of generated mutation set
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "sites": [
+2025-03-08 01:09:47 | INFO     | |       "mutation_477",
+2025-03-08 01:09:47 | INFO     | |       "mutation_1203",
+2025-03-08 01:09:47 | INFO     | |       "mutation_1392"
+2025-03-08 01:09:47 | INFO     | |     ],
+2025-03-08 01:09:47 | INFO     | |     "sample_mutation": {
+2025-03-08 01:09:47 | INFO     | |       "original": "GAG",
+2025-03-08 01:09:47 | INFO     | |       "alternative": "GAA",
+2025-03-08 01:09:47 | INFO     | |       "overhangs_count": 4
+2025-03-08 01:09:47 | INFO     | |     }
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:47 | INFO     | | RESULT: list of 64 items
+2025-03-08 01:09:47 | INFO     | | COMPLETED: generate_mutation_sets in 0.0040 seconds
+2025-03-08 01:09:47 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Generated 64 mutation sets
+2025-03-08 01:09:47 | INFO     | | STEP 1: Compute Compatibility - Creating compatibility matrices for mutation sets
+2025-03-08 01:09:47 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:47 | INFO     | | STARTING: create_compatibility_matrices(list of 64 items)
+2025-03-08 01:09:47 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:47 | INFO     | | VALIDATION PASS: Processing 64 mutation sets
+2025-03-08 01:09:47 | INFO     | | STEP 1: Matrix Creation - Creating compatibility matrices for each mutation set
+2025-03-08 01:09:47 | INFO     | | STEP 2: Process Set - Creating matrix for mutation set 1
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "sites": [
+2025-03-08 01:09:47 | INFO     | |       "mutation_477",
+2025-03-08 01:09:47 | INFO     | |       "mutation_1203",
+2025-03-08 01:09:47 | INFO     | |       "mutation_1392"
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 3: Matrix Shape - Creating matrix with shape (4, 4, 4)
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "overhangs_per_site": [
+2025-03-08 01:09:47 | INFO     | |       4,
+2025-03-08 01:09:47 | INFO     | |       4,
+2025-03-08 01:09:47 | INFO     | |       4
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 4: Incompatible Combination - Sample incompatible overhang set
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "overhangs": [
+2025-03-08 01:09:47 | DEBUG    | |       "GGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "CGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "CGAA"
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "reason": "Multiple overhangs share the triplet 'GAA'."
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 5: Incompatible Combination - Sample incompatible overhang set
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "overhangs": [
+2025-03-08 01:09:47 | DEBUG    | |       "GGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "CGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "GAAA"
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "reason": "Multiple overhangs share the triplet 'GAA'."
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 6: Incompatible Combination - Sample incompatible overhang set
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "overhangs": [
+2025-03-08 01:09:47 | DEBUG    | |       "GGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "CGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "AAAC"
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "reason": "Multiple overhangs share the triplet 'GAA'."
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 7: Incompatible Combination - Sample incompatible overhang set
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "overhangs": [
+2025-03-08 01:09:47 | DEBUG    | |       "GGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "CGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "AACC"
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "reason": "Multiple overhangs share the triplet 'GAA'."
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 8: Incompatible Combination - Sample incompatible overhang set
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "overhangs": [
+2025-03-08 01:09:47 | DEBUG    | |       "GGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "GAAA",
+2025-03-08 01:09:47 | DEBUG    | |       "CGAA"
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "reason": "Multiple overhangs share the triplet 'GAA'."
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 9: Matrix Stats - Matrix 1 has 0 valid combinations out of 64
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "valid_percentage": "0.00%"
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 10: Process Set - Creating matrix for mutation set 2
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "sites": [
+2025-03-08 01:09:47 | INFO     | |       "mutation_477",
+2025-03-08 01:09:47 | INFO     | |       "mutation_1203",
+2025-03-08 01:09:47 | INFO     | |       "mutation_1392"
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 11: Matrix Shape - Creating matrix with shape (4, 4, 4)
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "overhangs_per_site": [
+2025-03-08 01:09:47 | INFO     | |       4,
+2025-03-08 01:09:47 | INFO     | |       4,
+2025-03-08 01:09:47 | INFO     | |       4
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 12: Incompatible Combination - Sample incompatible overhang set
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "overhangs": [
+2025-03-08 01:09:47 | DEBUG    | |       "GGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "CGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "GACT"
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "reason": "Multiple overhangs share the triplet 'GAA'."
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 13: Incompatible Combination - Sample incompatible overhang set
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "overhangs": [
+2025-03-08 01:09:47 | DEBUG    | |       "GGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "CGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "ACTT"
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "reason": "Multiple overhangs share the triplet 'GAA'."
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 14: Incompatible Combination - Sample incompatible overhang set
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "overhangs": [
+2025-03-08 01:09:47 | DEBUG    | |       "GGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "CGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "CTTA"
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "reason": "Multiple overhangs share the triplet 'GAA'."
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 15: Incompatible Combination - Sample incompatible overhang set
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "overhangs": [
+2025-03-08 01:09:47 | DEBUG    | |       "GGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "CGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "TTAC"
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "reason": "Multiple overhangs share the triplet 'GAA'."
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 16: Incompatible Combination - Sample incompatible overhang set
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "overhangs": [
+2025-03-08 01:09:47 | DEBUG    | |       "GGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "GAAA",
+2025-03-08 01:09:47 | DEBUG    | |       "GACT"
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "reason": "Multiple overhangs share the triplet 'GAA'."
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 17: Matrix Stats - Matrix 2 has 8 valid combinations out of 64
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "valid_percentage": "12.50%"
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 18: Process Set - Creating matrix for mutation set 3
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "sites": [
+2025-03-08 01:09:47 | INFO     | |       "mutation_477",
+2025-03-08 01:09:47 | INFO     | |       "mutation_1203",
+2025-03-08 01:09:47 | INFO     | |       "mutation_1392"
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 19: Matrix Shape - Creating matrix with shape (4, 4, 4)
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "overhangs_per_site": [
+2025-03-08 01:09:47 | INFO     | |       4,
+2025-03-08 01:09:47 | INFO     | |       4,
+2025-03-08 01:09:47 | INFO     | |       4
+2025-03-08 01:09:47 | INFO     | |     ]
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 20: Incompatible Combination - Sample incompatible overhang set
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "overhangs": [
+2025-03-08 01:09:47 | DEBUG    | |       "GGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "CGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "GACA"
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "reason": "Multiple overhangs share the triplet 'GAA'."
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 21: Incompatible Combination - Sample incompatible overhang set
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "overhangs": [
+2025-03-08 01:09:47 | DEBUG    | |       "GGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "CGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "ACAT"
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "reason": "Multiple overhangs share the triplet 'GAA'."
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 22: Incompatible Combination - Sample incompatible overhang set
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "overhangs": [
+2025-03-08 01:09:47 | DEBUG    | |       "GGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "CGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "CATA"
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "reason": "Multiple overhangs share the triplet 'GAA'."
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 23: Incompatible Combination - Sample incompatible overhang set
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "overhangs": [
+2025-03-08 01:09:47 | DEBUG    | |       "GGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "CGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "ATAC"
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "reason": "Multiple overhangs share the triplet 'GAA'."
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | DEBUG    | | STEP 24: Incompatible Combination - Sample incompatible overhang set
+2025-03-08 01:09:47 | DEBUG    | |   {
+2025-03-08 01:09:47 | DEBUG    | |     "overhangs": [
+2025-03-08 01:09:47 | DEBUG    | |       "GGAA",
+2025-03-08 01:09:47 | DEBUG    | |       "GAAA",
+2025-03-08 01:09:47 | DEBUG    | |       "GACA"
+2025-03-08 01:09:47 | DEBUG    | |     ],
+2025-03-08 01:09:47 | DEBUG    | |     "reason": "Multiple overhangs share the triplet 'GAA'."
+2025-03-08 01:09:47 | DEBUG    | |   }
+2025-03-08 01:09:47 | INFO     | | STEP 25: Matrix Stats - Matrix 3 has 8 valid combinations out of 64
+2025-03-08 01:09:47 | INFO     | |   {
+2025-03-08 01:09:47 | INFO     | |     "valid_percentage": "12.50%"
+2025-03-08 01:09:47 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Found 1510 compatible combinations out of 4096 total
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | RESULT: list of 64 items
+2025-03-08 01:09:48 | INFO     | | COMPLETED: create_compatibility_matrices in 0.0880 seconds
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Created 64 compatibility matrices, 63 have valid combinations
+2025-03-08 01:09:48 | INFO     | | STEP 2: Matrix Visualization - Sample compatibility matrix (set #2)
+2025-03-08 01:09:48 | INFO     | |   Matrix shape: (4, 4, 4), non-zero: 8
+2025-03-08 01:09:48 | INFO     | | STEP 3: Filter Compatible Mutations - Removing mutation sets with no valid compatibility
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | STARTING: filter_compatible_mutations(list of 64 items, list of 64 items)
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Input: 64 mutation sets
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Input: 64 compatibility matrices
+2025-03-08 01:09:48 | INFO     | | STEP 1: Filter Sets - Identifying mutation sets with no valid combinations
+2025-03-08 01:09:48 | INFO     | | STEP 2: Remove Sets - Will remove 1 sets with all-zero matrices
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "percentage": "1.56%"
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Successfully filtered: 63 sets remaining
+2025-03-08 01:09:48 | INFO     | | STEP 3: Sample Result - Example of remaining valid mutation set
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "sites": [
+2025-03-08 01:09:48 | INFO     | |       "mutation_477",
+2025-03-08 01:09:48 | INFO     | |       "mutation_1203",
+2025-03-08 01:09:48 | INFO     | |       "mutation_1392"
+2025-03-08 01:09:48 | INFO     | |     ],
+2025-03-08 01:09:48 | INFO     | |     "mutations": {
+2025-03-08 01:09:48 | INFO     | |       "mutation_477": "GAA",
+2025-03-08 01:09:48 | INFO     | |       "mutation_1203": "GAA",
+2025-03-08 01:09:48 | INFO     | |       "mutation_1392": "ACT"
+2025-03-08 01:09:48 | INFO     | |     }
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | RESULT: list of 63 items
+2025-03-08 01:09:48 | INFO     | | COMPLETED: filter_compatible_mutations in 0.0060 seconds
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Final result: 63 optimized mutation sets
+2025-03-08 01:09:48 | INFO     | ----------------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | VALIDATION SUMMARY
+2025-03-08 01:09:48 | INFO     | ----------------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | None: ALL PASS (5/5)
+2025-03-08 01:09:48 | INFO     | optimize_mutations: ALL PASS (1/1)
+2025-03-08 01:09:48 | INFO     | generate_mutation_sets: ALL PASS (5/5)
+2025-03-08 01:09:48 | INFO     | create_compatibility_matrices: ALL PASS (2/2)
+2025-03-08 01:09:48 | INFO     | filter_compatible_mutations: ALL PASS (3/3)
+2025-03-08 01:09:48 | INFO     | ALL VALIDATIONS PASSED
+2025-03-08 01:09:48 | INFO     | ----------------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | RESULT: (list of 63 items, list of 63 items)
+2025-03-08 01:09:48 | INFO     | | COMPLETED: optimize_mutations in 0.1086 seconds
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | STARTING: design_mutation_primers(full_sequence='ACCGAGTACAAGCCCACGGTGCGCCTCGCCACCCGCGACGACGTCCC...', mutation_sets=list of 63 items, comp_matrices=list of 63 items, primer_name='Test 1')
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Input sequence is valid
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Received 63 mutation sets
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Received 63 compatibility matrices
+2025-03-08 01:09:48 | INFO     | | STEP 1: Process Mutation Set - Processing mutation set 1/63
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "sites": [
+2025-03-08 01:09:48 | INFO     | |       "mutation_477",
+2025-03-08 01:09:48 | INFO     | |       "mutation_1203",
+2025-03-08 01:09:48 | INFO     | |       "mutation_1392"
+2025-03-08 01:09:48 | INFO     | |     ]
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Found 8 valid overhang combinations
+2025-03-08 01:09:48 | INFO     | | STEP 2: Matrix Visualization - Compatibility matrix for set 1
+2025-03-08 01:09:48 | INFO     | |   Matrix shape: (4, 4, 4), non-zero: 8
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | STARTING: _apply_mutations('ACCGAGTACAAGCCCACGGTGCGCCTCGCCACCCGCGACGACGTCCC...', {'mutation_477': {'site': 'mutation_477', 'position': 477, 'original_sequence': 'GAG', 'alternative_sequence': 'GAA', 'mutated_base_index': 0, 'usage': 29.0, 'overhangs': {'overhang_options': [{'top_overhang': 'GGAA', 'bottom_overhang': 'TTCC', 'top_extended': 'AGGAAT', 'bottom_extended': 'ATTCCT'}, {'top_overhang': 'GAAA', 'bottom_overhang': 'TTTC', 'top_extended': 'AGAAAT', 'bottom_extended': 'ATTTCT'}, {'top_overhang': 'AAAC', 'bottom_overhang': 'GTTT', 'top_extended': 'AAAACT', 'bottom_extended': 'AGTTTT'}, {'top_overhang': 'AACC', 'bottom_overhang': 'GGTT', 'top_extended': 'AAACCT', 'bottom_extended': 'AGGTTT'}]}}, 'mutation_1203': {'site': 'mutation_1203', 'position': 1203, 'original_sequence': 'GAG', 'alternative_sequence': 'GAA', 'mutated_base_index': 0, 'usage': 29.0, 'overhangs': {'overhang_options': [{'top_overhang': 'CGAA', 'bottom_overhang': 'TTCG', 'top_extended': 'ACGAAT', 'bottom_extended': 'ATTCGT'}, {'top_overhang': 'GAAA', 'bottom_overhang': 'TTTC', 'top_extended': 'AGAAAT', 'bottom_extended': 'ATTTCT'}, {'top_overhang': 'AAAC', 'bottom_overhang': 'GTTT', 'top_extended': 'AAAACT', 'bottom_extended': 'AGTTTT'}, {'top_overhang': 'AACG', 'bottom_overhang': 'CGTT', 'top_extended': 'AAACGT', 'bottom_extended': 'ACGTTT'}]}}, 'mutation_1392': {'site': 'mutation_1392', 'position': 1392, 'original_sequence': 'ACC', 'alternative_sequence': 'ACT', 'mutated_base_index': 3, 'usage': 13.1, 'overhangs': {'overhang_options': [{'top_overhang': 'GACT', 'bottom_overhang': 'AGTC', 'top_extended': 'AGACTT', 'bottom_extended': 'AAGTCT'}, {'top_overhang': 'ACTT', 'bottom_overhang': 'AAGT', 'top_extended': 'AACTTT', 'bottom_extended': 'AAAGTT'}, {'top_overhang': 'CTTA', 'bottom_overhang': 'TAAG', 'top_extended': 'ACTTAT', 'bottom_extended': 'ATAAGT'}, {'top_overhang': 'TTAC', 'bottom_overhang': 'GTAA', 'top_extended': 'ATTACT', 'bottom_extended': 'AGTAAT'}]}}})
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | STEP 1: Apply Mutations - Applying 3 mutations to sequence
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "sequence_length": 1713
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | STEP 2: Mutation Details - Applying mutation at site mutation_477, position 477
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "original": "GAG",
+2025-03-08 01:09:48 | INFO     | |     "alternative": "GAA",
+2025-03-08 01:09:48 | INFO     | |     "context": "TTCCTGGAGACCT"
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | STEP 3: Mutation Detail - Mutated base at position 478: G -> A
+2025-03-08 01:09:48 | INFO     | | STEP 4: Mutation Details - Applying mutation at site mutation_1203, position 1203
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "original": "GAG",
+2025-03-08 01:09:48 | INFO     | |     "alternative": "GAA",
+2025-03-08 01:09:48 | INFO     | |     "context": "TTCACCGAGACGC"
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | STEP 5: Mutation Detail - Mutated base at position 1203: C -> G
+2025-03-08 01:09:48 | INFO     | | STEP 6: Mutation Detail - Mutated base at position 1204: G -> A
+2025-03-08 01:09:48 | INFO     | | STEP 7: Mutation Details - Applying mutation at site mutation_1392, position 1392
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "original": "ACC",
+2025-03-08 01:09:48 | INFO     | |     "alternative": "ACT",
+2025-03-08 01:09:48 | INFO     | |     "context": "AACAACGAGACCT"
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | STEP 8: Mutation Detail - Mutated base at position 1392: C -> A
+2025-03-08 01:09:48 | INFO     | | STEP 9: Mutation Detail - Mutated base at position 1393: G -> C
+2025-03-08 01:09:48 | INFO     | | STEP 10: Mutation Detail - Mutated base at position 1394: A -> T
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Mutation applied successfully, sequence length preserved
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | RESULT: 'ACCGAGTACAAGCCCACGGTGCGCCTCGCCACCCGCGACGACGTCCC...'
+2025-03-08 01:09:48 | INFO     | | COMPLETED: _apply_mutations in 0.0077 seconds
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Successfully applied mutations to sequence
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | STARTING: _construct_mutation_primers(original_seq='ACCGAGTACAAGCCCACGGTGCGCCTCGCCACCCGCGACGACGTCCC...', mutated_seq='ACCGAGTACAAGCCCACGGTGCGCCTCGCCACCCGCGACGACGTCCC...', mutation_set={'mutation_477': {'site': 'mutation_477', 'position': 477, 'original_sequence': 'GAG', 'alternative_sequence': 'GAA', 'mutated_base_index': 0, 'usage': 29.0, 'overhangs': {'overhang_options': [{'top_overhang': 'GGAA', 'bottom_overhang': 'TTCC', 'top_extended': 'AGGAAT', 'bottom_extended': 'ATTCCT'}, {'top_overhang': 'GAAA', 'bottom_overhang': 'TTTC', 'top_extended': 'AGAAAT', 'bottom_extended': 'ATTTCT'}, {'top_overhang': 'AAAC', 'bottom_overhang': 'GTTT', 'top_extended': 'AAAACT', 'bottom_extended': 'AGTTTT'}, {'top_overhang': 'AACC', 'bottom_overhang': 'GGTT', 'top_extended': 'AAACCT', 'bottom_extended': 'AGGTTT'}]}}, 'mutation_1203': {'site': 'mutation_1203', 'position': 1203, 'original_sequence': 'GAG', 'alternative_sequence': 'GAA', 'mutated_base_index': 0, 'usage': 29.0, 'overhangs': {'overhang_options': [{'top_overhang': 'CGAA', 'bottom_overhang': 'TTCG', 'top_extended': 'ACGAAT', 'bottom_extended': 'ATTCGT'}, {'top_overhang': 'GAAA', 'bottom_overhang': 'TTTC', 'top_extended': 'AGAAAT', 'bottom_extended': 'ATTTCT'}, {'top_overhang': 'AAAC', 'bottom_overhang': 'GTTT', 'top_extended': 'AAAACT', 'bottom_extended': 'AGTTTT'}, {'top_overhang': 'AACG', 'bottom_overhang': 'CGTT', 'top_extended': 'AAACGT', 'bottom_extended': 'ACGTTT'}]}}, 'mutation_1392': {'site': 'mutation_1392', 'position': 1392, 'original_sequence': 'ACC', 'alternative_sequence': 'ACT', 'mutated_base_index': 3, 'usage': 13.1, 'overhangs': {'overhang_options': [{'top_overhang': 'GACT', 'bottom_overhang': 'AGTC', 'top_extended': 'AGACTT', 'bottom_extended': 'AAGTCT'}, {'top_overhang': 'ACTT', 'bottom_overhang': 'AAGT', 'top_extended': 'AACTTT', 'bottom_extended': 'AAAGTT'}, {'top_overhang': 'CTTA', 'bottom_overhang': 'TAAG', 'top_extended': 'ACTTAT', 'bottom_extended': 'ATAAGT'}, {'top_overhang': 'TTAC', 'bottom_overhang': 'GTAA', 'top_extended': 'ATTACT', 'bottom_extended': 'AGTAAT'}]}}}, valid_coords=ndarray shape=(3,), primer_name='Test 1')
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | STEP 1: Construct Primers - Constructing primers with flank length 10
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "selected_coord": "[0 3 0]"
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | STEP 2: Design Primer Pair - Designing primers for site mutation_477 at position 477
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "mutation": "GAA"
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | STARTING: _construct_primer('ACCGAGTACAAGCCCACGGTGCGCCTCGCCACCCGCGACGACGTCCC...', 476, dict with 7 keys, 0, 10, is_reverse=False, primer_name='Test 1')
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | STEP 1: Construct Forward Primer - Designing forward primer at position 477
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "flank": 10,
+2025-03-08 01:09:48 | INFO     | |     "selected_coord": "0"
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Primer contains valid binding region
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | RESULT: ('Test 1_FW', 'GAACGTCTCAGGAATCCGCCTTCCTGAAGACCTCCGCG')
+2025-03-08 01:09:48 | INFO     | | COMPLETED: _construct_primer in 0.0020 seconds
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | STARTING: _construct_primer('ACCGAGTACAAGCCCACGGTGCGCCTCGCCACCCGCGACGACGTCCC...', 476, dict with 7 keys, 0, 10, is_reverse=True, primer_name='Test 1')
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | STEP 2: Construct Reverse Primer - Designing reverse primer at position 477
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "flank": 10,
+2025-03-08 01:09:48 | INFO     | |     "selected_coord": "0"
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Primer contains valid binding region
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | RESULT: ('Test 1_RV', 'GAACGTCTCATTCCTCGCGGAGGTCTTCAGGAAGGCGG')
+2025-03-08 01:09:48 | INFO     | | COMPLETED: _construct_primer in 0.0016 seconds
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | STEP 1: Design Primer Pair - Designing primers for site mutation_1203 at position 1203
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "mutation": "GAA"
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | STARTING: _construct_primer('ACCGAGTACAAGCCCACGGTGCGCCTCGCCACCCGCGACGACGTCCC...', 1202, dict with 7 keys, 0, 10, is_reverse=False, primer_name='Test 1')
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | STEP 3: Construct Forward Primer - Designing forward primer at position 1203
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "flank": 10,
+2025-03-08 01:09:48 | INFO     | |     "selected_coord": "0"
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Primer contains valid binding region
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | RESULT: ('Test 1_FW', 'GAACGTCTCACGAATAGGCCTTCACGAAGACGCTGTAC')
+2025-03-08 01:09:48 | INFO     | | COMPLETED: _construct_primer in 0.0020 seconds
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | STARTING: _construct_primer('ACCGAGTACAAGCCCACGGTGCGCCTCGCCACCCGCGACGACGTCCC...', 1202, dict with 7 keys, 0, 10, is_reverse=True, primer_name='Test 1')
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | STEP 4: Construct Reverse Primer - Designing reverse primer at position 1203
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "flank": 10,
+2025-03-08 01:09:48 | INFO     | |     "selected_coord": "0"
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Primer contains valid binding region
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | RESULT: ('Test 1_RV', 'GAACGTCTCATTCGTGTACAGCGTCTTCGTGAAGGCCT')
+2025-03-08 01:09:48 | INFO     | | COMPLETED: _construct_primer in 0.0010 seconds
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | STEP 2: Design Primer Pair - Designing primers for site mutation_1392 at position 1392
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "mutation": "ACT"
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | STARTING: _construct_primer('ACCGAGTACAAGCCCACGGTGCGCCTCGCCACCCGCGACGACGTCCC...', 1391, dict with 7 keys, 0, 10, is_reverse=False, primer_name='Test 1')
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | STEP 5: Construct Forward Primer - Designing forward primer at position 1392
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "flank": 10,
+2025-03-08 01:09:48 | INFO     | |     "selected_coord": "0"
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Primer contains valid binding region
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | RESULT: ('Test 1_FW', 'GAACGTCTCAGACTTAGGCCAACAAACTGACCTACGTC')
+2025-03-08 01:09:48 | INFO     | | COMPLETED: _construct_primer in 0.0025 seconds
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | STARTING: _construct_primer('ACCGAGTACAAGCCCACGGTGCGCCTCGCCACCCGCGACGACGTCCC...', 1391, dict with 7 keys, 0, 10, is_reverse=True, primer_name='Test 1')
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | STEP 6: Construct Reverse Primer - Designing reverse primer at position 1392
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "flank": 10,
+2025-03-08 01:09:48 | INFO     | |     "selected_coord": "0"
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Primer contains valid binding region
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | RESULT: ('Test 1_RV', 'GAACGTCTCAAGTCTGACGTAGGTCAGTTTGTTGGCCT')
+2025-03-08 01:09:48 | INFO     | | COMPLETED: _construct_primer in 0.0021 seconds
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Successfully created 3 primer pairs
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | RESULT: [MutationPrimer(site='mutation_477', position=477, forward=Primer(name='Test 1_FW', sequence='GAACGTCTCAGGAATCCGCCTTCCTGAAGACCTCCGCG', binding_region=None, tm=None, gc_content=None, length=None), reverse=Primer(name='Test 1_RV', sequence='GAACGTCTCATTCCTCGCGGAGGTCTTCAGGAAGGCGG', binding_region=None, tm=None, gc_content=None, length=None), mutation_info={'site': 'mutation_477', 'position': 477, 'original_sequence': 'GAG', 'alternative_sequence': 'GAA', 'mutated_base_index': 0, 'usage': 29.0, 'overhangs': {'overhang_options': [{'top_overhang': 'GGAA', 'bottom_overhang': 'TTCC', 'top_extended': 'AGGAAT', 'bottom_extended': 'ATTCCT'}, {'top_overhang': 'GAAA', 'bottom_overhang': 'TTTC', 'top_extended': 'AGAAAT', 'bottom_extended': 'ATTTCT'}, {'top_overhang': 'AAAC', 'bottom_overhang': 'GTTT', 'top_extended': 'AAAACT', 'bottom_extended': 'AGTTTT'}, {'top_overhang': 'AACC', 'bottom_overhang': 'GGTT', 'top_extended': 'AAACCT', 'bottom_extended': 'AGGTTT'}]}}), MutationPrimer(site='mutation_1203', position=1203, forward=Primer(name='Test 1_FW', sequence='GAACGTCTCACGAATAGGCCTTCACGAAGACGCTGTAC', binding_region=None, tm=None, gc_content=None, length=None), reverse=Primer(name='Test 1_RV', sequence='GAACGTCTCATTCGTGTACAGCGTCTTCGTGAAGGCCT', binding_region=None, tm=None, gc_content=None, length=None), mutation_info={'site': 'mutation_1203', 'position': 1203, 'original_sequence': 'GAG', 'alternative_sequence': 'GAA', 'mutated_base_index': 0, 'usage': 29.0, 'overhangs': {'overhang_options': [{'top_overhang': 'CGAA', 'bottom_overhang': 'TTCG', 'top_extended': 'ACGAAT', 'bottom_extended': 'ATTCGT'}, {'top_overhang': 'GAAA', 'bottom_overhang': 'TTTC', 'top_extended': 'AGAAAT', 'bottom_extended': 'ATTTCT'}, {'top_overhang': 'AAAC', 'bottom_overhang': 'GTTT', 'top_extended': 'AAAACT', 'bottom_extended': 'AGTTTT'}, {'top_overhang': 'AACG', 'bottom_overhang': 'CGTT', 'top_extended': 'AAACGT', 'bottom_extended': 'ACGTTT'}]}}), MutationPrimer(site='mutation_1392', position=1392, forward=Primer(name='Test 1_FW', sequence='GAACGTCTCAGACTTAGGCCAACAAACTGACCTACGTC', binding_region=None, tm=None, gc_content=None, length=None), reverse=Primer(name='Test 1_RV', sequence='GAACGTCTCAAGTCTGACGTAGGTCAGTTTGTTGGCCT', binding_region=None, tm=None, gc_content=None, length=None), mutation_info={'site': 'mutation_1392', 'position': 1392, 'original_sequence': 'ACC', 'alternative_sequence': 'ACT', 'mutated_base_index': 3, 'usage': 13.1, 'overhangs': {'overhang_options': [{'top_overhang': 'GACT', 'bottom_overhang': 'AGTC', 'top_extended': 'AGACTT', 'bottom_extended': 'AAGTCT'}, {'top_overhang': 'ACTT', 'bottom_overhang': 'AAGT', 'top_extended': 'AACTTT', 'bottom_extended': 'AAAGTT'}, {'top_overhang': 'CTTA', 'bottom_overhang': 'TAAG', 'top_extended': 'ACTTAT', 'bottom_extended': 'ATAAGT'}, {'top_overhang': 'TTAC', 'bottom_overhang': 'GTAA', 'top_extended': 'ATTACT', 'bottom_extended': 'AGTAAT'}]}})]
+2025-03-08 01:09:48 | INFO     | | COMPLETED: _construct_mutation_primers in 0.0189 seconds
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Successfully constructed mutation primers
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | RESULT: [MutationPrimer(site='mutation_477', position=477, forward=Primer(name='Test 1_FW', sequence='GAACGTCTCAGGAATCCGCCTTCCTGAAGACCTCCGCG', binding_region=None, tm=None, gc_content=None, length=None), reverse=Primer(name='Test 1_RV', sequence='GAACGTCTCATTCCTCGCGGAGGTCTTCAGGAAGGCGG', binding_region=None, tm=None, gc_content=None, length=None), mutation_info={'site': 'mutation_477', 'position': 477, 'original_sequence': 'GAG', 'alternative_sequence': 'GAA', 'mutated_base_index': 0, 'usage': 29.0, 'overhangs': {'overhang_options': [{'top_overhang': 'GGAA', 'bottom_overhang': 'TTCC', 'top_extended': 'AGGAAT', 'bottom_extended': 'ATTCCT'}, {'top_overhang': 'GAAA', 'bottom_overhang': 'TTTC', 'top_extended': 'AGAAAT', 'bottom_extended': 'ATTTCT'}, {'top_overhang': 'AAAC', 'bottom_overhang': 'GTTT', 'top_extended': 'AAAACT', 'bottom_extended': 'AGTTTT'}, {'top_overhang': 'AACC', 'bottom_overhang': 'GGTT', 'top_extended': 'AAACCT', 'bottom_extended': 'AGGTTT'}]}}), MutationPrimer(site='mutation_1203', position=1203, forward=Primer(name='Test 1_FW', sequence='GAACGTCTCACGAATAGGCCTTCACGAAGACGCTGTAC', binding_region=None, tm=None, gc_content=None, length=None), reverse=Primer(name='Test 1_RV', sequence='GAACGTCTCATTCGTGTACAGCGTCTTCGTGAAGGCCT', binding_region=None, tm=None, gc_content=None, length=None), mutation_info={'site': 'mutation_1203', 'position': 1203, 'original_sequence': 'GAG', 'alternative_sequence': 'GAA', 'mutated_base_index': 0, 'usage': 29.0, 'overhangs': {'overhang_options': [{'top_overhang': 'CGAA', 'bottom_overhang': 'TTCG', 'top_extended': 'ACGAAT', 'bottom_extended': 'ATTCGT'}, {'top_overhang': 'GAAA', 'bottom_overhang': 'TTTC', 'top_extended': 'AGAAAT', 'bottom_extended': 'ATTTCT'}, {'top_overhang': 'AAAC', 'bottom_overhang': 'GTTT', 'top_extended': 'AAAACT', 'bottom_extended': 'AGTTTT'}, {'top_overhang': 'AACG', 'bottom_overhang': 'CGTT', 'top_extended': 'AAACGT', 'bottom_extended': 'ACGTTT'}]}}), MutationPrimer(site='mutation_1392', position=1392, forward=Primer(name='Test 1_FW', sequence='GAACGTCTCAGACTTAGGCCAACAAACTGACCTACGTC', binding_region=None, tm=None, gc_content=None, length=None), reverse=Primer(name='Test 1_RV', sequence='GAACGTCTCAAGTCTGACGTAGGTCAGTTTGTTGGCCT', binding_region=None, tm=None, gc_content=None, length=None), mutation_info={'site': 'mutation_1392', 'position': 1392, 'original_sequence': 'ACC', 'alternative_sequence': 'ACT', 'mutated_base_index': 3, 'usage': 13.1, 'overhangs': {'overhang_options': [{'top_overhang': 'GACT', 'bottom_overhang': 'AGTC', 'top_extended': 'AGACTT', 'bottom_extended': 'AAGTCT'}, {'top_overhang': 'ACTT', 'bottom_overhang': 'AAGT', 'top_extended': 'AACTTT', 'bottom_extended': 'AAAGTT'}, {'top_overhang': 'CTTA', 'bottom_overhang': 'TAAG', 'top_extended': 'ACTTAT', 'bottom_extended': 'ATAAGT'}, {'top_overhang': 'TTAC', 'bottom_overhang': 'GTAA', 'top_extended': 'ATTACT', 'bottom_extended': 'AGTAAT'}]}})]
+2025-03-08 01:09:48 | INFO     | | COMPLETED: design_mutation_primers in 0.0316 seconds
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | STARTING: generate_GG_edge_primers(0, 'ACCGAGTACAAGCCCACGGTGCGCCTCGCCACCCGCGACGACGTCCC...', '6', '6', 'Test 1')
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | STEP 1: Generate Edge Primers - Generating primers for sequence 0
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "sequence_length": 1713,
+2025-03-08 01:09:48 | INFO     | |     "left_part": "6",
+2025-03-08 01:09:48 | INFO     | |     "right_part": "6"
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | STEP 2: Calculate Primer Length - Determining optimal forward primer length from position 0
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "sequence_length": 1713
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | STEP 3: Length Iteration - Testing length 18
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "sequence": "ACCGAGTACAAGCCCACG",
+2025-03-08 01:09:48 | INFO     | |     "tm": 52.6,
+2025-03-08 01:09:48 | INFO     | |     "target": 60
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | STEP 4: Length Iteration - Testing length 19
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "sequence": "ACCGAGTACAAGCCCACGG",
+2025-03-08 01:09:48 | INFO     | |     "tm": 55.41,
+2025-03-08 01:09:48 | INFO     | |     "target": 60
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | STEP 5: Length Iteration - Testing length 20
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "sequence": "ACCGAGTACAAGCCCACGGT",
+2025-03-08 01:09:48 | INFO     | |     "tm": 55.88,
+2025-03-08 01:09:48 | INFO     | |     "target": 60
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | STEP 6: Length Iteration - Testing length 21
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "sequence": "ACCGAGTACAAGCCCACGGTG",
+2025-03-08 01:09:48 | INFO     | |     "tm": 58.26,
+2025-03-08 01:09:48 | INFO     | |     "target": 60
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | STEP 7: Length Iteration - Testing length 22
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "sequence": "ACCGAGTACAAGCCCACGGTGC",
+2025-03-08 01:09:48 | INFO     | |     "tm": 60.43,
+2025-03-08 01:09:48 | INFO     | |     "target": 60
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Calculated optimal primer length: 22
+2025-03-08 01:09:48 | INFO     | | STEP 8: Calculate Primer Length - Determining optimal reverse primer length from position 1713
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "sequence_length": 1713
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | STEP 9: Length Iteration - Testing length 18
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "sequence": "GATGCGGTGGGCTCTATG",
+2025-03-08 01:09:48 | INFO     | |     "tm": 52.6,
+2025-03-08 01:09:48 | INFO     | |     "target": 60
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | STEP 10: Length Iteration - Testing length 19
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "sequence": "GGATGCGGTGGGCTCTATG",
+2025-03-08 01:09:48 | INFO     | |     "tm": 55.41,
+2025-03-08 01:09:48 | INFO     | |     "target": 60
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | STEP 11: Length Iteration - Testing length 20
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "sequence": "GGGATGCGGTGGGCTCTATG",
+2025-03-08 01:09:48 | INFO     | |     "tm": 57.93,
+2025-03-08 01:09:48 | INFO     | |     "target": 60
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | STEP 12: Length Iteration - Testing length 21
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "sequence": "GGGGATGCGGTGGGCTCTATG",
+2025-03-08 01:09:48 | INFO     | |     "tm": 60.21,
+2025-03-08 01:09:48 | INFO     | |     "target": 60
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Calculated optimal primer length: 21
+2025-03-08 01:09:48 | INFO     | | STEP 13: Calculated Lengths - Determined optimal primer lengths
+2025-03-08 01:09:48 | INFO     | |   {
+2025-03-08 01:09:48 | INFO     | |     "forward_length": 22,
+2025-03-08 01:09:48 | INFO     | |     "reverse_length": 21
+2025-03-08 01:09:48 | INFO     | |   }
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Successfully retrieved MTK part end overhangs
+2025-03-08 01:09:48 | INFO     | | VALIDATION PASS: Successfully created edge primers
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------
+2025-03-08 01:09:48 | INFO     | | RESULT: {'forward_primer': {'name': 'Test 1_F', 'sequence': 'GCATCGTCTCATCGGTCTCATACAACCGAGTACAAGCCCACGGTGC', 'binding_region': 'ACCGAGTACAAGCCCACGGTGC', 'tm': 60.43, 'gc_content': 63.63636363636363, 'length': 46}, 'reverse_primer': {'name': 'Test 1_R', 'sequence': 'ATGCCGTCTCAGGTCTCAACTCCATAGAGCCCACCGCATCCCC', 'binding_region': 'CATAGAGCCCACCGCATCCCC', 'tm': 60.21, 'gc_content': 66.66666666666666, 'length': 43}, 'product_size': 1713}
+2025-03-08 01:09:48 | INFO     | | COMPLETED: generate_GG_edge_primers in 0.0161 seconds
+2025-03-08 01:09:48 | INFO     | +------------------------------------------------------------

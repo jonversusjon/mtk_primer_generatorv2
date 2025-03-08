@@ -43,7 +43,8 @@ class GoldenGateProtocol:
         self.mutation_analyzer = MutationAnalyzer(
             codon_usage_dict=codon_usage_dict,
             max_mutations=max_mutations,
-            verbose=verbose
+            verbose=verbose,
+            debug=True,
         )
 
         self.sequencesToDomesticate = sequencesToDomesticate
@@ -112,13 +113,13 @@ class GoldenGateProtocol:
             if sites_to_mutate:
 
                 with debug_context("Mutation analysis"):
-                    mutation_options = self.mutation_analyzer.get_all_mutations(
-                        sites_to_mutate)
+                    mutation_options = self.mutation_analyzer.get_all_mutations(single_seq,
+                                                                                sites_to_mutate)
                     optimized_mutations, compatibility_matrices = None, None
 
                     if mutation_options:
                         optimized_mutations, compatibility_matrices = self.mutation_optimizer.optimize_mutations(
-                            sequence=processed_seq, mutation_options=mutation_options
+                            mutation_options=mutation_options
                         )
 
                         sequence_data["mutations"] = {

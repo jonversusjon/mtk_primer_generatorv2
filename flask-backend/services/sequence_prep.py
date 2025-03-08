@@ -142,7 +142,8 @@ class SequencePreparator:
                     codon_dict["codon_seq"] = str(codon_seq)
                     codon_dict["amino_acid"] = translation_table.forward_table.get(
                         str(codon_seq), 'X')
-                    codon_dict["position"] = codon_pos + 1
+                    # Removed +1 for 0-indexing
+                    codon_dict["position"] = codon_pos
                     codons.append(codon_dict)
 
             return codons
@@ -151,9 +152,7 @@ class SequencePreparator:
         """Helper method to find sites for a specific enzyme."""
         site_details = []
         seq_str = str(seq)
-        # print(f"seq_str: {seq_str}")
-        # print(f"recognition_seq: {recognition_seq}")
-        # Forward strand matches
+
         forward_matches = list(re.finditer(
             re.escape(recognition_seq), seq_str))
 
@@ -162,12 +161,24 @@ class SequencePreparator:
             index = match.start()
             frame = index % 3
             codons = self.get_codons(seq, index, len(recognition_seq), frame)
+
+            # Get context sequence (10bp upstream and 10bp downstream)
+            start_context = max(0, index - 10)
+            end_context = min(len(seq_str), index + len(recognition_seq) + 10)
+            context_seq = seq_str[start_context:end_context]
+
+            # Calculate mutated base indices relative to the context sequence
+            context_mutated_indices = [
+                i - start_context for i in range(index, index + len(recognition_seq))]
+
             site_details.append({
-                'position': index + 1,
+                'position': index,  # Removed +1 for 0-indexing
                 'sequence': recognition_seq,
                 'frame': frame,
                 'codons': codons,
-                'strand': '+'
+                'strand': '+',
+                'context': context_seq,
+                'context_mutated_indices': context_mutated_indices
             })
 
         # Reverse strand matches
@@ -178,12 +189,24 @@ class SequencePreparator:
             index = match.start()
             frame = index % 3
             codons = self.get_codons(seq, index, len(recognition_seq), frame)
+
+            # Get context sequence (10bp upstream and 10bp downstream)
+            start_context = max(0, index - 10)
+            end_context = min(len(seq_str), index + len(recognition_seq) + 10)
+            context_seq = seq_str[start_context:end_context]
+
+            # Calculate mutated base indices relative to the context sequence
+            context_mutated_indices = [
+                i - start_context for i in range(index, index + len(rev_comp))]
+
             site_details.append({
-                'position': index + 1,
+                'position': index,  # Removed +1 for 0-indexing
                 'sequence': rev_comp,
                 'frame': frame,
                 'codons': codons,
-                'strand': '-'
+                'strand': '-',
+                'context': context_seq,
+                'context_mutated_indices': context_mutated_indices
             })
 
         return site_details
@@ -214,8 +237,9 @@ class SequencePreparator:
 
                 site_type_description = site_type_descriptions.get(
                     site_type, site_type)
+                # Add +1 to position for display only
                 positions = ', '.join(
-                    str(details['position']) for details in details_list)
+                    str(details['position'] + 1) for details in details_list)
                 number_of_instances = len(details_list)
 
                 table.add_row([
