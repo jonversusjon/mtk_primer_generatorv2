@@ -237,3 +237,43 @@ class GoldenGateUtils:
             # Convert tuple to list for JSON
             return [self.convert_non_serializable(v) for v in obj]
         return obj  # Return as-is if it's already JSON serializable
+
+    def analyze_incompatibility_reason(self, combo):
+        """
+        Analyzes why a given combination of overhangs is incompatible.
+        """
+        for seq in combo:
+            for i in range(len(seq) - 3):
+                if seq[i] == seq[i + 1] == seq[i + 2] == seq[i + 3]:
+                    return f"Overhang {seq} has more than 3 consecutive identical bases."
+        seen_triplets = set()
+        for seq in combo:
+            for i in range(len(seq) - 2):
+                triplet = seq[i:i + 3]
+                if triplet in seen_triplets:
+                    return f"Multiple overhangs share the triplet '{triplet}'."
+                seen_triplets.add(triplet)
+        for seq in combo:
+            gc_content = sum(
+                1 for base in seq if base in "GC") / len(seq) * 100
+            if gc_content == 0:
+                return f"Overhang {seq} has 0% GC content (all A/T)."
+            elif gc_content == 100:
+                return f"Overhang {seq} has 100% GC content (all G/C)."
+        return "Unknown reason (should not happen)."
+
+    def save_primers_to_tsv(self, primer_data: List[List[str]], output_tsv_path: str) -> None:
+        """Saves primer data to a TSV file."""
+        with debug_context("save_primers_to_tsv"):
+            if not primer_data:
+                logger.warning("No primer data to save.")
+                return
+
+            try:
+                with open(output_tsv_path, "w") as tsv_file:
+                    tsv_file.write("Primer Name\tSequence\tAmplicon\n")
+                    for row in primer_data:
+                        tsv_file.write("\t".join(map(str, row)) + "\n")
+            except IOError as e:
+                logger.error(f"Error writing to file {output_tsv_path}: {e}")
+                raise

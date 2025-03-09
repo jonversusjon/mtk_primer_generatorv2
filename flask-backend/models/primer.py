@@ -18,7 +18,7 @@ class Primer:
 @dataclass
 class MutationPrimer:
     site: str
-    position: int  # Position is used for ordering
+    position: int  # Used for ordering
     forward: Primer
     reverse: Primer
     mutation_info: dict

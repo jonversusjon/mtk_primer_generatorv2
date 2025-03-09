@@ -7,3 +7,4 @@ venv/
 *.so
 .Python
 /logs
+/.vscode

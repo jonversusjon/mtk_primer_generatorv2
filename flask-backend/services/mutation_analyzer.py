@@ -101,6 +101,13 @@ class MutationAnalyzer(DebugMixin):
                         }
                     )
 
+                    # Calculate context as 30 bp upstream and 30 bp downstream of the recognition sequence.
+                    context_start = max(0, site["position"] - 30)
+                    context_end = site["position"] + len(site["sequence"]) + 30
+                    site["context"] = sequence[context_start:context_end]
+                    # Note: We no longer assign context_mutated_indices here based on the recognition site.
+                    # Those indices will be determined later for each specific codon mutation.
+
                     frame = site["frame"]
                     site_mutations = {
                         "position": site["position"],
@@ -191,12 +198,12 @@ class MutationAnalyzer(DebugMixin):
         """
         context_sequence = site["context"]
         site_sequence = site["sequence"]
-        
-        # The site["context_mutated_indices"] currently represents the position of the 
-        # recognition site in the context sequence, not the specific bases that will change.
-        # We'll keep using it for locating the codon but rename it for clarity.
-        recognition_site_indices = site["context_mutated_indices"]
-        
+
+        # Instead of using a site field for recognition indices, compute them directly.
+        # Because the context is built as 30bp upstream of the recognition sequence,
+        # the recognition sequence always starts at index 30.
+        recognition_indices = list(range(30, 30 + len(site_sequence)))
+
         self.log_step(
             "Find Alternatives",
             f"Finding alternatives for codon {original_codon} (AA: {amino_acid})",
@@ -207,7 +214,7 @@ class MutationAnalyzer(DebugMixin):
                 "site_sequence": site_sequence,
                 "codon_offset": codon_offset,
                 "context_sequence": context_sequence,
-                "recognition_site_indices": recognition_site_indices
+                "recognition_indices": recognition_indices
             }
         )
 
@@ -229,21 +236,22 @@ class MutationAnalyzer(DebugMixin):
             {"indices": overlapping_indices}
         )
 
-        # Calculate the codon start position in the context
+        # Calculate the codon start position in the context using the computed recognition indices.
         if codon_offset >= len(site_sequence):
-            codon_start_in_context = recognition_site_indices[-1] + (
+            codon_start_in_context = recognition_indices[-1] + (
                 codon_offset - len(site_sequence) + 1)
         elif codon_offset < 0:
-            codon_start_in_context = recognition_site_indices[0] + codon_offset
+            codon_start_in_context = recognition_indices[0] + codon_offset
         else:
-            codon_start_in_context = recognition_site_indices[codon_offset]
+            codon_start_in_context = recognition_indices[codon_offset]
 
         for candidate in alternative_codons:
             if candidate == original_codon:
                 continue
 
             # Find which positions differ between original and candidate codon
-            mutations_list = [i for i in range(3) if candidate[i] != original_codon[i]]
+            mutations_list = [i for i in range(
+                3) if candidate[i] != original_codon[i]]
             differences = len(mutations_list)
 
             if differences > self.max_mutations:
@@ -274,9 +282,8 @@ class MutationAnalyzer(DebugMixin):
 
             # Create a copy of the context sequence and apply the mutations
             mutated_context = list(context_sequence)
-            
-            # THIS IS THE KEY CHANGE - Calculate the actual mutated indices in the context
-            # These are the indices that will change when swapping the codon
+
+            # These indices will capture the specific bases changed by the codon swap.
             context_mutated_indices = []
             for i in mutations_list:
                 pos_in_context = codon_start_in_context + i
@@ -285,15 +292,14 @@ class MutationAnalyzer(DebugMixin):
                     context_mutated_indices.append(pos_in_context)
 
             mutated_context = ''.join(mutated_context)
-            
-            # Log the specific mutation positions
+
             self.log_step(
                 "Calculate Mutation Positions",
                 f"Identified mutated indices for candidate {candidate}",
                 {"context_mutated_indices": context_mutated_indices},
                 level=logging.DEBUG
             )
-            
+
             sticky_ends = self._calculate_sticky_ends_with_context(
                 context_sequence,
                 mutated_context,
@@ -306,7 +312,7 @@ class MutationAnalyzer(DebugMixin):
                 "usage": usage,
                 "mutations": mutation_tuple,
                 "sticky_ends": sticky_ends,
-                "mutation_positions_in_context": context_mutated_indices  # Use a new key to avoid confusion
+                "mutation_positions_in_context": context_mutated_indices
             }
 
             valid_alternatives.append(valid_alternative)
@@ -319,7 +325,7 @@ class MutationAnalyzer(DebugMixin):
                     "mutations": mutation_tuple,
                     "changes_in_site": changes_in_site,
                     "sticky_ends": sticky_ends,
-                    "context_mutated_indices": context_mutated_indices
+                    "mutation_positions_in_context": context_mutated_indices
                 },
                 level=logging.DEBUG
             )
@@ -334,6 +340,7 @@ class MutationAnalyzer(DebugMixin):
             {"original": original_codon, "amino_acid": amino_acid}
         )
         return valid_alternatives
+
     def _calculate_sticky_ends_with_context(
         self,
         original_context: str,
@@ -343,6 +350,7 @@ class MutationAnalyzer(DebugMixin):
     ) -> Dict:
         """
         Calculate all possible sticky end sequences for a given mutation using the full context.
+        Each sticky end is recorded as a dictionary with the 4-base sequence and its start index in the context.
         """
         sticky_ends = {}
 
@@ -378,13 +386,23 @@ class MutationAnalyzer(DebugMixin):
                     top_strand = ''.join(
                         mutated_context[i] for i in sticky_range)
                     bottom_strand = self.utils.reverse_complement(top_strand)
-                    position_sticky_ends["top_strand"].append(top_strand)
-                    position_sticky_ends["bottom_strand"].append(bottom_strand)
+                    # Record each sticky end with its sequence and the start index of the overhang in the context.
+                    position_sticky_ends["top_strand"].append({
+                        "seq": top_strand,
+                        "start_index": sticky_range.start
+                    })
+                    position_sticky_ends["bottom_strand"].append({
+                        "seq": bottom_strand,
+                        "start_index": sticky_range.start
+                    })
 
                     self.log_step(
                         "Sticky End",
                         f"Generated sticky end for range {list(sticky_range)}",
-                        {"top_strand": top_strand, "bottom_strand": bottom_strand},
+                        {
+                            "top_strand": {"seq": top_strand, "start_index": sticky_range.start},
+                            "bottom_strand": {"seq": bottom_strand, "start_index": sticky_range.start}
+                        },
                         level=logging.DEBUG
                     )
 

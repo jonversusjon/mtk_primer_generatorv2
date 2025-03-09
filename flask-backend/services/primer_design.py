@@ -47,7 +47,7 @@ class PrimerDesigner(DebugMixin):
     def design_mutation_primers(self, full_sequence: str, mutation_sets: list, comp_matrices: list, primer_name: str = None):
         """
         Designs mutation primers for the provided full sequence given one or more mutation sets.
-        Uses the compatibility matrix to pick valid overhang combinations.
+        Uses the compatibility matrix to pick valid overhang combinations and constructs MutationPrimer objects.
         """
         # Validate inputs.
         self.validate(isinstance(full_sequence, str) and full_sequence,
@@ -89,6 +89,7 @@ class PrimerDesigner(DebugMixin):
             chosen_coords = valid_coords[0]
             position_keys = list(mutation_set.keys())
 
+            # Log chosen overhang options per site.
             for i, site_key in enumerate(position_keys):
                 site_info = mutation_set[site_key]
                 overhang_index = int(chosen_coords[i].item())
@@ -105,8 +106,7 @@ class PrimerDesigner(DebugMixin):
                     {
                         "top_overhang": overhang_data.get("top_overhang"),
                         "bottom_overhang": overhang_data.get("bottom_overhang"),
-                        "top_extended": overhang_data.get("top_extended"),
-                        "bottom_extended": overhang_data.get("bottom_extended"),
+                        "overhang_start_index": overhang_data.get("overhang_start_index")
                     }
                 )
 
@@ -133,11 +133,11 @@ class PrimerDesigner(DebugMixin):
         """
         Applies the mutations specified in mutation_set to target_seq.
         """
-        self.log_step("Apply Mutations", f"Applying {len(mutation_set)} mutations to sequence", {
-            "sequence_length": len(target_seq)})
+        self.log_step("Apply Mutations", f"Applying {len(mutation_set)} mutations to sequence",
+                      {"sequence_length": len(target_seq)})
         mutated_seq = list(target_seq)
         for site_key, mut in mutation_set.items():
-            pos = mut["position"] - 1  # converting to 0-indexed.
+            pos = mut["position"] - 1  # Convert to 0-indexed.
             alt_seq = mut["alternative_sequence"]
             orig_seq = mut["original_sequence"]
             self.log_step("Mutation Details", f"Applying mutation at site {site_key}, position {pos+1}",
@@ -166,8 +166,8 @@ class PrimerDesigner(DebugMixin):
 
     @DebugMixin.debug_wrapper
     def _construct_mutation_primers(self, original_seq: str, mutated_seq: str, mutation_set: dict,
-                                    valid_coords: np.ndarray, primer_name: str = None, flank: int = 10) -> list:
-        self.log_step("Construct Primers", f"Constructing primers with flank length {flank}",
+                                    valid_coords: np.ndarray, primer_name: str = None, binding_length: int = 10) -> list:
+        self.log_step("Construct Primers", f"Constructing primers with binding length {binding_length}",
                       {"selected_coord": valid_coords})
         mutation_primers = []
 
@@ -178,9 +178,9 @@ class PrimerDesigner(DebugMixin):
                           {"mutation": mut["alternative_sequence"], "selected_coord": selected_coord})
 
             forward_tuple = self._construct_primer(mutated_seq, position, mut, selected_coord,
-                                                   flank, is_reverse=False, primer_name=primer_name)
+                                                   binding_length, is_reverse=False, primer_name=primer_name)
             reverse_tuple = self._construct_primer(mutated_seq, position, mut, selected_coord,
-                                                   flank, is_reverse=True, primer_name=primer_name)
+                                                   binding_length, is_reverse=True, primer_name=primer_name)
 
             if forward_tuple and reverse_tuple:
                 forward_primer = Primer(
@@ -200,49 +200,63 @@ class PrimerDesigner(DebugMixin):
 
     @DebugMixin.debug_wrapper
     def _construct_primer(self, mutated_seq: str, position: int, mut: dict, selected_coord: int,
-                          flank: int, is_reverse: bool, primer_name: str = None):
+                          binding_length: int, is_reverse: bool, primer_name: str = None):
         """
         Constructs a mutagenic primer using the mutated sequence as the binding region.
         The final primer consists of:
-          - A non-annealing tail: spacer + BsmBI recognition site + an extended overhang (from the compatibility matrix)
-          - An annealing region: a segment of the mutated sequence that spans from (position - flank) to (position + mutation_length + flank)
+        - A non-annealing tail: spacer + BsmBI recognition site
+        - An annealing region: a segment of the mutated sequence starting at the overhang start index for binding_length bases.
         For reverse primers, the annealing region is reverse-complemented.
         """
         direction = "reverse" if is_reverse else "forward"
-        self.log_step(f"Construct {direction.capitalize()} Primer", f"Designing {direction} primer at position {position+1}",
-                      {"flank": flank, "selected_coord": selected_coord})
+        self.log_step(f"Construct {direction.capitalize()} Primer",
+                      f"Designing {direction} primer at site position {position+1}",
+                      {"binding_length": binding_length, "selected_coord": selected_coord})
 
         if not primer_name:
             primer_name = f"Mut_{mut['site']}"
         primer_suffix = "_RV" if is_reverse else "_FW"
         primer_name = f"{primer_name}{primer_suffix}"
 
-        mutation_length = len(mut["original_sequence"])
-        binding_start = max(0, position - flank)
-        binding_end = min(len(mutated_seq), position + mutation_length + flank)
-
-        if binding_end - binding_start < (mutation_length + 2 * flank):
-            self.debugger and self.debugger.log_warning(f"Binding region length insufficient for {direction} primer",
-                                                        {"binding_start": binding_start, "binding_end": binding_end,
-                                                         "expected_length": mutation_length + 2 * flank})
+        # Retrieve the chosen overhang option and its starting index.
+        overhang_options = mut.get("overhangs", {}).get("overhang_options", [])
+        if not overhang_options or selected_coord >= len(overhang_options):
+            self.debugger and self.debugger.log_warning(
+                f"No valid overhang option found for site {mut['site']}")
             return None
 
-        binding_region = mutated_seq[binding_start:binding_end]
+        overhang_option = overhang_options[selected_coord]
+        overhang_start_index = overhang_option.get("overhang_start_index")
+        if overhang_start_index is None:
+            self.debugger and self.debugger.log_warning(
+                f"Overhang start index missing for site {mut['site']}")
+            return None
+
+        # Calculate the binding (annealing) region from the mutated sequence.
+        binding_region = mutated_seq[overhang_start_index:
+                                     overhang_start_index + binding_length]
+        if len(binding_region) < binding_length:
+            self.debugger and self.debugger.log_warning(
+                f"Binding region length insufficient for {direction} primer",
+                {"start_index": overhang_start_index, "requested_length": binding_length,
+                    "actual_length": len(binding_region)}
+            )
+            return None
+
         if is_reverse:
             binding_region = str(Seq(binding_region).reverse_complement())
 
-        extended_seq = str(mut['overhangs']['overhang_options'][selected_coord][
-            'bottom_extended' if is_reverse else 'top_extended'])
+        # The final primer: non-annealing tail (spacer + BsmBI site) + binding region.
+        primer_seq = self.spacer + self.bsmbi_site + binding_region
 
-        primer_seq = self.spacer + self.bsmbi_site + extended_seq + binding_region
-        self.validate(len(primer_seq) > len(self.spacer + self.bsmbi_site + extended_seq),
+        self.validate(len(primer_seq) > len(self.spacer + self.bsmbi_site),
                       "Primer contains valid binding region",
                       {"spacer": self.spacer,
                        "enzyme_site": self.bsmbi_site,
-                       "extended_seq": extended_seq,
                        "binding_region": binding_region,
                        "total_length": len(primer_seq),
                        "binding_length": len(binding_region)})
+
         return (primer_name, primer_seq)
 
     @DebugMixin.debug_wrapper

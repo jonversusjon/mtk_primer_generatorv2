@@ -9,10 +9,12 @@ from .mutation_optimizer import MutationOptimizer
 from .utils import GoldenGateUtils
 from config.logging_config import logger
 from .base import debug_context
-from models.primer import Primer, PrimerSet
+from models.primer import Primer, PrimerSet, MutationPrimer
+from services.debug.debug_utils import MutationDebugger, visualize_matrix
+from services.debug.debug_mixin import DebugMixin
 
 
-class GoldenGateProtocol:
+class GoldenGateProtocol(DebugMixin):
     """
     Orchestrates the Golden Gate protocol by managing sequence preparation,
     primer design, mutation analysis, and optimization.
@@ -36,13 +38,12 @@ class GoldenGateProtocol:
             codon_usage_dict=codon_usage_dict,
             max_mutations=max_mutations,
             verbose=verbose,
-            debug=False,
+            debug=True,
         )
         self.mutation_optimizer = MutationOptimizer(
             verbose=verbose, debug=True)
         self.primer_designer = PrimerDesigner(
             kozak=kozak, verbose=verbose, debug=True)
-        # self.primer_selector = PrimerSelector()
 
         self.logger.debug(
             f"GoldenGateProtocol initialized with codon_usage_dict: {codon_usage_dict}")
@@ -154,22 +155,6 @@ class GoldenGateProtocol:
 
         return self.utils.convert_non_serializable(result_data)
 
-    def _save_primers_to_tsv(self, primer_data: List[List[str]], output_tsv_path: str) -> None:
-        """Saves primer data to a TSV file."""
-        with debug_context("save_primers_to_tsv"):
-            if not primer_data:
-                logger.warning("No primer data to save.")
-                return
-
-            try:
-                with open(output_tsv_path, "w") as tsv_file:
-                    tsv_file.write("Primer Name\tSequence\tAmplicon\n")
-                    for row in primer_data:
-                        tsv_file.write("\t".join(map(str, row)) + "\n")
-            except IOError as e:
-                logger.error(f"Error writing to file {output_tsv_path}: {e}")
-                raise
-
     def group_primers_into_pcr_reactions(self, sequence_data: Dict) -> Dict[str, Dict[str, Primer]]:
         """
         Groups primers into PCR reactions using chaining logic.
@@ -178,48 +163,77 @@ class GoldenGateProtocol:
         Reaction 1: edge.forward + edge.reverse.
 
         If mutation primers exist (assumed sorted by position), then:
-        Reaction 1: edge.forward + first mutation's reverse
-        Reaction 2..n: previous mutation's forward + current mutation's reverse
-        Final Reaction: last mutation's forward + edge.reverse
+        Reaction 1: edge.forward + first mutation's reverse primer
+        Reaction 2..n: previous mutation's forward primer + current mutation's reverse primer
+        Final Reaction: last mutation's forward primer + edge.reverse
         """
         reactions = {}
         reaction_num = 1
 
-        edge_fw = sequence_data["edge_primers"]["forward_primer"]["sequence"]
-        edge_rv = sequence_data["edge_primers"]["reverse_primer"]["sequence"]
+        self.log_step("Group PCR Reactions",
+                      "Starting grouping of primers into PCR reactions.")
 
-        # Extract mutation sets from the sequence data
-        mutation_sets = sequence_data.get("mutation_primers", {})
+        # Retrieve edge primers: Adjusted to match expected structure.
+        edge_fw: Primer = sequence_data["edge_primers"]["forward_primer"]
+        edge_rv: Primer = sequence_data["edge_primers"]["reverse_primer"]
 
-        # Sort mutations by position (ascending order)
-        if not mutation_sets:
-            raise ValueError(
-                "No valid mutation sets remaining after filtering. Check filtering criteria.")
-        mutations = sorted(mutation_sets, key=lambda m: m.position)
+        self.log_step("Edge Primers Retrieved", "Edge primers obtained.",
+                      {"edge_forward": edge_fw["sequence"], "edge_reverse": edge_rv["sequence"]})
 
-        # Case with no mutations:
-        if not mutations:
+        # Get the mutation primers list (assumed to be a list of MutationPrimer instances).
+        mutation_primers: list[MutationPrimer] = sequence_data.get(
+            "mutation_primers", [])
+        self.log_step("Mutation Primers Retrieved", "Retrieved mutation primers.",
+                      {"mutation_primer_count": len(mutation_primers)})
+
+        # If no mutation primers exist, create a single reaction with just the edge primers.
+        if not mutation_primers:
+            self.log_step("No Mutation Primers",
+                          "No mutation primers found; creating single edge-only reaction.")
             reactions[f"Reaction_{reaction_num}"] = {
-                "forward": edge_fw, "reverse": edge_rv}
+                "forward": edge_fw["sequence"], "reverse": edge_rv["sequence"]}
+            self.log_step("PCR Reaction Created", f"Reaction_{reaction_num} created.",
+                          {"forward": edge_fw["sequence"], "reverse": edge_rv["sequence"]})
             return reactions
 
-        # Reaction 1: edge forward with the first mutation's reverse primer
-        reactions[f"Reaction_{reaction_num}"] = {
-            "forward": edge_fw, "reverse": mutations[0].reverse}
+        # Sort mutation primers by position.
+        mutations = sorted(mutation_primers, key=lambda m: m.position)
+        self.log_step("Sorted Mutation Primers", "Sorted mutation primers by position.",
+                      {"sorted_positions": [m.position for m in mutations]})
+
+        # Reaction 1: edge forward with first mutation's reverse primer.
+        reaction_label = f"Reaction_{reaction_num}"
+        reactions[reaction_label] = {
+            "forward": edge_fw["sequence"], "reverse": mutations[0].reverse.sequence}
+        self.log_step("PCR Reaction Created", f"{reaction_label} created.",
+                      {"forward": edge_fw["sequence"], "reverse": mutations[0].reverse.sequence,
+                       "edge_forward": True, "mutation_reverse_position": mutations[0].position})
         reaction_num += 1
 
-        # Intermediate reactions: chain mutation primers
+        # Chain intermediate mutation primers.
         for i in range(1, len(mutations)):
-            reactions[f"Reaction_{reaction_num}"] = {
-                "forward": mutations[i - 1].forward,
-                "reverse": mutations[i].reverse
-            }
+            reaction_label = f"Reaction_{reaction_num}"
+            forward_seq = mutations[i - 1].forward.sequence
+            reverse_seq = mutations[i].reverse.sequence
+            reactions[reaction_label] = {
+                "forward": forward_seq, "reverse": reverse_seq}
+            self.log_step("PCR Reaction Created", f"{reaction_label} created.",
+                          {"forward": forward_seq, "reverse": reverse_seq,
+                           "from_mutation_position": mutations[i - 1].position,
+                           "to_mutation_position": mutations[i].position})
             reaction_num += 1
 
-        # Final Reaction: last mutation's forward primer with edge reverse primer
-        reactions[f"Reaction_{reaction_num}"] = {
-            "forward": mutations[-1].forward, "reverse": edge_rv}
+        # Final Reaction: last mutation's forward with edge reverse.
+        reaction_label = f"Reaction_{reaction_num}"
+        final_forward = mutations[-1].forward.sequence
+        reactions[reaction_label] = {
+            "forward": final_forward, "reverse": edge_rv["sequence"]}
+        self.log_step("PCR Reaction Created", f"{reaction_label} created.",
+                      {"forward": final_forward, "reverse": edge_rv["sequence"],
+                       "from_mutation_position": mutations[-1].position, "edge_reverse": True})
 
+        self.log_step("Group PCR Reactions Complete", "Completed grouping of PCR reactions.",
+                      {"total_reactions": reaction_num})
         return reactions
 
 

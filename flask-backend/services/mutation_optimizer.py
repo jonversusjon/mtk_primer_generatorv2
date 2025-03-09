@@ -4,14 +4,11 @@ import numpy as np
 from itertools import product
 from tqdm import tqdm
 import logging
-from functools import wraps
-import random
-
-from .utils import GoldenGateUtils
-from config.logging_config import logger
 from services.base import debug_context
 from services.debug.debug_mixin import DebugMixin
 from services.debug.debug_utils import MutationDebugger, visualize_matrix, visualize_overhang_compatibility
+from config.logging_config import logger
+from .utils import GoldenGateUtils
 
 
 class MutationOptimizer(DebugMixin):
@@ -21,12 +18,8 @@ class MutationOptimizer(DebugMixin):
     """
 
     def __init__(self, verbose: bool = False, debug: bool = False):
-        """
-        Initialize the optimizer with a precomputed compatibility table.
-        """
         self.logger = logger.getChild("MutationOptimizer")
         self.utils = GoldenGateUtils()
-
         self.verbose = verbose
         self.debug = debug
         self.debugger = MutationDebugger() if self.debug else None
@@ -41,7 +34,6 @@ class MutationOptimizer(DebugMixin):
             self.compatibility_table_path)
         self.logger.debug(
             "MutationOptimizer initialized with compatibility table.")
-
         if self.verbose:
             self.logger.info("MutationOptimizer is running in verbose mode.")
 
@@ -51,69 +43,90 @@ class MutationOptimizer(DebugMixin):
             self.validate(isinstance(self.compatibility_table,
                           np.ndarray), "Compatibility table is a numpy array")
 
+    # --- Sequence & Context Utilities ---
+
+    def apply_mutation_to_context(self, context: str, codon_pos_in_context: int, alt_seq: str) -> str:
+        """
+        Applies the alternative sequence to the context at the given position,
+        returning a new mutated context.
+        """
+        context_list = list(context)
+        for i, nucleotide in enumerate(alt_seq):
+            if codon_pos_in_context + i < len(context_list):
+                context_list[codon_pos_in_context + i] = nucleotide
+        return "".join(context_list)
+
+    def extract_primer_context(self, mutated_context: str, mutation_start: int, mutation_end: int, flank: int = 30) -> str:
+        """
+        Extracts a primer design region from the mutated context.
+        The region includes 'flank' number of bases upstream and downstream of the mutation.
+        """
+        start = max(0, mutation_start - flank)
+        end = min(len(mutated_context), mutation_end + flank)
+        return mutated_context[start:end]
+
+    def process_overhangs(self, alternative: dict, codon_pos_in_context: int, context: str = None) -> list:
+        """
+        Processes sticky end information for an alternative mutation.
+        If the alternative already contains precomputed overhangs (under "overhangs"/"overhang_options"),
+        we update missing overhang_start_index values using the current codon position.
+        Otherwise, if raw sticky-end data (under "sticky_ends") is available, we compute them.
+        """
+        # If the alternative already includes overhang options, refresh missing start indices.
+        if "overhangs" in alternative and "overhang_options" in alternative["overhangs"]:
+            options = alternative["overhangs"]["overhang_options"]
+            for option in options:
+                if option.get("overhang_start_index") is None:
+                    # For now, set the start index to codon_pos_in_context.
+                    option["overhang_start_index"] = codon_pos_in_context
+                    logger.info(f"Updated overhang_start_index for site {alternative.get('site', 'unknown')} "
+                                f"to {codon_pos_in_context}")
+            return options
+
+        # Otherwise, process raw sticky end data (if present)
+        overhang_options = []
+        for pos_key, overhang_data in alternative.get("sticky_ends", {}).items():
+            try:
+                pos = int(pos_key.split('_')[1])
+            except (IndexError, ValueError) as e:
+                logger.warning(
+                    f"Skipping invalid sticky end key {pos_key}: {e}")
+                continue
+
+            if context is not None:
+                overhang_start_index = codon_pos_in_context + pos
+                if overhang_start_index < 0 or overhang_start_index >= len(context):
+                    logger.warning(f"Overhang start index out of bounds: {overhang_start_index} "
+                                   f"for mutation at {codon_pos_in_context}, skipping.")
+                    continue
+            else:
+                overhang_start_index = None
+
+            top_strands = overhang_data.get("top_strand", [])
+            bottom_strands = overhang_data.get("bottom_strand", [])
+            for i, top_overhang in enumerate(top_strands):
+                bottom_overhang = bottom_strands[i] if i < len(
+                    bottom_strands) else None
+                if not top_overhang or not bottom_overhang:
+                    logger.warning(
+                        f"Skipping overhang at {overhang_start_index}: missing strands.")
+                    continue
+                entry = {
+                    "top_overhang": top_overhang,
+                    "bottom_overhang": bottom_overhang,
+                    "overhang_start_index": overhang_start_index
+                }
+                overhang_options.append(entry)
+                logger.info(f"Processed overhang: {entry}")
+        return overhang_options
+
+    # --- Mutation Set Generation ---
+
     @DebugMixin.debug_wrapper
-    def optimize_mutations(self, mutation_options: Dict) -> List[Dict]:
+    def generate_mutation_sets(self, mutation_options: dict) -> list:
         """
-        Find the optimal combination of mutations that are compatible according to the BsmBI sticky-end strategy.
-        """
-        if not self.debug:
-            with debug_context("mutation_optimization"):
-                logger.info("Step 1: Generating possible mutation sets...")
-                mutation_sets = self.generate_mutation_sets(mutation_options)
-                logger.debug(f"Generated {len(mutation_sets)} mutation sets.")
-
-                logger.info("Step 2: Computing compatibility matrices...")
-                compatibility_matrices = self.create_compatibility_matrices(
-                    mutation_sets)
-
-                logger.info(
-                    "Step 3: Filtering mutation sets based on compatibility...")
-                optimized_mutations = self.filter_compatible_mutations(
-                    mutation_sets, compatibility_matrices)
-
-                logger.debug(
-                    f"Final number of optimized mutation sets: {len(optimized_mutations)}")
-                return optimized_mutations, compatibility_matrices
-        else:
-            self.validate(isinstance(mutation_options, dict) and len(mutation_options) > 0,
-                          "Mutation options are valid",
-                          {k: v for k, v in list(mutation_options.items())[:2]})
-            self.log_step("Generate Mutation Sets",
-                          "Creating all possible combinations of mutations")
-            mutation_sets = self.generate_mutation_sets(mutation_options)
-            self.validate(isinstance(mutation_sets, list),
-                          f"Generated {len(mutation_sets)} mutation sets",
-                          {"sample": mutation_sets[0] if mutation_sets else None})
-            self.log_step("Compute Compatibility",
-                          "Creating compatibility matrices for mutation sets")
-            compatibility_matrices = self.create_compatibility_matrices(
-                mutation_sets)
-            nonzero_matrices = sum(
-                1 for m in compatibility_matrices if np.any(m != 0))
-            self.validate(len(compatibility_matrices) == len(mutation_sets),
-                          f"Created {len(compatibility_matrices)} compatibility matrices, {nonzero_matrices} have valid combinations",
-                          {"nonzero_rate": f"{nonzero_matrices/len(compatibility_matrices):.2%}" if compatibility_matrices else "N/A"})
-            if compatibility_matrices and nonzero_matrices > 0:
-                for i, matrix in enumerate(compatibility_matrices):
-                    if np.any(matrix != 0):
-                        self.log_step(
-                            "Matrix Visualization", f"Sample compatibility matrix (set #{i+1})", visualize_matrix(matrix))
-                        break
-            self.log_step("Filter Compatible Mutations",
-                          "Removing mutation sets with no valid compatibility")
-            optimized_mutations = self.filter_compatible_mutations(
-                mutation_sets, compatibility_matrices)
-            self.validate(isinstance(optimized_mutations, list),
-                          f"Final result: {len(optimized_mutations)} optimized mutation sets",
-                          {"reduction": f"{(1 - len(optimized_mutations)/len(mutation_sets)):.2%}" if mutation_sets else "N/A"})
-            if self.debug:
-                self.debugger.summarize_validations()
-            return optimized_mutations, compatibility_matrices
-
-    @DebugMixin.debug_wrapper
-    def generate_mutation_sets(self, mutation_options: Dict) -> List[Dict]:
-        """
-        Generates all possible mutation sets by selecting exactly one alternative codon per restriction site.
+        Generates all possible mutation sets by selecting exactly one alternative codon per site.
+        Each mutation entry includes a primer design context and updated overhang start indices.
         """
         if self.debug:
             self.validate(isinstance(mutation_options, dict) and len(mutation_options) > 0,
@@ -123,135 +136,12 @@ class MutationOptimizer(DebugMixin):
                           "Organizing mutation choices per site")
 
         mutation_choices_per_site = []
-
         for site, site_data in mutation_options.items():
-            site_mutation_choices = []
             if self.debug:
                 self.log_step(
                     "Process Site", f"Processing site {site} at position {site_data['position']}")
-            for codon in site_data["codons"]:
-                for alternative in codon["alternative_codons"]:
-                    if "sticky_ends" not in alternative:
-                        continue
-
-                    # This unified list will store all overhang options for this alternative
-                    overhang_options = []
-
-                    context = site_data.get("context", "")
-                    context_mutated_indices = site_data.get(
-                        "context_mutated_indices", [])
-                    if context and len(context) > 0:
-                        codon_pos = codon["position"]
-                        # Assume the first index in context_mutated_indices is the site start in context.
-                        site_start_in_context = context_mutated_indices[0]
-                        codon_pos_in_context = site_start_in_context + \
-                            (codon_pos - site_data["position"])
-                        # Update context with the alternative sequence (the mutation)
-                        mutated_context = list(context)
-                        for i in range(len(alternative["seq"])):
-                            if codon_pos_in_context + i < len(mutated_context):
-                                mutated_context[codon_pos_in_context +
-                                                i] = alternative["seq"][i]
-                        mutated_context = ''.join(mutated_context)
-
-                        # Loop over each sticky end specification (each pos_key)
-                        for pos_key in alternative["sticky_ends"]:
-                            try:
-                                pos = int(pos_key.split('_')[1])
-                            except (IndexError, ValueError):
-                                continue
-                            pos_in_context = codon_pos_in_context + pos
-
-                            # If top strand information is provided, iterate over its options
-                            if "top_strand" in alternative["sticky_ends"][pos_key]:
-                                for i, top_overhang in enumerate(alternative["sticky_ends"][pos_key]["top_strand"]):
-                                    # Determine extended region boundaries based on the option index
-                                    if i == 0:
-                                        start, end = pos_in_context - 4, pos_in_context + 2
-                                    elif i == 1:
-                                        start, end = pos_in_context - 3, pos_in_context + 3
-                                    elif i == 2:
-                                        start, end = pos_in_context - 2, pos_in_context + 4
-                                    elif i == 3:
-                                        start, end = pos_in_context - 1, pos_in_context + 5
-                                    else:
-                                        continue
-
-                                    start = max(0, start)
-                                    end = min(len(mutated_context), end)
-                                    if end - start >= 6:
-                                        top_extended = mutated_context[start:end]
-                                    else:
-                                        top_extended = mutated_context[start:end]
-                                        if len(top_extended) < 6:
-                                            padding_needed = 6 - \
-                                                len(top_extended)
-                                            if start > 0:
-                                                prefix = mutated_context[max(
-                                                    0, start - padding_needed):start]
-                                                top_extended = prefix + top_extended
-                                            if len(top_extended) < 6 and end < len(mutated_context):
-                                                suffix = mutated_context[end:min(
-                                                    len(mutated_context), end + padding_needed)]
-                                                top_extended = top_extended + suffix
-                                        top_extended = top_extended[:6]
-
-                                    # Get the corresponding bottom strand overhang (if available)
-                                    bottom_overhang = None
-                                    if "bottom_strand" in alternative["sticky_ends"][pos_key]:
-                                        try:
-                                            bottom_overhang = alternative["sticky_ends"][pos_key]["bottom_strand"][i]
-                                        except IndexError:
-                                            bottom_overhang = None
-
-                                    # Compute bottom extended as the reverse complement of the top extended sequence
-                                    bottom_extended = self.utils.reverse_complement(
-                                        top_extended)
-
-                                    # Append the unified overhang option
-                                    overhang_options.append({
-                                        "top_overhang": top_overhang,
-                                        "bottom_overhang": bottom_overhang,
-                                        "top_extended": top_extended,
-                                        "bottom_extended": bottom_extended
-                                    })
-                    else:
-                        # If no context is provided, use a default extended sequence method.
-                        for pos_key in alternative["sticky_ends"]:
-                            if "top_strand" in alternative["sticky_ends"][pos_key]:
-                                for i, top_overhang in enumerate(alternative["sticky_ends"][pos_key]["top_strand"]):
-                                    top_extended = "A" + top_overhang + "T"
-                                    bottom_overhang = None
-                                    if "bottom_strand" in alternative["sticky_ends"][pos_key]:
-                                        try:
-                                            bottom_overhang = alternative["sticky_ends"][pos_key]["bottom_strand"][i]
-                                        except IndexError:
-                                            bottom_overhang = None
-                                    bottom_extended = "A" + bottom_overhang + "T" if bottom_overhang else None
-                                    overhang_options.append({
-                                        "top_overhang": top_overhang,
-                                        "bottom_overhang": bottom_overhang,
-                                        "top_extended": top_extended,
-                                        "bottom_extended": bottom_extended
-                                    })
-
-                    # Now, instead of storing four separate lists, we store a single unified structure:
-                    overhangs = {"overhang_options": overhang_options}
-
-                    # Use this 'overhangs' dictionary in your mutation_entry:
-                    original_seq = codon.get("original_sequence", codon.get(
-                        "codon_seq", alternative.get("seq", "")))
-                    mutation_entry = {
-                        "site": site,
-                        "position": site_data["position"],
-                        "original_sequence": original_seq,
-                        "alternative_sequence": alternative["seq"],
-                        "mutated_base_index": (codon["position"] - site_data["position"] + site_data["frame"]) % 6,
-                        "usage": alternative["usage"],
-                        "overhangs": overhangs
-                    }
-                    site_mutation_choices.append(mutation_entry)
-
+            site_mutation_choices = self.process_site_mutation_options(
+                site, site_data)
             if self.debug:
                 self.validate(len(site_mutation_choices) > 0,
                               f"Found {len(site_mutation_choices)} valid mutation options for site {site}")
@@ -263,7 +153,7 @@ class MutationOptimizer(DebugMixin):
         ]
         if self.debug:
             expected_count = np.prod([len(choices)
-                                      for choices in mutation_choices_per_site])
+                                     for choices in mutation_choices_per_site])
             self.validate(len(all_mutation_sets) == expected_count,
                           f"Created {len(all_mutation_sets)} mutation sets (expected: {expected_count})",
                           {"sites": len(mutation_choices_per_site)})
@@ -283,6 +173,67 @@ class MutationOptimizer(DebugMixin):
             print(f"Created {len(all_mutation_sets)} mutation sets")
         return all_mutation_sets
 
+    def process_site_mutation_options(self, site: str, site_data: dict) -> list:
+        """
+        Processes mutation options for a single site.
+        If context is available, applies the mutation to generate a mutated context,
+        extracts a primer region, and updates overhang start indices.
+        """
+        mutation_entries = []
+        context = site_data.get("context", "")
+        context_indices = site_data.get("context_mutated_indices", [])
+        print(f"site_data: {site_data}")
+        for codon in site_data.get("codons", []):
+            for alternative in codon.get("alternative_codons", []):
+                # If precomputed overhangs exist, use them (and update missing start indices).
+                if "overhangs" in alternative and "overhang_options" in alternative["overhangs"]:
+                    overhang_options = alternative["overhangs"]["overhang_options"]
+                    if context:
+                        site_start_in_context = context_indices[0] if context_indices else 0
+                        codon_pos_in_context = site_start_in_context + \
+                            (codon["position"] - site_data["position"])
+                        # Update any missing overhang_start_index using codon_pos_in_context.
+                        for option in overhang_options:
+                            if option.get("overhang_start_index") is None:
+                                option["overhang_start_index"] = codon_pos_in_context
+                                logger.info(
+                                    f"Setting overhang_start_index for site {site} to {codon_pos_in_context}")
+                    final_overhang_options = overhang_options
+                else:
+                    # Fallback: compute overhangs from raw sticky-end data.
+                    if context:
+                        site_start_in_context = context_indices[0] if context_indices else 0
+                        codon_pos_in_context = site_start_in_context + \
+                            (codon["position"] - site_data["position"])
+                        mutated_context = self.apply_mutation_to_context(
+                            context, codon_pos_in_context, alternative["seq"])
+                        primer_context = self.extract_primer_context(
+                            mutated_context, codon_pos_in_context, codon_pos_in_context + len(alternative["seq"]), flank=30)
+                        final_overhang_options = self.process_overhangs(
+                            alternative, codon_pos_in_context, context=mutated_context)
+                    else:
+                        primer_context = ""
+                        final_overhang_options = self.process_overhangs(
+                            alternative, 0, context=None)
+
+                mutated_base_index = (
+                    codon["position"] - site_data["position"] + site_data["frame"]) % 6
+                original_seq = codon.get("original_sequence", codon.get(
+                    "codon_seq", alternative.get("seq", "")))
+                mutation_entry = {
+                    "site": site,
+                    "position": site_data["position"],
+                    "original_sequence": original_seq,
+                    "alternative_sequence": alternative["seq"],
+                    "mutated_base_index": mutated_base_index,
+                    "overhangs": {"overhang_options": final_overhang_options},
+                    "primer_context": primer_context if context else ""
+                }
+                mutation_entries.append(mutation_entry)
+        return mutation_entries
+
+    # --- Compatibility Matrix & Filtering ---
+
     @DebugMixin.debug_wrapper
     def create_compatibility_matrices(self, mutation_sets: List[Dict]) -> List[np.ndarray]:
         if self.debug:
@@ -291,33 +242,23 @@ class MutationOptimizer(DebugMixin):
                           {"first_set_sites": list(mutation_sets[0].keys()) if mutation_sets else None})
             self.log_step(
                 "Matrix Creation", "Creating compatibility matrices for each mutation set")
-            total_combinations = 0
-            compatible_combinations = 0
-            zero_matrices = 0
         compatibility_matrices = []
         for mutation_set_idx, mutation_set in enumerate(tqdm(mutation_sets, desc="Processing Mutation Sets", unit="set")):
-            if self.debug and mutation_set_idx < 3:
-                self.log_step("Process Set", f"Creating matrix for mutation set {mutation_set_idx+1}",
-                              {"sites": list(mutation_set.keys())})
             position_keys = list(mutation_set.keys())
             overhang_lists = [
-                [option["top_overhang"] for option in mutation_set[pos]["overhangs"]["overhang_options"]]
+                [option["top_overhang"]
+                    for option in mutation_set[pos]["overhangs"]["overhang_options"]]
                 for pos in position_keys
             ]
-
             matrix_shape = tuple(len(overhangs)
                                  for overhangs in overhang_lists)
             if self.debug and mutation_set_idx < 3:
                 self.log_step("Matrix Shape", f"Creating matrix with shape {matrix_shape}",
                               {"overhangs_per_site": [len(o) for o in overhang_lists]})
             compatibility_matrix = np.zeros(matrix_shape, dtype=int)
-            all_ones = 0
-            tested_combos = []
             for combo_indices in product(*[range(len(overhang_list)) for overhang_list in overhang_lists]):
                 combo = tuple(overhang_lists[i][idx]
                               for i, idx in enumerate(combo_indices))
-                if self.debug:
-                    total_combinations += 1
                 compatible = True
                 n_sites = len(combo)
                 for i in range(n_sites):
@@ -326,43 +267,12 @@ class MutationOptimizer(DebugMixin):
                         idx2 = self.utils.seq_to_index(combo[j])
                         if self.compatibility_table[idx1][idx2] != 1:
                             compatible = False
-                            if self.debug and mutation_set_idx < 3 and len(tested_combos) < 5:
-                                reason = self.analyze_incompatibility_reason(
-                                    combo)
-                                tested_combos.append((combo, reason))
                             break
                     if not compatible:
                         break
                 if compatible:
-                    all_ones += 1
-                    if self.debug:
-                        compatible_combinations += 1
                     compatibility_matrix[combo_indices] = 1
-            if np.all(compatibility_matrix == 0):
-                if self.debug:
-                    zero_matrices += 1
             compatibility_matrices.append(compatibility_matrix)
-            if self.debug and mutation_set_idx < 3 and tested_combos:
-                for combo, reason in tested_combos:
-                    self.debugger.log_step("Incompatible Combination", "Sample incompatible overhang set",
-                                           {"overhangs": combo, "reason": reason}, level=logging.DEBUG)
-                self.debugger.log_step("Matrix Stats", f"Matrix {mutation_set_idx+1} has {all_ones} valid combinations out of {np.prod(matrix_shape)}",
-                                       {"valid_percentage": f"{all_ones/np.prod(matrix_shape):.2%}" if np.prod(matrix_shape) > 0 else "N/A"})
-        zero_matrices_count = sum(
-            1 for matrix in compatibility_matrices if np.all(matrix == 0))
-        logger.debug(
-            f"\n ⚠️ {zero_matrices_count} out of {len(compatibility_matrices)} compatibility matrices are all zeroes. ⚠️")
-        if self.debug:
-            self.validate(compatible_combinations > 0,
-                          f"Found {compatible_combinations} compatible combinations out of {total_combinations} total",
-                          {"matrices_created": len(compatibility_matrices),
-                           "zero_matrices": zero_matrices,
-                           "success_rate": f"{compatible_combinations/total_combinations:.2%}" if total_combinations > 0 else "N/A"})
-        if zero_matrices_count == len(compatibility_matrices):
-            logger.warning("❗ No valid combinatations found.")
-            if self.debug:
-                self.debugger.log_warning(
-                    "No valid combinations found in any matrix!")
         return compatibility_matrices
 
     @DebugMixin.debug_wrapper
@@ -376,52 +286,43 @@ class MutationOptimizer(DebugMixin):
                 "Filter Sets", "Identifying mutation sets with no valid combinations")
         indices_to_remove = [i for i, matrix in enumerate(
             compatibility_matrices) if np.all(matrix == 0)]
-        if self.debug:
-            self.log_step("Remove Sets", f"Will remove {len(indices_to_remove)} sets with all-zero matrices",
-                          {"percentage": f"{len(indices_to_remove)/len(mutation_sets):.2%}" if mutation_sets else "N/A"})
         for idx in reversed(indices_to_remove):
             del mutation_sets[idx]
             del compatibility_matrices[idx]
-        if self.verbose:
-            if len(indices_to_remove) == 0:
-                logger.info(
-                    "All mutation sets have at least 1 valid overhang combinations.")
-            else:
-                logger.info(
-                    f"Removed {len(indices_to_remove)} mutation sets that had no valid overhang combinations.")
-        if self.debug:
-            self.validate(len(mutation_sets) + len(indices_to_remove) == len(compatibility_matrices) + len(indices_to_remove),
-                          f"Successfully filtered: {len(mutation_sets)} sets remaining")
-            if mutation_sets:
-                sample_set = mutation_sets[0]
-                sample_info = {
-                    "sites": list(sample_set.keys()),
-                    "mutations": {key: value["alternative_sequence"] for key, value in sample_set.items()}
-                }
-                self.debugger.log_step(
-                    "Sample Result", "Example of remaining valid mutation set", sample_info)
         return mutation_sets
 
-    def analyze_incompatibility_reason(self, combo):
+    @DebugMixin.debug_wrapper
+    def optimize_mutations(self, mutation_options: Dict) -> List[Dict]:
         """
-        Analyzes why a given combination of overhangs is incompatible.
+        Finds the optimal combination of mutations that are compatible according to the BsmBI sticky-end strategy.
         """
-        for seq in combo:
-            for i in range(len(seq) - 3):
-                if seq[i] == seq[i + 1] == seq[i + 2] == seq[i + 3]:
-                    return f"Overhang {seq} has more than 3 consecutive identical bases."
-        seen_triplets = set()
-        for seq in combo:
-            for i in range(len(seq) - 2):
-                triplet = seq[i:i + 3]
-                if triplet in seen_triplets:
-                    return f"Multiple overhangs share the triplet '{triplet}'."
-                seen_triplets.add(triplet)
-        for seq in combo:
-            gc_content = sum(
-                1 for base in seq if base in "GC") / len(seq) * 100
-            if gc_content == 0:
-                return f"Overhang {seq} has 0% GC content (all A/T)."
-            elif gc_content == 100:
-                return f"Overhang {seq} has 100% GC content (all G/C)."
-        return "Unknown reason (should not happen)."
+        if not self.debug:
+            with debug_context("mutation_optimization"):
+                logger.info("Generating possible mutation sets...")
+                mutation_sets = self.generate_mutation_sets(mutation_options)
+                logger.info("Computing compatibility matrices...")
+                compatibility_matrices = self.create_compatibility_matrices(
+                    mutation_sets)
+                logger.info(
+                    "Filtering mutation sets based on compatibility...")
+                optimized_mutations = self.filter_compatible_mutations(
+                    mutation_sets, compatibility_matrices)
+                logger.debug(
+                    f"Optimized mutation sets: {len(optimized_mutations)}")
+                return optimized_mutations, compatibility_matrices
+        else:
+            self.validate(isinstance(mutation_options, dict) and len(mutation_options) > 0,
+                          "Mutation options are valid",
+                          {k: v for k, v in list(mutation_options.items())[:2]})
+            self.log_step("Generate Mutation Sets",
+                          "Creating all possible combinations of mutations")
+            mutation_sets = self.generate_mutation_sets(mutation_options)
+            self.log_step("Compute Compatibility",
+                          "Creating compatibility matrices for mutation sets")
+            compatibility_matrices = self.create_compatibility_matrices(
+                mutation_sets)
+            self.log_step("Filter Compatible Mutations",
+                          "Removing mutation sets with no valid compatibility")
+            optimized_mutations = self.filter_compatible_mutations(
+                mutation_sets, compatibility_matrices)
+            return optimized_mutations, compatibility_matrices
