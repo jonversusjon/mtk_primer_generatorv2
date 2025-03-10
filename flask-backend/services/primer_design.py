@@ -49,73 +49,98 @@ class PrimerDesigner(DebugMixin):
         Designs mutation primers for the provided full sequence given one or more mutation sets.
         Uses the compatibility matrix to pick valid overhang combinations and constructs MutationPrimer objects.
         """
-        # Validate inputs.
-        self.validate(isinstance(full_sequence, str) and full_sequence,
-                      "Input sequence is valid", {"sequence_length": len(full_sequence)})
-        self.validate(isinstance(mutation_sets, list) and mutation_sets,
-                      f"Received {len(mutation_sets)} mutation sets",
-                      {"first_set_sites": list(mutation_sets[0].keys()) if mutation_sets else None})
-        self.validate(isinstance(comp_matrices, list) and len(comp_matrices) == len(mutation_sets),
-                      f"Received {len(comp_matrices)} compatibility matrices",
-                      {"first_matrix_shape": comp_matrices[0].shape if comp_matrices else None})
+        # (Input validation code omitted for brevity)
 
         for set_index, mutation_set in enumerate(mutation_sets):
             self.state['current_mutation'] = set_index
             self.log_step("Process Mutation Set", f"Processing mutation set {set_index+1}/{len(mutation_sets)}",
                           {"sites": list(mutation_set.keys())})
 
-            # Find valid overhang combinations using the compatibility matrix.
+            # Use the compatibility matrix to obtain valid overhang combinations.
             valid_coords = np.argwhere(comp_matrices[set_index] == 1)
-            valid_combinations = np.count_nonzero(comp_matrices[set_index])
+            self.log_step("Compatibility Matrix", f"Valid coordinates for mutation set {set_index+1}",
+                          {"valid_coords": valid_coords.tolist()})
             self.validate(valid_coords.size > 0,
-                          f"Found {valid_combinations} valid overhang combinations",
+                          f"Found {np.count_nonzero(comp_matrices[set_index])} valid overhang combinations",
                           {"matrix_size": comp_matrices[set_index].size})
+            self.log_step("Matrix Visualization", f"Compatibility matrix for set {set_index+1}",
+                          visualize_matrix(comp_matrices[set_index]))
 
-            if valid_coords.size > 0:
-                self.log_step("Matrix Visualization", f"Compatibility matrix for set {set_index+1}",
-                              visualize_matrix(comp_matrices[set_index]))
-            else:
-                self.debugger and self.debugger.log_warning(
-                    f"No valid overhang combinations for set {set_index+1}")
-                continue
+            # we now know, for the current mutation set, which overhangs are compatible with each other
+            # amongst the N sites to mutate
+            for i, site_to_mutate_data in enumerate(mutation_set.values()):
+                print(f"site_to_mutate_data: {site_to_mutate_data}")
+                # design primer for the ith mutation
+                # the mutated context for designing primers is contained in the alternative codon dict
+                site, position, original_codon_sequence, alternative_codon_sequence, mutated_base_index, overhangs, primer_context = site_to_mutate_data.values()
 
-            # Apply mutations to create the mutated sequence.
-            mutated_seq = self._apply_mutations(full_sequence, mutation_set)
-            self.validate(mutated_seq is not None and len(mutated_seq) == len(full_sequence),
-                          "Successfully applied mutations to sequence",
-                          {"original_length": len(full_sequence), "mutated_length": len(mutated_seq)})
+                mutated_seq = self._apply_mutations(
+                    full_sequence, mutation_set)
+                self.validate(mutated_seq is not None and len(mutated_seq) == len(full_sequence),
+                              "Successfully applied mutations to sequence",
+                              {"original_length": len(full_sequence), "mutated_length": len(mutated_seq)})
+                # annealing_region = mutated_seq[sticky_end_placement[0]:sticky_end_placement[0] + self.binding_length]
+                # the forward primer is self.spacer + self.bsmbi_site + annealing_region
 
-            # Choose the first valid coordinate row from the compatibility matrix.
-            chosen_coords = valid_coords[0]
-            position_keys = list(mutation_set.keys())
+            # # Log chosen sticky end details (drilling down into the codon structure).
+            # for i, site_key in enumerate(position_keys):
+            #     site_info = mutation_set[site_key]
+            #     overhang_index = int(chosen_coords[i].item())
+            #     try:
+            #         if "overhangs" in site_info:
+            #             overhang_options = site_info["overhangs"].get(
+            #                 "overhang_options", [])
+            #             if overhang_options and overhang_index < len(overhang_options):
+            #                 chosen_option = overhang_options[overhang_index]
+            #                 top_info = chosen_option.get("top_overhang")
+            #                 bottom_info = chosen_option.get("bottom_overhang")
+            #                 self.log_step(
+            #                     "Chosen Overhang",
+            #                     f"For site {site_key} (position {site_info['position']}), using overhang option index {overhang_index}",
+            #                     {
+            #                         "top_overhang": top_info,
+            #                         "bottom_overhang": bottom_info,
+            #                     }
+            #                 )
+            #             else:
+            #                 raise KeyError(
+            #                     "No valid overhang options available.")
+            #         else:
+            #             # Fallback logging for legacy structure.
+            #             if "alternative_codons" in site_info:
+            #                 alternative = site_info["alternative_codons"][overhang_index]
+            #             elif "codons" in site_info:
+            #                 alternative = site_info["codons"][0]["alternative_codons"][overhang_index]
+            #             else:
+            #                 raise KeyError(
+            #                     "No alternative codon information found.")
+            #             sticky_ends = alternative.get("sticky_ends", {})
+            #             sticky_key = list(sticky_ends.keys())[
+            #                 0] if sticky_ends else None
+            #             top_option = sticky_ends.get(sticky_key, {}).get(
+            #                 "top_strand", []) if sticky_key else None
+            #             bottom_option = sticky_ends.get(sticky_key, {}).get(
+            #                 "bottom_strand", []) if sticky_key else None
+            #             self.log_step(
+            #                 "Chosen Sticky Ends",
+            #                 f"For site {site_key} (position {site_info['position']}), using alternative codon index {overhang_index}",
+            #                 {
+            #                     "alternative_codon": alternative["seq"],
+            #                     "top_sticky": top_option[overhang_index] if top_option and len(top_option) > overhang_index else None,
+            #                     "bottom_sticky": bottom_option[overhang_index] if bottom_option and len(bottom_option) > overhang_index else None,
+            #                 }
+            #             )
+                # except (KeyError, IndexError) as e:
+                #     self.log_step("Sticky End Error", f"Could not retrieve sticky end for site {site_key}",
+                #                   {"error": str(e)}, level=logging.ERROR)
+                #     continue
 
-            # Log chosen overhang options per site.
-            for i, site_key in enumerate(position_keys):
-                site_info = mutation_set[site_key]
-                overhang_index = int(chosen_coords[i].item())
-                try:
-                    overhang_data = site_info["overhangs"]["overhang_options"][overhang_index]
-                except (KeyError, IndexError) as e:
-                    self.log_step("Overhang Error", f"Could not retrieve overhang for site {site_key}",
-                                  {"error": str(e)}, level=logging.ERROR)
-                    continue
-
-                self.log_step(
-                    "Chosen Overhang",
-                    f"For site {site_key} (position {site_info['position']}), using overhang index {overhang_index}",
-                    {
-                        "top_overhang": overhang_data.get("top_overhang"),
-                        "bottom_overhang": overhang_data.get("bottom_overhang"),
-                        "overhang_start_index": overhang_data.get("overhang_start_index")
-                    }
-                )
-
-            # Construct MutationPrimer objects using the chosen overhang row.
+            # Construct MutationPrimer objects.
             mutation_primers = self._construct_mutation_primers(
                 original_seq=full_sequence,
                 mutated_seq=mutated_seq,
                 mutation_set=mutation_set,
-                valid_coords=chosen_coords,
+                valid_coords=[],
                 primer_name=primer_name
             )
             self.validate(mutation_primers is not None, "Successfully constructed mutation primers",
@@ -138,15 +163,15 @@ class PrimerDesigner(DebugMixin):
         mutated_seq = list(target_seq)
         for site_key, mut in mutation_set.items():
             pos = mut["position"] - 1  # Convert to 0-indexed.
-            alt_seq = mut["alternative_sequence"]
-            orig_seq = mut["original_sequence"]
+            alt_codon_seq = mut["alternative_codon_sequence"]
+            orig_codon_seq = mut["original_codon_sequence"]
             self.log_step("Mutation Details", f"Applying mutation at site {site_key}, position {pos+1}",
-                          {"original": orig_seq, "alternative": alt_seq,
-                           "context": target_seq[max(0, pos-5):min(len(target_seq), pos+len(orig_seq)+5)]})
-            mutated_seq[pos:pos + len(orig_seq)] = alt_seq
+                          {"original": orig_codon_seq, "alternative": alt_codon_seq,
+                           "context_sequence": target_seq[max(0, pos-5):min(len(target_seq), pos+len(orig_codon_seq)+5)]})
+            mutated_seq[pos:pos + len(orig_codon_seq)] = alt_codon_seq
             if self.verbose or self.debug:
                 self._log_mutation(target_seq, ''.join(
-                    mutated_seq), pos, len(orig_seq))
+                    mutated_seq), pos, len(orig_codon_seq))
         result = ''.join(mutated_seq)
         self.validate(len(result) == len(target_seq),
                       "Mutation applied successfully, sequence length preserved",
@@ -175,7 +200,7 @@ class PrimerDesigner(DebugMixin):
             selected_coord = int(valid_coords[i].item())
             position = mut["position"] - 1
             self.log_step("Design Primer Pair", f"Designing primers for site {site_key} at position {position+1}",
-                          {"mutation": mut["alternative_sequence"], "selected_coord": selected_coord})
+                          {"mutation": mut["alternative_codon_sequence"], "selected_coord": selected_coord})
 
             forward_tuple = self._construct_primer(mutated_seq, position, mut, selected_coord,
                                                    binding_length, is_reverse=False, primer_name=primer_name)
@@ -205,7 +230,7 @@ class PrimerDesigner(DebugMixin):
         Constructs a mutagenic primer using the mutated sequence as the binding region.
         The final primer consists of:
         - A non-annealing tail: spacer + BsmBI recognition site
-        - An annealing region: a segment of the mutated sequence starting at the overhang start index for binding_length bases.
+        - An annealing region: a segment of the mutated sequence starting at the sticky end start index.
         For reverse primers, the annealing region is reverse-complemented.
         """
         direction = "reverse" if is_reverse else "forward"
@@ -214,23 +239,67 @@ class PrimerDesigner(DebugMixin):
                       {"binding_length": binding_length, "selected_coord": selected_coord})
 
         if not primer_name:
-            primer_name = f"Mut_{mut['site']}"
+            primer_name = f"Mut_{mut.get('site', 'unknown')}"
         primer_suffix = "_RV" if is_reverse else "_FW"
         primer_name = f"{primer_name}{primer_suffix}"
 
-        # Retrieve the chosen overhang option and its starting index.
-        overhang_options = mut.get("overhangs", {}).get("overhang_options", [])
-        if not overhang_options or selected_coord >= len(overhang_options):
-            self.debugger and self.debugger.log_warning(
-                f"No valid overhang option found for site {mut['site']}")
-            return None
-
-        overhang_option = overhang_options[selected_coord]
-        overhang_start_index = overhang_option.get("overhang_start_index")
-        if overhang_start_index is None:
-            self.debugger and self.debugger.log_warning(
-                f"Overhang start index missing for site {mut['site']}")
-            return None
+        # Use the new structure if available: expect an "overhangs" key with "overhang_options"
+        if "overhangs" in mut:
+            overhang_options = mut["overhangs"].get("overhang_options", [])
+            if not overhang_options or selected_coord >= len(overhang_options):
+                self.debugger and self.debugger.log_warning(
+                    f"No valid overhang option found for site {mut.get('site', 'unknown')}")
+                return None
+            overhang_option = overhang_options[selected_coord]
+            # Choose the strand info based on primer orientation.
+            strand_info = overhang_option.get(
+                "bottom_overhang") if is_reverse else overhang_option.get("top_overhang")
+            if not strand_info:
+                self.debugger and self.debugger.log_warning(
+                    f"No sticky end information found for site {mut.get('site', 'unknown')}")
+                return None
+            overhang_start_index = strand_info.get("start_index")
+            if overhang_start_index is None:
+                self.debugger and self.debugger.log_warning(
+                    f"Sticky end start index missing for site {mut.get('site', 'unknown')}")
+                return None
+        else:
+            # Fallback to legacy structure if needed (e.g., using alternative_codons)
+            if "alternative_codons" in mut:
+                alternative_codons = mut["alternative_codons"]
+            elif "codons" in mut and len(mut["codons"]) > 0:
+                alternative_codons = mut["codons"][0].get(
+                    "alternative_codons", [])
+            else:
+                alternative_codons = []
+            if not alternative_codons or selected_coord >= len(alternative_codons):
+                self.debugger and self.debugger.log_warning(
+                    f"No valid alternative codon found for site {mut.get('site', 'unknown')}")
+                return None
+            alternative = alternative_codons[selected_coord]
+            sticky_ends = alternative.get("sticky_ends", {})
+            # Assume a key (like "position_2") exists; adjust if necessary.
+            sticky_key = list(sticky_ends.keys())[0] if sticky_ends else None
+            if not sticky_key:
+                self.debugger and self.debugger.log_warning(
+                    f"No sticky ends found for alternative codon {alternative['seq']} at site {mut.get('site', 'unknown')}")
+                return None
+            if is_reverse:
+                sticky_list = sticky_ends.get(
+                    sticky_key, {}).get("bottom_strand", [])
+            else:
+                sticky_list = sticky_ends.get(
+                    sticky_key, {}).get("top_strand", [])
+            if not sticky_list or selected_coord >= len(sticky_list):
+                self.debugger and self.debugger.log_warning(
+                    f"No valid sticky end option found for site {mut.get('site', 'unknown')}")
+                return None
+            overhang_option = sticky_list[selected_coord]
+            overhang_start_index = overhang_option.get("start_index")
+            if overhang_start_index is None:
+                self.debugger and self.debugger.log_warning(
+                    f"Sticky end start index missing for site {mut.get('site', 'unknown')}")
+                return None
 
         # Calculate the binding (annealing) region from the mutated sequence.
         binding_region = mutated_seq[overhang_start_index:
@@ -239,7 +308,7 @@ class PrimerDesigner(DebugMixin):
             self.debugger and self.debugger.log_warning(
                 f"Binding region length insufficient for {direction} primer",
                 {"start_index": overhang_start_index, "requested_length": binding_length,
-                    "actual_length": len(binding_region)}
+                 "actual_length": len(binding_region)}
             )
             return None
 

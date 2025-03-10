@@ -116,8 +116,8 @@ class GoldenGateProtocol(DebugMixin):
             if sites_to_mutate:
 
                 with debug_context("Mutation analysis"):
-                    mutation_options = self.mutation_analyzer.get_all_mutations(single_seq,
-                                                                                sites_to_mutate)
+                    mutation_options = self.mutation_analyzer.get_all_mutations(
+                        sites_to_mutate)
                     optimized_mutations, compatibility_matrices = None, None
 
                     if mutation_options:

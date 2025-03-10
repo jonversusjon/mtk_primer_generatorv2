@@ -10,8 +10,33 @@ from .base import debug_context
 
 class SequencePreparator:
     """
-    Handles sequence preprocessing for Golden Gate assembly,
-    including frame adjustments and restriction site analysis.
+    Sequence Preparation Module
+
+    This module handles preprocessing of DNA sequences for Golden Gate assembly,
+    including the removal of start/stop codons, ensuring sequences are in the correct reading frame,
+    and identifying restriction enzyme recognition sites (specifically BsmBI and BsaI) that require mutation.
+
+    Input Parameters:
+        - sequence (str or Bio.Seq.Seq): The DNA sequence to be prepared.
+        - verbose (bool): Controls detailed logging during site identification.
+
+    Output Data Structures:
+        The methods provide structured outputs:
+        - preprocess_sequence: Returns a tuple (cleaned_sequence (str), message (str), in_frame (bool)).
+        - find_bsmbi_bsai_sites: Returns a sorted list of dictionaries, each containing:
+            • 'position' (int): Start position of the recognition site.
+            • 'sequence' (str): Recognition site sequence.
+            • 'enzyme' (str): Enzyme name ('BsmBI' or 'BsaI').
+            • 'frame' (int): Reading frame (0, 1, or 2).
+            • 'strand' (str): Strand orientation ('+' or '-').
+            • 'codons' (List[Dict]): Codons overlapping the recognition site with details:
+                - 'codon_seq' (str): Codon sequence.
+                - 'position' (int): Codon position within the sequence.
+                - 'amino_acid' (str): Amino acid encoded by the codon.
+            • 'context_sequence' (str): Sequence context surrounding the recognition site.
+            • 'context_recognition_site_indices' (List[int]): Positions of the mutated bases within the context.
+
+        - get_codons: Returns a list of codon dictionaries as described above.
     """
 
     def __init__(self, verbose: bool = False):
@@ -156,47 +181,46 @@ class SequencePreparator:
         forward_matches = list(re.finditer(
             re.escape(recognition_seq), seq_str))
 
-        print(f"forward_matches: {forward_matches}")
         for match in forward_matches:
             index = match.start()
             frame = index % 3
             codons = self.get_codons(seq, index, len(recognition_seq), frame)
 
-            # Get context sequence (10bp upstream and 10bp downstream)
-            start_context = max(0, index - 10)
-            end_context = min(len(seq_str), index + len(recognition_seq) + 10)
+            # Get context sequence (30bp upstream and 30bp downstream)
+            start_context = max(0, index - 30)
+            end_context = min(len(seq_str), index + len(recognition_seq) + 30)
             context_seq = seq_str[start_context:end_context]
 
             # Calculate mutated base indices relative to the context sequence
-            context_mutated_indices = [
+            context_recognition_site_indices = [
                 i - start_context for i in range(index, index + len(recognition_seq))]
 
             site_details.append({
                 'position': index,  # Removed +1 for 0-indexing
-                'sequence': recognition_seq,
+                'recognition_sequence': recognition_seq,
                 'frame': frame,
                 'codons': codons,
                 'strand': '+',
-                'context': context_seq,
-                'context_mutated_indices': context_mutated_indices
+                'context_sequence': context_seq,
+                'context_recognition_site_indices': context_recognition_site_indices
             })
 
         # Reverse strand matches
         rev_comp = str(Seq(recognition_seq).reverse_complement())
         reverse_matches = list(re.finditer(re.escape(rev_comp), seq_str))
-        # print(f"reverse_matches: {reverse_matches}")
+
         for match in reverse_matches:
             index = match.start()
             frame = index % 3
             codons = self.get_codons(seq, index, len(recognition_seq), frame)
 
-            # Get context sequence (10bp upstream and 10bp downstream)
-            start_context = max(0, index - 10)
-            end_context = min(len(seq_str), index + len(recognition_seq) + 10)
+            # Get context sequence (30bp upstream and 30bp downstream)
+            start_context = max(0, index - 30)
+            end_context = min(len(seq_str), index + len(recognition_seq) + 30)
             context_seq = seq_str[start_context:end_context]
 
             # Calculate mutated base indices relative to the context sequence
-            context_mutated_indices = [
+            context_recognition_site_indices = [
                 i - start_context for i in range(index, index + len(rev_comp))]
 
             site_details.append({
@@ -205,8 +229,8 @@ class SequencePreparator:
                 'frame': frame,
                 'codons': codons,
                 'strand': '-',
-                'context': context_seq,
-                'context_mutated_indices': context_mutated_indices
+                'context_sequence': context_seq,
+                'context_recognition_site_indices': context_recognition_site_indices
             })
 
         return site_details
