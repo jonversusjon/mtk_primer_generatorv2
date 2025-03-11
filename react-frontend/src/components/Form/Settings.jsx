@@ -76,6 +76,29 @@ function Settings({
           </select>
         </div>
 
+        {/* Results Limit Setting */}
+        <div className="form-group">
+          <label htmlFor="results-select">Number of Results:</label>
+          <select
+            id="results-select"
+            className="form-control"
+            value={formData.results_limit}
+            onChange={(e) =>
+              updateFormData(
+                "results_limit",
+                e.target.value === "all" ? "all" : parseInt(e.target.value)
+              )
+            }
+          >
+            {[...Array(6).keys()].map((i) => (
+              <option key={i} value={2 ** i}>
+                {2 ** i}
+              </option>
+            ))}
+            <option value="all">All</option>
+          </select>
+        </div>
+
         {/* Verbose Mode Toggle */}
         <div className="form-check">
           <input

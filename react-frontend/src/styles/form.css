@@ -89,7 +89,6 @@ textarea {
 margin: 20px auto;
 padding: 20px;
 border-radius: 12px;
-background-color: var(--form-bg);
 box-shadow: 5px 5px 10px var(--shadow-color);
 max-width: 600px;
 }
@@ -301,7 +300,6 @@ width: 200px;
 
 /* Dark Mode */
 .dark-mode #primer-form {
-background-color: var(--form-bg);
 box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.5);
 }
 
@@ -321,3 +319,4 @@ border-top-color: var(--foreground-color);
   width: 100%;
 }
 }
+

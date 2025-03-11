@@ -29,6 +29,9 @@ function App() {
     try {
       // This will be implemented in the API section
       const response = await generateProtocol(formData);
+
+      console.log("📢 Received API Response from Flask:", response);
+      
       setResults(response);
     } catch (err) {
       setError(

@@ -4,11 +4,36 @@ from services.utils import GoldenGateUtils
 from services.protocol import GoldenGateProtocol
 from flask_cors import CORS
 import json
+import logging
 
 api = Blueprint("api", __name__, url_prefix="/api")
 CORS(api)  # Enable CORS for all routes in this blueprint
 
 utils = GoldenGateUtils()
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+
+def get_nested_keys(item, prefix=''):
+    """
+    Recursively collect keys from dictionaries and lists.
+
+    :param item: The dictionary or list to inspect.
+    :param prefix: The prefix to use for nested keys.
+    :return: A list of string keys, including paths.
+    """
+    keys = []
+    if isinstance(item, dict):
+        for k, v in item.items():
+            full_key = f"{prefix}.{k}" if prefix else k
+            keys.append(full_key)
+            keys.extend(get_nested_keys(v, full_key))
+    elif isinstance(item, list):
+        for index, element in enumerate(item):
+            indexed_prefix = f"{prefix}[{index}]"
+            keys.extend(get_nested_keys(element, indexed_prefix))
+    return keys
 
 
 @api.route("/species", methods=["GET"])
@@ -36,6 +61,7 @@ def generate_protocol():
         max_mut_per_site = data.get("max_mut_per_site", 3)
         verbose_mode = data.get("verbose_mode", True)
         template_sequence = data.get("templateSequence", "")
+        max_results = data.get("max_results", 1)
 
         # Validate input
         if not species:
@@ -51,12 +77,24 @@ def generate_protocol():
             max_mutations=max_mut_per_site,
             template_seq=template_sequence,
             kozak=kozak,
+            max_results=max_results,
             verbose=verbose_mode
         )
 
         # Generate the protocol
         result = protocol_maker.create_gg_protocol()
         serializable_result = utils.convert_non_serializable(result)
+
+        result_keys = get_nested_keys(result)
+        serializable_keys = get_nested_keys(serializable_result)
+
+        # Optionally, compare key sets to see if any keys were lost in conversion
+        missing_keys = set(result_keys) - set(serializable_keys)
+        if missing_keys:
+            logger.warning(
+                "Missing keys in serializable result: %s", missing_keys)
+        else:
+            logger.debug("No keys are missing in serializable result.")
 
         # Check for errors
         if serializable_result.get('has_errors', False):
@@ -65,6 +103,8 @@ def generate_protocol():
                 "sequence_errors": serializable_result.get('sequence_errors', {})
             }), 422
 
+        print(
+            f"Generated protocol: {serializable_result}")
         # Success - return the result
         return jsonify(serializable_result)
 

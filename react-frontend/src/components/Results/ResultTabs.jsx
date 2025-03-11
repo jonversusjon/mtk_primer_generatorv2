@@ -49,7 +49,7 @@ function ResultTabs({ results }) {
               aria-labelledby={`result-tab-button-${index}`}
               hidden={activeTab !== index}
             >
-              <ResultTab result={result} />
+              <ResultTab result={result} index={index} />
             </div>
           ))}
         </div>

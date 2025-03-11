@@ -28,6 +28,7 @@ class GoldenGateProtocol(DebugMixin):
         template_seq: Optional[str] = None,
         kozak: str = "MTK",
         output_tsv_path: str = "designed_primers.tsv",
+        max_results: int = 1,
         verbose: bool = False
     ):
         self.logger = logger.getChild("GoldenGateProtocol")
@@ -66,6 +67,8 @@ class GoldenGateProtocol(DebugMixin):
             'primers_designed': []
         }
 
+        self.max_results = max_results
+
     def create_gg_protocol(self) -> dict:
         """
         Main function to orchestrate the Golden Gate protocol creation.
@@ -84,6 +87,8 @@ class GoldenGateProtocol(DebugMixin):
             sequence_data = {
                 "sequence_index": idx,
                 "processed_sequence": None,
+                "mtk_part_left": mtk_part_left,
+                "mtk_part_right": mtk_part_right,
                 "restriction_sites": [],
                 "mutations": None,
                 "PCR_reactions": {},
@@ -126,6 +131,8 @@ class GoldenGateProtocol(DebugMixin):
                             mutation_options=mutation_options
                         )
 
+                        # TODO: add valid solution tracking to enable retuning multiple solutions up to
+                        # max_results number of solutions to the user
                         sequence_data["mutations"] = {
                             "all_mutation_options": optimized_mutations,
                             "compatibility": compatibility_matrices

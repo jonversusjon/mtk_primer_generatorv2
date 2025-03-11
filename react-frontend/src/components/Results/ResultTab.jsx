@@ -9,8 +9,14 @@ function formatPrimerSequence(primer) {
   return "None";
 }
 
-function ResultTab({ result }) {
+function ResultTab({ result, index }) {
   const [copied, setCopied] = React.useState(false);
+
+  const mtkPartLeft = result?.mtk_part_left || "N/A";
+  const mtkPartRight = result?.mtk_part_right || "N/A";
+
+  console.log("MTK Part Left:", mtkPartLeft);
+  console.log("MTK Part Right:", mtkPartRight);
 
   // Copy all primer data (tab-separated) to the clipboard
   const copyPrimersToClipboard = React.useCallback(() => {
@@ -62,7 +68,19 @@ function ResultTab({ result }) {
           ))}
         </div>
       )}
-
+      {/* Display MTK Part Numbers */}
+      <div className="mtk-part-info">
+        {mtkPartLeft === mtkPartRight ? (
+          <p>
+            <strong>MTK Part Number:</strong> {mtkPartLeft}
+          </p>
+        ) : (
+          <p>
+            <strong>MTK Part Number Left:</strong> {mtkPartLeft} <br />
+            <strong>MTK Part Number Right:</strong> {mtkPartRight}
+          </p>
+        )}
+      </div>
       {/* Restriction Sites */}
       {result.restriction_sites && result.restriction_sites.length > 0 && (
         <RestrictionSiteSummary sites={result.restriction_sites} />
