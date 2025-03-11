@@ -38,6 +38,7 @@ class PrimerDesigner(DebugMixin):
         }
         self.bsmbi_site = "CGTCTC"
         self.spacer = "GAA"
+        self.max_binding_length = 30
 
         # Validate that the MTK part end sequences have been loaded.
         self.validate(self.part_end_dict is not None,
@@ -160,18 +161,27 @@ class PrimerDesigner(DebugMixin):
     def _construct_mutation_primers(self, mutation_set: list,
                                     selected_coords: list,
                                     primer_name: str = None,
-                                    binding_length: int = 10) -> list:
+                                    min_binding_length: int = 10) -> list:
+        """
+        For each mutation in mutation_set, design forward and reverse primers such that:
+        - The forward primer is on the left (5') side of the overhang/mutation site
+            (on the sense strand).
+        - The reverse primer is on the right (3') side of the overhang/mutation site
+            (on the sense strand), but we reverse-complement that region to get the actual
+            primer that anneals to the antisense strand.
 
-        self.log_step("Construct Primers", f"Constructing primers with binding length {binding_length}",
+        'overhang_start_index' is the 0-based index where the 4-nt sticky end begins (e.g. 32).
+        """
+
+        self.log_step("Construct Primers",
+                      f"Constructing primers with binding length {min_binding_length}",
                       {"selected_coord": selected_coords})
         mutation_primers = []
 
-        # Helper function to compute the reverse complement of a sequence.
         def reverse_complement(seq: str) -> str:
             complement = str.maketrans('ATCGatcg', 'TAGCtagc')
             return seq.translate(complement)[::-1]
 
-        # Helper function to calculate GC content as a percentage.
         def calculate_gc(seq: str) -> float:
             seq = seq.upper()
             if len(seq) == 0:
@@ -180,64 +190,87 @@ class PrimerDesigner(DebugMixin):
             return round((gc_count / len(seq)) * 100, 2)
 
         for i, mutation_set_obj in enumerate(mutation_set):
-            # Select the appropriate overhang based on selected_coords.
             selected_overhang = selected_coords[i]
             overhang_data = mutation_set_obj["overhangs"]["overhang_options"][selected_overhang]
+            print(f"overhang_data: {overhang_data}")
             mutated_context = mutation_set_obj["mutated_context"]
             overhang_start_index = overhang_data["overhang_start_index"]
 
             tm_threshold = self.default_params["tm_threshold"]
 
-            # ----- Forward Primer -----
-            # The annealing region begins at overhang_start_index - 1 (5' end of annealing region)
-            f_start = overhang_start_index - 1
-            f_seq_length = binding_length
-            f_primer_anneal = mutated_context[f_start:f_start + f_seq_length]
-            while self._calculate_tm(f_primer_anneal) < tm_threshold and (f_start + f_seq_length) < len(mutated_context):
+            # ========== FORWARD PRIMER ==========
+            f_5prime_cap = overhang_start_index - 1
+
+            # Expand the annealing region if Tm is too low.
+            f_seq_length = min_binding_length
+            f_anneal = mutated_context[f_5prime_cap:f_5prime_cap + f_seq_length]
+            while self._calculate_tm(f_anneal) < tm_threshold and f_seq_length < self.max_binding_length:
                 f_seq_length += 1
-                f_primer_anneal = mutated_context[f_start:f_start + f_seq_length]
+                f_anneal = mutated_context[f_5prime_cap:f_5prime_cap + f_seq_length]
 
-            # Build the forward primer full sequence by prepending the overhang.
-            forward_full_seq = f"GAA{self.bsmbi_site}{f_primer_anneal}"
+            self.log_step(
+                "Forward Primer Sequence",
+                f"Forward primer annealing region[1:5]: {f_anneal[1:5]}, "
+                f"overhang_seq: {overhang_data['top_overhang']['seq']}"
+            )
 
-            # ----- Reverse Primer -----
-            # The annealing region begins at overhang_start_index + 4 (5' end of annealing region)
-            r_start = overhang_start_index + 4
-            r_seq_length = binding_length
-            r_primer_anneal = mutated_context[r_start:r_start + r_seq_length]
-            while self._calculate_tm(r_primer_anneal) < tm_threshold and (r_start + r_seq_length) < len(mutated_context):
+            self.validate(
+                str(f_anneal[1:5]).strip().upper() == str(
+                    overhang_data["top_overhang"]["seq"]).strip().upper(),
+                f"Forward primer annealing region[1:5] ({f_anneal[1:5].strip().upper()}) "
+                f"matches expected overhang sequence ({overhang_data['top_overhang']['seq'].strip().upper()})"
+            )
+
+            f_primer_sequence = self.spacer + self.bsmbi_site + f_anneal
+
+            # ========== REVERSE PRIMER ==========
+            r_5prime_cap = overhang_start_index + 5
+
+            # Expand the annealing region if Tm is too low.
+            r_seq_length = min_binding_length
+            r_anneal = mutated_context[r_5prime_cap:r_5prime_cap + r_seq_length]
+            while self._calculate_tm(r_anneal) < tm_threshold and r_seq_length < self.max_binding_length:
                 r_seq_length += 1
-                r_primer_anneal = mutated_context[r_start:r_start + r_seq_length]
-            # Reverse complement the annealing region to generate the final reverse primer binding sequence.
-            r_primer_anneal_rc = reverse_complement(r_primer_anneal)
+                r_anneal = mutated_context[r_5prime_cap -
+                                           r_seq_length:r_5prime_cap]
 
-            # Build the reverse primer full sequence by prepending the overhang.
-            reverse_full_seq = f"GAA{self.bsmbi_site}{r_primer_anneal_rc}"
+            r_anneal = reverse_complement(r_anneal)
+            r_primer_sequence = self.spacer + self.bsmbi_site + r_anneal
+            self.log_step(
+                "Reverse Primer Sequence",
+                f"Reverse primer annealing region[1:5]: {r_anneal[1:5]}, "
+                f"overhang_seq: {overhang_data['bottom_overhang']['seq']}"
+            )
+            self.log_step(
+                "r_anneal", f"Reverse primer annealing region: {r_anneal}")
+            self.validate(
+                str(r_anneal[1:5]).strip().upper() == str(
+                    overhang_data["bottom_overhang"]["seq"]).strip().upper(),
+                f"Reverse primer annealing region[1:5] ({repr(str(r_anneal[1:5]).strip().upper())}) "
+                f"matches expected overhang sequence ({repr(str(overhang_data['bottom_overhang']['seq']).strip().upper())})"
+            )
 
-            # Create the forward Primer object.
+            # ========== CREATE PRIMER OBJECTS ==========
             f_primer = Primer(
                 name=primer_name +
                 "_forward" if primer_name else f"primer_{i}_forward",
-                sequence=forward_full_seq,
-                binding_region=f_primer_anneal,
-                tm=self._calculate_tm(f_primer_anneal),
-                gc_content=calculate_gc(f_primer_anneal),
-                length=len(forward_full_seq)
+                sequence=f_primer_sequence,
+                binding_region=f_anneal,
+                tm=self._calculate_tm(f_anneal),
+                gc_content=calculate_gc(f_anneal),
+                length=len(f_primer_sequence)
             )
 
-            # Create the reverse Primer object.
             r_primer = Primer(
                 name=primer_name +
                 "_reverse" if primer_name else f"primer_{i}_reverse",
-                sequence=reverse_full_seq,
-                binding_region=r_primer_anneal_rc,
-                # tm should be equivalent for r_primer_anneal and its reverse complement.
-                tm=self._calculate_tm(r_primer_anneal),
-                gc_content=calculate_gc(r_primer_anneal),
-                length=len(reverse_full_seq)
+                sequence=r_primer_sequence,
+                binding_region=r_anneal,
+                tm=self._calculate_tm(r_anneal),
+                gc_content=calculate_gc(r_anneal),
+                length=len(r_primer_sequence)
             )
 
-            # Construct the final MutationPrimer dataclass object.
             mutation_primer = MutationPrimer(
                 site=mutation_set_obj["site"],
                 position=mutation_set_obj["position"],
@@ -246,28 +279,28 @@ class PrimerDesigner(DebugMixin):
                 mutation_info=mutation_set_obj
             )
 
-            # Log detailed results for this primer pair.
-        self.log_step("Primer Design Result",
-                      f"Designed primer pair for mutation {mutation_set_obj['site']} at position {mutation_set_obj['position']}")
+            self.log_step("Primer Design Result",
+                          f"Designed primer pair for mutation {mutation_set_obj['site']} at position {mutation_set_obj['position']}")
+            self.log_step("Mutated Context", mutated_context)
+            self.log_step("Overhang", overhang_data)
 
-        self.log_step("Mutated Context", mutated_context)
-        self.log_step("Overhang", overhang_data)
+            self.log_step("Forward Primer Name", f_primer.name)
+            self.log_step("Forward Primer Sequence", f_primer.sequence)
+            self.log_step("Forward Primer Binding Region",
+                          f_primer.binding_region)
+            self.log_step("Forward Primer Tm", f_primer.tm)
+            self.log_step("Forward Primer GC Content", f_primer.gc_content)
+            self.log_step("Forward Primer Length", f_primer.length)
 
-        self.log_step("Forward Primer Name", f_primer.name)
-        self.log_step("Forward Primer Sequence", f_primer.sequence)
-        self.log_step("Forward Primer Binding Region", f_primer.binding_region)
-        self.log_step("Forward Primer Tm", f_primer.tm)
-        self.log_step("Forward Primer GC Content", f_primer.gc_content)
-        self.log_step("Forward Primer Length", f_primer.length)
+            self.log_step("Reverse Primer Name", r_primer.name)
+            self.log_step("Reverse Primer Sequence", r_primer.sequence)
+            self.log_step("Reverse Primer Binding Region",
+                          r_primer.binding_region)
+            self.log_step("Reverse Primer Tm", r_primer.tm)
+            self.log_step("Reverse Primer GC Content", r_primer.gc_content)
+            self.log_step("Reverse Primer Length", r_primer.length)
 
-        self.log_step("Reverse Primer Name", r_primer.name)
-        self.log_step("Reverse Primer Sequence", r_primer.sequence)
-        self.log_step("Reverse Primer Binding Region", r_primer.binding_region)
-        self.log_step("Reverse Primer Tm", r_primer.tm)
-        self.log_step("Reverse Primer GC Content", r_primer.gc_content)
-        self.log_step("Reverse Primer Length", r_primer.length)
-
-        mutation_primers.append(mutation_primer)
+            mutation_primers.append(mutation_primer)
 
         return mutation_primers
 

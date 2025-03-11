@@ -38,10 +38,10 @@ class GoldenGateProtocol(DebugMixin):
             codon_usage_dict=codon_usage_dict,
             max_mutations=max_mutations,
             verbose=verbose,
-            debug=True,
+            debug=False,
         )
         self.mutation_optimizer = MutationOptimizer(
-            verbose=verbose, debug=True)
+            verbose=verbose, debug=False)
         self.primer_designer = PrimerDesigner(
             kozak=kozak, verbose=verbose, debug=True)
 
