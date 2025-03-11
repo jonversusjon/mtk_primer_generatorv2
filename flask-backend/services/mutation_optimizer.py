@@ -20,40 +20,29 @@ class MutationOptimizer(DebugMixin):
     for Golden Gate assembly compatibility. It evaluates alternative codon mutations based on
     sticky-end compatibility, selecting sets of mutations that satisfy the Golden Gate cloning criteria.
 
-    Input:
-        - mutation_options (Dict): Output from the MutationAnalyzer.get_all_mutations function.
-        Structure:
-            {
-            "mutation_{recognition_site_position}": {
-                "position": int,
-                "sequence": str,
-                "frame": int,
-                "strand": str,
-                "enzyme": str,
-                "context_sequence": str,
-                "codons": [
-                    {
-                        "original_codon_sequence": str,
-                        "position": int,
-                        "amino_acid": str,
-                        "alternative_codons": [
-                            {
-                                "seq": str,
-                                "usage": float,
-                                "mutations": tuple(int, int, int),
-                                "changes_in_site": List[int],
-                                "sticky_ends":  {
-                                    "top_strand": {
-                                        "seq": str,
-                                        "start_index": int
-                                    },
-                                    "bottom_strand": {
-                                        "seq": str,
-                                        "start_index": int
-                                    }
-                                },
-                                "mutation_positions_in_context": List[int]
-                            }
+    Output Data Structure:
+        The get_all_mutations function returns a dictionary keyed by "mutation_{recognition_site_position}", where each value is a dictionary with:
+            - "position": The recognition site position.
+            - "sequence": The recognition site sequence.
+            - "frame": The reading frame.
+            - "strand": The DNA strand.
+            - "enzyme": The enzyme name.
+            - "codons": A list of dictionaries for each codon, each containing:
+                    • "codon_original_sequence": The original codon sequence.
+                    • "context_position": The codon position in the context sequence.
+                    • "amino_acid": The encoded amino acid.
+                    • "alternative_codons": A list of dictionaries for each valid alternative codon, each containing:
+                            - "seq": The alternative codon sequence.
+                            - "usage": The codon usage frequency.
+                            - "mutations": A 3-tuple of integers indicating changes (1 for a mutation, 0 otherwise).
+                            - "changes_in_site": A list of codon index positions (0, 1, or 2) where the candidate alters the recognition region.
+                            - "sticky_ends": A dictionary keyed by "position_{codon_index}" that contains:
+                                    • "top_strand": A list of dictionaries, each with:
+                                            - "seq": The overhang sequence.
+                                            - "overhang_start_index": The starting index in the context.
+                                    • "bottom_strand": A list of dictionaries with corresponding reverse-complement data.
+                            - "mutated_context": The context sequence with the codon replaced by the alternative codon.
+                            - "mutation_positions_in_context": A list of indices in the context where the mutation occurs.
 
     Output:
         - optimized_mutations (List[Dict]): A list of mutation sets, where each mutation set
@@ -65,10 +54,11 @@ class MutationOptimizer(DebugMixin):
             • "alternative_codon_sequence": the selected alternative codon.
             • "mutated_base_index": position of the mutation within the recognition site.
             • "overhangs": Dict containing "overhang_options", a list with:
-                    - "top_overhang": dict {"seq": str, "start_index": int}
-                    - "bottom_overhang": dict {"seq": str, "start_index": int}
+                    - "top_overhang": dict {"seq": str, "overhang_start_index": int}
+                    - "bottom_overhang": dict {"seq": str, "overhang_start_index": int}
                     - "overhang_start_index": int
-            • "primer_context": DNA context suitable for primer design around the mutation.
+            • "mutated_context": DNA context suitable for primer design around the mutation.
+            - "mutation_positions_in_context": A list of indices in the context where the mutation occurs.
 
         - compatibility_matrices (List[np.ndarray]): List of N-dimensional numpy arrays corresponding
         to each mutation set, indicating compatible (1) and incompatible (0) overhang combinations.
@@ -103,113 +93,92 @@ class MutationOptimizer(DebugMixin):
             self.validate(isinstance(self.compatibility_table,
                           np.ndarray), "Compatibility table is a numpy array")
 
-    # --- Context Utilities ---
+    @DebugMixin.debug_wrapper
+    def optimize_mutations(self, mutation_options: Dict) -> List[Dict]:
+        with debug_context("mutation_optimization"):
+            # 1. Generate all possible mutation sets
+            self.log_step("Generate Mutation Sets",
+                          "Creating all possible mutation combinations")
+            mutation_sets = self.generate_mutation_sets(mutation_options)
 
-    def apply_mutation_to_context(self, context: str, pos: int, alt_seq: str) -> str:
-        return context[:pos] + alt_seq + context[pos+len(alt_seq):]
+            # 2. Create compatibility matrices for each mutation set
+            self.log_step("Compute Compatibility",
+                          "Creating compatibility matrices")
+            matrices = self.create_compatibility_matrices(mutation_sets)
 
-    def extract_primer_context(self, mutated_ctx: str, start: int, end: int, flank: int = 30) -> str:
-        return mutated_ctx[max(0, start - flank):min(len(mutated_ctx), end + flank)]
+            # 3. Filter out mutation sets without a single compatible combination
+            self.log_step("Filter Compatible Mutations",
+                          "Removing incompatible mutation sets")
+            optimized = self.filter_compatible_mutations(
+                mutation_sets, matrices)
 
-    def process_overhangs(self, alternative: dict, codon_pos: int, context: str = None) -> list:
-        overhang_options = []
-        for key, overhang_data in alternative.get("sticky_ends", {}).items():
-            # TODO: whatever used the position_ notation is no longer used and needs to be removed
-            if not key.startswith("position_"):
-                logger.warning(f"Skipping invalid sticky end key {key}")
-                continue
-            pos = int(key.split("_")[1])
-            overhang_start = codon_pos + pos if context else None
-            if context and (overhang_start < 0 or overhang_start >= len(context)):
-                logger.warning(
-                    f"Overhang start index {overhang_start} out of bounds for mutation at {codon_pos}")
-                continue
-            top_strands = overhang_data.get("top_strand", [])
-            bottom_strands = overhang_data.get("bottom_strand", [])
-            for top, bottom in zip(top_strands, bottom_strands):
-                if not top or not bottom:
-                    logger.warning(
-                        f"Missing overhang strands at {overhang_start}")
-                    continue
-                entry = {"top_overhang": top, "bottom_overhang": bottom,
-                         "overhang_start_index": overhang_start}
-                overhang_options.append(entry)
-                logger.info(f"Processed overhang: {entry}")
-        return overhang_options
-
-    # --- Mutation Set Generation ---
+            return optimized, matrices
 
     @DebugMixin.debug_wrapper
     def generate_mutation_sets(self, mutation_options: dict) -> list:
-        self.validate(mutation_options and isinstance(mutation_options, dict),
-                      f"Received {len(mutation_options)} mutation option sites")
+        self.validate(
+            mutation_options and isinstance(mutation_options, dict),
+            f"Received {len(mutation_options)} mutation option sites"
+        )
         mutation_choices = []
         for site_key, site_data in mutation_options.items():
             self.log_step(
                 "Process Site", f"Processing site {site_key} at position {site_data['position']}")
-            site_choices = self.process_site_mutation_options(
-                site_key, site_data)
+            mutation_entries = []
+            # Iterate through each codon in the site.
+            for codon in site_data.get("codons", []):
+                # Iterate through each alternative codon option.
+                for alt in codon.get("alternative_codons", []):
+                    # Build overhang options from the sticky_ends.
+                    overhang_options = []
+                    for sticky_key, sticky_val in alt.get("sticky_ends", {}).items():
+                        top_list = sticky_val.get("top_strand", [])
+                        bottom_list = sticky_val.get("bottom_strand", [])
+                        for idx in range(len(top_list)):
+                            top_option = top_list[idx]
+                            bottom_option = bottom_list[idx] if idx < len(
+                                bottom_list) else {}
+                            overhang_options.append({
+                                "top_overhang": top_option,
+                                "bottom_overhang": bottom_option,
+                                "overhang_start_index": top_option.get("overhang_start_index")
+                            })
+                    mutation_entry = {
+                        "site": site_key,
+                        "position": site_data.get("position"),
+                        "original_codon_sequence": codon.get("codon_original_sequence"),
+                        "alternative_codon_sequence": alt.get("seq"),
+                        # Select the first mutation index if available.
+                        "mutated_base_index": alt.get("changes_in_site", [None])[0],
+                        "overhangs": {"overhang_options": overhang_options},
+                        "mutated_context": alt.get("mutated_context"),
+                        "mutation_positions_in_context": alt.get("mutation_positions_in_context")
+                    }
+                    mutation_entries.append(mutation_entry)
             self.validate(
-                site_choices, f"Found {len(site_choices)} valid mutation options for {site_key}")
-            mutation_choices.append(site_choices)
-        all_sets = [{mutation["site"]: mutation for mutation in combo}
-                    for combo in product(*mutation_choices)]
+                mutation_entries, f"Found {len(mutation_entries)} mutation entries for {site_key}")
+            mutation_choices.append(mutation_entries)
+
+        # Generate the Cartesian product of mutation entries across sites.
+        all_sets = [list(combo) for combo in product(*mutation_choices)]
         if self.debug:
             expected = np.prod([len(choices) for choices in mutation_choices])
-            self.validate(len(all_sets) == expected,
-                          f"Created {len(all_sets)} mutation sets (expected: {expected})",
-                          {"sites": len(mutation_choices)})
+            self.validate(
+                len(all_sets) == expected,
+                f"Created {len(all_sets)} mutation sets (expected: {expected})",
+                {"sites": len(mutation_choices)}
+            )
         return all_sets
-
-    def process_site_mutation_options(self, site: str, site_data: dict) -> list:
-        self.log_step("Process Site Mutations",
-                      f"Processing mutations for site {site} with site data {site_data}")
-        entries = []
-        context_sequence = site_data.get("context_sequence", "")
-        indices = site_data.get("context_recognition_site_indices", [])
-        for codon in site_data.get("codons", []):
-            for alt in codon.get("alternative_codons", []):
-                if context_sequence:
-                    site_start = indices[0] if indices else 0
-                    codon_pos = site_start + \
-                        (codon["position"] - site_data["position"])
-                    mutated_ctx = self.apply_mutation_to_context(
-                        context_sequence, codon_pos, alt["seq"])
-                    primer_ctx = self.extract_primer_context(
-                        mutated_ctx, codon_pos, codon_pos + len(alt["seq"]))
-                    overhang_opts = self.process_overhangs(
-                        alt, codon_pos, context=mutated_ctx)
-                else:
-                    primer_ctx = ""
-                    overhang_opts = self.process_overhangs(
-                        alt, 0, context=None)
-                m_index = (codon["position"] -
-                           site_data["position"] + site_data["frame"]) % 6
-                original_seq = codon.get("original_codon_sequence", codon.get(
-                    "codon_seq", alt.get("seq", "")))
-                entry = {
-                    "site": site,
-                    "position": site_data["position"],
-                    "original_codon_sequence": original_seq,
-                    "alternative_codon_sequence": alt["seq"],
-                    "mutated_base_index": m_index,
-                    "overhangs": {"overhang_options": overhang_opts},
-                    "primer_context": primer_ctx
-                }
-                entries.append(entry)
-        return entries
-
-    # --- Compatibility Matrix & Filtering ---
 
     @DebugMixin.debug_wrapper
     def create_compatibility_matrices(self, mutation_sets: List[Dict]) -> List[np.ndarray]:
         compatibility_matrices = []
         for mutation_set in tqdm(mutation_sets, desc="Processing Mutation Sets", unit="set"):
-            keys = list(mutation_set.keys())
+            keys = list(range(len(mutation_set)))
             overhang_lists = [
-                [opt["top_overhang"]
-                    for opt in mutation_set[k]["overhangs"]["overhang_options"]]
-                for k in keys
+                [opt["overhangs"]["overhang_options"][i]
+                 for i in range(len(opt["overhangs"]["overhang_options"]))]
+                for opt in mutation_set
             ]
             shape = tuple(len(lst) for lst in overhang_lists)
             matrix = np.zeros(shape, dtype=int)
@@ -217,9 +186,9 @@ class MutationOptimizer(DebugMixin):
                 combo = tuple(overhang_lists[i][idx]
                               for i, idx in enumerate(combo_indices))
                 n = len(combo)
-                if all(self.compatibility_table[self.utils.seq_to_index(combo[i]["seq"])][self.utils.seq_to_index(combo[j]["seq"])] == 1
-
-                       for i in range(n) for j in range(i+1, n)):
+                if all(self.compatibility_table[self.utils.seq_to_index(combo[i]["top_overhang"]["seq"])][
+                        self.utils.seq_to_index(combo[j]["top_overhang"]["seq"])] == 1
+                        for i in range(n) for j in range(i + 1, n)):
                     matrix[combo_indices] = 1
             compatibility_matrices.append(matrix)
         return compatibility_matrices
@@ -232,19 +201,3 @@ class MutationOptimizer(DebugMixin):
             del mutation_sets[i]
             del compatibility_matrices[i]
         return mutation_sets
-
-    @DebugMixin.debug_wrapper
-    def optimize_mutations(self, mutation_options: Dict) -> List[Dict]:
-        with debug_context("mutation_optimization"):
-            self.log_step("Generate Mutation Sets",
-                          "Creating all possible mutation combinations")
-            mutation_sets = self.generate_mutation_sets(mutation_options)
-            self.log_step("Compute Compatibility",
-                          "Creating compatibility matrices")
-            matrices = self.create_compatibility_matrices(mutation_sets)
-            self.log_step("Filter Compatible Mutations",
-                          "Removing incompatible mutation sets")
-            optimized = self.filter_compatible_mutations(
-                mutation_sets, matrices)
-
-            return optimized, matrices

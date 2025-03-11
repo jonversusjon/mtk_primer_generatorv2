@@ -32,7 +32,7 @@ class PrimerDesigner(DebugMixin):
         self.kozak = kozak
         self.part_end_dict = self.utils.get_mtk_partend_sequences()
         self.default_params = {
-            'tm_threshold': 45.0, 'min_3p_match': 10, 'max_mismatches': 1,
+            'tm_threshold': 55.0, 'min_3p_match': 10, 'max_mismatches': 1,
             'mv_conc': 50.0, 'dv_conc': 1.5, 'dntp_conc': 0.2,
             'dna_conc': 250.0, 'min_tm': 57
         }
@@ -44,20 +44,27 @@ class PrimerDesigner(DebugMixin):
                       "MTK part end sequences loaded successfully", {"kozak": self.kozak})
 
     @DebugMixin.debug_wrapper
-    def design_mutation_primers(self, full_sequence: str, mutation_sets: list, comp_matrices: list, primer_name: str = None):
+    def design_mutation_primers(self, mutation_sets: list, comp_matrices: list, primer_name: str = None):
         """
         Designs mutation primers for the provided full sequence given one or more mutation sets.
         Uses the compatibility matrix to pick valid overhang combinations and constructs MutationPrimer objects.
         """
-        # (Input validation code omitted for brevity)
 
         for set_index, mutation_set in enumerate(mutation_sets):
             self.state['current_mutation'] = set_index
-            self.log_step("Process Mutation Set", f"Processing mutation set {set_index+1}/{len(mutation_sets)}",
-                          {"sites": list(mutation_set.keys())})
 
             # Use the compatibility matrix to obtain valid overhang combinations.
             valid_coords = np.argwhere(comp_matrices[set_index] == 1)
+            selected_coords = valid_coords[np.random.choice(
+                valid_coords.shape[0])]
+            selected_coords = selected_coords.tolist()
+
+            # Use log_step to output debug info:
+            self.log_step(
+                "Debug Info", f"Valid coordinates for mutation set {set_index+1}: {valid_coords.tolist()}")
+            self.log_step(
+                "Debug Info", f"Selected coordinates for mutation set {set_index+1}: {selected_coords}")
+
             self.log_step("Compatibility Matrix", f"Valid coordinates for mutation set {set_index+1}",
                           {"valid_coords": valid_coords.tolist()})
             self.validate(valid_coords.size > 0,
@@ -68,79 +75,39 @@ class PrimerDesigner(DebugMixin):
 
             # we now know, for the current mutation set, which overhangs are compatible with each other
             # amongst the N sites to mutate
-            for i, site_to_mutate_data in enumerate(mutation_set.values()):
+
+            for i, site_to_mutate_data in enumerate(mutation_set):
+                overhang_options = site_to_mutate_data["overhangs"].get(
+                    "overhang_options", [])
+
+                # Ensure valid_coords has an entry for this index
+                if i >= len(valid_coords):
+                    raise IndexError(f"valid_coords index {i} out of range")
+
+                selected_overhang = selected_coords[i]
+                overhang_data = overhang_options[selected_overhang]
+                print(f"overhang_data: {overhang_data}")
+                # Extract overhang sequences safely
+                try:
+                    top_overhang_seq = overhang_data["top_overhang"]["seq"]
+                    bottom_overhang_seq = overhang_data["bottom_overhang"]["seq"]
+                    self.log_step(
+                        "Overhang Sequences", f"Top overhang: {top_overhang_seq}, Bottom overhang: {bottom_overhang_seq}",)
+                except KeyError as e:
+                    raise KeyError(
+                        f"Missing expected key in overhang_data: {e}")
+
+                # Use extracted sequences as needed
+
                 print(f"site_to_mutate_data: {site_to_mutate_data}")
+
                 # design primer for the ith mutation
                 # the mutated context for designing primers is contained in the alternative codon dict
-                site, position, original_codon_sequence, alternative_codon_sequence, mutated_base_index, overhangs, primer_context = site_to_mutate_data.values()
-
-                mutated_seq = self._apply_mutations(
-                    full_sequence, mutation_set)
-                self.validate(mutated_seq is not None and len(mutated_seq) == len(full_sequence),
-                              "Successfully applied mutations to sequence",
-                              {"original_length": len(full_sequence), "mutated_length": len(mutated_seq)})
-                # annealing_region = mutated_seq[sticky_end_placement[0]:sticky_end_placement[0] + self.binding_length]
-                # the forward primer is self.spacer + self.bsmbi_site + annealing_region
-
-            # # Log chosen sticky end details (drilling down into the codon structure).
-            # for i, site_key in enumerate(position_keys):
-            #     site_info = mutation_set[site_key]
-            #     overhang_index = int(chosen_coords[i].item())
-            #     try:
-            #         if "overhangs" in site_info:
-            #             overhang_options = site_info["overhangs"].get(
-            #                 "overhang_options", [])
-            #             if overhang_options and overhang_index < len(overhang_options):
-            #                 chosen_option = overhang_options[overhang_index]
-            #                 top_info = chosen_option.get("top_overhang")
-            #                 bottom_info = chosen_option.get("bottom_overhang")
-            #                 self.log_step(
-            #                     "Chosen Overhang",
-            #                     f"For site {site_key} (position {site_info['position']}), using overhang option index {overhang_index}",
-            #                     {
-            #                         "top_overhang": top_info,
-            #                         "bottom_overhang": bottom_info,
-            #                     }
-            #                 )
-            #             else:
-            #                 raise KeyError(
-            #                     "No valid overhang options available.")
-            #         else:
-            #             # Fallback logging for legacy structure.
-            #             if "alternative_codons" in site_info:
-            #                 alternative = site_info["alternative_codons"][overhang_index]
-            #             elif "codons" in site_info:
-            #                 alternative = site_info["codons"][0]["alternative_codons"][overhang_index]
-            #             else:
-            #                 raise KeyError(
-            #                     "No alternative codon information found.")
-            #             sticky_ends = alternative.get("sticky_ends", {})
-            #             sticky_key = list(sticky_ends.keys())[
-            #                 0] if sticky_ends else None
-            #             top_option = sticky_ends.get(sticky_key, {}).get(
-            #                 "top_strand", []) if sticky_key else None
-            #             bottom_option = sticky_ends.get(sticky_key, {}).get(
-            #                 "bottom_strand", []) if sticky_key else None
-            #             self.log_step(
-            #                 "Chosen Sticky Ends",
-            #                 f"For site {site_key} (position {site_info['position']}), using alternative codon index {overhang_index}",
-            #                 {
-            #                     "alternative_codon": alternative["seq"],
-            #                     "top_sticky": top_option[overhang_index] if top_option and len(top_option) > overhang_index else None,
-            #                     "bottom_sticky": bottom_option[overhang_index] if bottom_option and len(bottom_option) > overhang_index else None,
-            #                 }
-            #             )
-                # except (KeyError, IndexError) as e:
-                #     self.log_step("Sticky End Error", f"Could not retrieve sticky end for site {site_key}",
-                #                   {"error": str(e)}, level=logging.ERROR)
-                #     continue
 
             # Construct MutationPrimer objects.
             mutation_primers = self._construct_mutation_primers(
-                original_seq=full_sequence,
-                mutated_seq=mutated_seq,
                 mutation_set=mutation_set,
-                valid_coords=[],
+                selected_coords=selected_coords,
                 primer_name=primer_name
             )
             self.validate(mutation_primers is not None, "Successfully constructed mutation primers",
@@ -190,143 +157,119 @@ class PrimerDesigner(DebugMixin):
                     self.logger.info(msg)
 
     @DebugMixin.debug_wrapper
-    def _construct_mutation_primers(self, original_seq: str, mutated_seq: str, mutation_set: dict,
-                                    valid_coords: np.ndarray, primer_name: str = None, binding_length: int = 10) -> list:
+    def _construct_mutation_primers(self, mutation_set: list,
+                                    selected_coords: list,
+                                    primer_name: str = None,
+                                    binding_length: int = 10) -> list:
+
         self.log_step("Construct Primers", f"Constructing primers with binding length {binding_length}",
-                      {"selected_coord": valid_coords})
+                      {"selected_coord": selected_coords})
         mutation_primers = []
 
-        for i, (site_key, mut) in enumerate(mutation_set.items()):
-            selected_coord = int(valid_coords[i].item())
-            position = mut["position"] - 1
-            self.log_step("Design Primer Pair", f"Designing primers for site {site_key} at position {position+1}",
-                          {"mutation": mut["alternative_codon_sequence"], "selected_coord": selected_coord})
+        # Helper function to compute the reverse complement of a sequence.
+        def reverse_complement(seq: str) -> str:
+            complement = str.maketrans('ATCGatcg', 'TAGCtagc')
+            return seq.translate(complement)[::-1]
 
-            forward_tuple = self._construct_primer(mutated_seq, position, mut, selected_coord,
-                                                   binding_length, is_reverse=False, primer_name=primer_name)
-            reverse_tuple = self._construct_primer(mutated_seq, position, mut, selected_coord,
-                                                   binding_length, is_reverse=True, primer_name=primer_name)
+        # Helper function to calculate GC content as a percentage.
+        def calculate_gc(seq: str) -> float:
+            seq = seq.upper()
+            if len(seq) == 0:
+                return 0.0
+            gc_count = seq.count("G") + seq.count("C")
+            return round((gc_count / len(seq)) * 100, 2)
 
-            if forward_tuple and reverse_tuple:
-                forward_primer = Primer(
-                    name=forward_tuple[0], sequence=forward_tuple[1])
-                reverse_primer = Primer(
-                    name=reverse_tuple[0], sequence=reverse_tuple[1])
-                mutation_primer = MutationPrimer(site=mut["site"], position=mut["position"],
-                                                 forward=forward_primer, reverse=reverse_primer, mutation_info=mut)
-                mutation_primers.append(mutation_primer)
-            else:
-                self.debugger and self.debugger.log_warning(
-                    f"Failed to create primer pair for site {site_key}")
+        for i, mutation_set_obj in enumerate(mutation_set):
+            # Select the appropriate overhang based on selected_coords.
+            selected_overhang = selected_coords[i]
+            overhang_data = mutation_set_obj["overhangs"]["overhang_options"][selected_overhang]
+            mutated_context = mutation_set_obj["mutated_context"]
+            overhang_start_index = overhang_data["overhang_start_index"]
 
-        self.validate(len(mutation_primers) > 0, f"Successfully created {len(mutation_primers)} primer pairs",
-                      {"expected": len(mutation_set)})
-        return mutation_primers
+            tm_threshold = self.default_params["tm_threshold"]
 
-    @DebugMixin.debug_wrapper
-    def _construct_primer(self, mutated_seq: str, position: int, mut: dict, selected_coord: int,
-                          binding_length: int, is_reverse: bool, primer_name: str = None):
-        """
-        Constructs a mutagenic primer using the mutated sequence as the binding region.
-        The final primer consists of:
-        - A non-annealing tail: spacer + BsmBI recognition site
-        - An annealing region: a segment of the mutated sequence starting at the sticky end start index.
-        For reverse primers, the annealing region is reverse-complemented.
-        """
-        direction = "reverse" if is_reverse else "forward"
-        self.log_step(f"Construct {direction.capitalize()} Primer",
-                      f"Designing {direction} primer at site position {position+1}",
-                      {"binding_length": binding_length, "selected_coord": selected_coord})
+            # ----- Forward Primer -----
+            # The annealing region begins at overhang_start_index - 1 (5' end of annealing region)
+            f_start = overhang_start_index - 1
+            f_seq_length = binding_length
+            f_primer_anneal = mutated_context[f_start:f_start + f_seq_length]
+            while self._calculate_tm(f_primer_anneal) < tm_threshold and (f_start + f_seq_length) < len(mutated_context):
+                f_seq_length += 1
+                f_primer_anneal = mutated_context[f_start:f_start + f_seq_length]
 
-        if not primer_name:
-            primer_name = f"Mut_{mut.get('site', 'unknown')}"
-        primer_suffix = "_RV" if is_reverse else "_FW"
-        primer_name = f"{primer_name}{primer_suffix}"
+            # Build the forward primer full sequence by prepending the overhang.
+            forward_full_seq = f"GAA{self.bsmbi_site}{f_primer_anneal}"
 
-        # Use the new structure if available: expect an "overhangs" key with "overhang_options"
-        if "overhangs" in mut:
-            overhang_options = mut["overhangs"].get("overhang_options", [])
-            if not overhang_options or selected_coord >= len(overhang_options):
-                self.debugger and self.debugger.log_warning(
-                    f"No valid overhang option found for site {mut.get('site', 'unknown')}")
-                return None
-            overhang_option = overhang_options[selected_coord]
-            # Choose the strand info based on primer orientation.
-            strand_info = overhang_option.get(
-                "bottom_overhang") if is_reverse else overhang_option.get("top_overhang")
-            if not strand_info:
-                self.debugger and self.debugger.log_warning(
-                    f"No sticky end information found for site {mut.get('site', 'unknown')}")
-                return None
-            overhang_start_index = strand_info.get("start_index")
-            if overhang_start_index is None:
-                self.debugger and self.debugger.log_warning(
-                    f"Sticky end start index missing for site {mut.get('site', 'unknown')}")
-                return None
-        else:
-            # Fallback to legacy structure if needed (e.g., using alternative_codons)
-            if "alternative_codons" in mut:
-                alternative_codons = mut["alternative_codons"]
-            elif "codons" in mut and len(mut["codons"]) > 0:
-                alternative_codons = mut["codons"][0].get(
-                    "alternative_codons", [])
-            else:
-                alternative_codons = []
-            if not alternative_codons or selected_coord >= len(alternative_codons):
-                self.debugger and self.debugger.log_warning(
-                    f"No valid alternative codon found for site {mut.get('site', 'unknown')}")
-                return None
-            alternative = alternative_codons[selected_coord]
-            sticky_ends = alternative.get("sticky_ends", {})
-            # Assume a key (like "position_2") exists; adjust if necessary.
-            sticky_key = list(sticky_ends.keys())[0] if sticky_ends else None
-            if not sticky_key:
-                self.debugger and self.debugger.log_warning(
-                    f"No sticky ends found for alternative codon {alternative['seq']} at site {mut.get('site', 'unknown')}")
-                return None
-            if is_reverse:
-                sticky_list = sticky_ends.get(
-                    sticky_key, {}).get("bottom_strand", [])
-            else:
-                sticky_list = sticky_ends.get(
-                    sticky_key, {}).get("top_strand", [])
-            if not sticky_list or selected_coord >= len(sticky_list):
-                self.debugger and self.debugger.log_warning(
-                    f"No valid sticky end option found for site {mut.get('site', 'unknown')}")
-                return None
-            overhang_option = sticky_list[selected_coord]
-            overhang_start_index = overhang_option.get("start_index")
-            if overhang_start_index is None:
-                self.debugger and self.debugger.log_warning(
-                    f"Sticky end start index missing for site {mut.get('site', 'unknown')}")
-                return None
+            # ----- Reverse Primer -----
+            # The annealing region begins at overhang_start_index + 4 (5' end of annealing region)
+            r_start = overhang_start_index + 4
+            r_seq_length = binding_length
+            r_primer_anneal = mutated_context[r_start:r_start + r_seq_length]
+            while self._calculate_tm(r_primer_anneal) < tm_threshold and (r_start + r_seq_length) < len(mutated_context):
+                r_seq_length += 1
+                r_primer_anneal = mutated_context[r_start:r_start + r_seq_length]
+            # Reverse complement the annealing region to generate the final reverse primer binding sequence.
+            r_primer_anneal_rc = reverse_complement(r_primer_anneal)
 
-        # Calculate the binding (annealing) region from the mutated sequence.
-        binding_region = mutated_seq[overhang_start_index:
-                                     overhang_start_index + binding_length]
-        if len(binding_region) < binding_length:
-            self.debugger and self.debugger.log_warning(
-                f"Binding region length insufficient for {direction} primer",
-                {"start_index": overhang_start_index, "requested_length": binding_length,
-                 "actual_length": len(binding_region)}
+            # Build the reverse primer full sequence by prepending the overhang.
+            reverse_full_seq = f"GAA{self.bsmbi_site}{r_primer_anneal_rc}"
+
+            # Create the forward Primer object.
+            f_primer = Primer(
+                name=primer_name +
+                "_forward" if primer_name else f"primer_{i}_forward",
+                sequence=forward_full_seq,
+                binding_region=f_primer_anneal,
+                tm=self._calculate_tm(f_primer_anneal),
+                gc_content=calculate_gc(f_primer_anneal),
+                length=len(forward_full_seq)
             )
-            return None
 
-        if is_reverse:
-            binding_region = str(Seq(binding_region).reverse_complement())
+            # Create the reverse Primer object.
+            r_primer = Primer(
+                name=primer_name +
+                "_reverse" if primer_name else f"primer_{i}_reverse",
+                sequence=reverse_full_seq,
+                binding_region=r_primer_anneal_rc,
+                # tm should be equivalent for r_primer_anneal and its reverse complement.
+                tm=self._calculate_tm(r_primer_anneal),
+                gc_content=calculate_gc(r_primer_anneal),
+                length=len(reverse_full_seq)
+            )
 
-        # The final primer: non-annealing tail (spacer + BsmBI site) + binding region.
-        primer_seq = self.spacer + self.bsmbi_site + binding_region
+            # Construct the final MutationPrimer dataclass object.
+            mutation_primer = MutationPrimer(
+                site=mutation_set_obj["site"],
+                position=mutation_set_obj["position"],
+                forward=f_primer,
+                reverse=r_primer,
+                mutation_info=mutation_set_obj
+            )
 
-        self.validate(len(primer_seq) > len(self.spacer + self.bsmbi_site),
-                      "Primer contains valid binding region",
-                      {"spacer": self.spacer,
-                       "enzyme_site": self.bsmbi_site,
-                       "binding_region": binding_region,
-                       "total_length": len(primer_seq),
-                       "binding_length": len(binding_region)})
+            # Log detailed results for this primer pair.
+        self.log_step("Primer Design Result",
+                      f"Designed primer pair for mutation {mutation_set_obj['site']} at position {mutation_set_obj['position']}")
 
-        return (primer_name, primer_seq)
+        self.log_step("Mutated Context", mutated_context)
+        self.log_step("Overhang", overhang_data)
+
+        self.log_step("Forward Primer Name", f_primer.name)
+        self.log_step("Forward Primer Sequence", f_primer.sequence)
+        self.log_step("Forward Primer Binding Region", f_primer.binding_region)
+        self.log_step("Forward Primer Tm", f_primer.tm)
+        self.log_step("Forward Primer GC Content", f_primer.gc_content)
+        self.log_step("Forward Primer Length", f_primer.length)
+
+        self.log_step("Reverse Primer Name", r_primer.name)
+        self.log_step("Reverse Primer Sequence", r_primer.sequence)
+        self.log_step("Reverse Primer Binding Region", r_primer.binding_region)
+        self.log_step("Reverse Primer Tm", r_primer.tm)
+        self.log_step("Reverse Primer GC Content", r_primer.gc_content)
+        self.log_step("Reverse Primer Length", r_primer.length)
+
+        mutation_primers.append(mutation_primer)
+
+        return mutation_primers
 
     @DebugMixin.debug_wrapper
     def generate_GG_edge_primers(self, idx, sequence, mtk_part_left, mtk_part_right, primer_name):

@@ -48,8 +48,8 @@ class MutationAnalyzer(DebugMixin):
             - "strand": The DNA strand.
             - "enzyme": The enzyme name.
             - "codons": A list of dictionaries for each codon, each containing:
-                    • "original_codon_sequence": The original codon sequence.
-                    • "position": The codon position.
+                    • "codon_original_sequence": The original codon sequence.
+                    • "context_position": The codon position in the context sequence.
                     • "amino_acid": The encoded amino acid.
                     • "alternative_codons": A list of dictionaries for each valid alternative codon, each containing:
                             - "seq": The alternative codon sequence.
@@ -59,8 +59,9 @@ class MutationAnalyzer(DebugMixin):
                             - "sticky_ends": A dictionary keyed by "position_{codon_index}" that contains:
                                     • "top_strand": A list of dictionaries, each with:
                                             - "seq": The overhang sequence.
-                                            - "start_index": The starting index in the context.
+                                            - "overhang_start_index": The starting index in the context.
                                     • "bottom_strand": A list of dictionaries with corresponding reverse-complement data.
+                            - "mutated_context": The context sequence with the codon replaced by the alternative codon.
                             - "mutation_positions_in_context": A list of indices in the context where the mutation occurs.
     """
 
@@ -95,40 +96,12 @@ class MutationAnalyzer(DebugMixin):
                       {"first_site": sites_to_mutate[0] if sites_to_mutate else None})
         self.log_step(
             "Analysis Start", f"Starting mutation analysis for {len(sites_to_mutate)} sites")
+
         mutation_options = {}
         try:
             with debug_context("mutation_analysis"):
                 for site_idx, site in enumerate(sites_to_mutate):
-                    print(f" ****** site ****** : {site}")
-                    """
-                    {
-                    "position": 477,
-                    "sequence": "GAGACC",
-                    "frame": 0,
-                    "codons": [
-                        {
-                        "codon_seq": "GAG",
-                        "amino_acid": "E",
-                        "position": 477
-                        },
-                        {
-                        "codon_seq": "ACC",
-                        "amino_acid": "T",
-                        "position": 480
-                        }
-                    ],
-                    "strand": "-",
-                    "context_sequence": "GCCGAGCGCGCCGGGGTGCCCGCCTTCCTGGAGACCTCCGCGCCCCGCAACCTCCCCTTCTACGAG",
-                    "context_recognition_site_indices": [
-                        30,
-                        31,
-                        32,
-                        33,
-                        34,
-                        35
-                    ],
-                    "enzyme": "BsaI"
-                    }"""
+                    site_key = f"mutation_{site['position']}"
                     self.log_step("Process Site",
                                   f"Analyzing site {site_idx+1}/{len(sites_to_mutate)}",
                                   {"position": site["position"],
@@ -136,68 +109,93 @@ class MutationAnalyzer(DebugMixin):
                                    "enzyme": site["enzyme"],
                                    "codons": len(site["codons"])})
 
-                    frame = site["frame"]
-                    # # Initialize a streamlined mutations dict for the site.
-                    # site_mutations = {"position": site["position"],
-                    #                   "sequence": site["sequence"],
-                    #                   "frame": frame,
-                    #                   "strand": site["strand"],
-                    #                   "enzyme": site["enzyme"],
-                    #                   "codons": []}
-                    # TODO: fixing the way context and mutated context are stored
+                    # Assemble the site-level data.
+                    site_mutations = {
+                        "position": site["position"],
+                        "sequence": site["sequence"],
+                        "frame": site["frame"],
+                        "strand": site["strand"],
+                        "enzyme": site["enzyme"],
+                        "codons": []
+                    }
+
+                    site_has_alternatives = False
 
                     for codon_idx, codon in enumerate(site["codons"]):
+                        print(f" *** codon: {codon}")
+                        # Re-key "codon_seq" to "codon_original_sequence"
+                        codon["codon_original_sequence"] = codon.pop(
+                            "codon_seq")
+
+                        # Use the updated key for logging.
                         self.log_step("Process Codon",
                                       f"Analyzing codon {codon_idx+1}/{len(site['codons'])}",
-                                      {"codon_seq": codon["codon_seq"],
-                                       "position": codon["position"],
+                                      {"codon_original_sequence": codon["codon_original_sequence"],
+                                       "context_position": codon["context_position"],
                                        "amino_acid": codon["amino_acid"]})
-                        codon_offset = codon["position"] - site["position"]
 
                         # Inject overlapping_indices for this codon.
                         site_with_indices = {
-                            **site, "overlapping_indices": self.utils.get_recognition_site_bases(frame, codon_idx)}
+                            **site,
+                            "overlapping_indices": self.utils.get_recognition_site_bases(site["frame"], codon_idx)
+                        }
+
                         alternatives = self._find_alternative_codons(
-                            site_with_indices, codon["codon_seq"], codon["amino_acid"])
-                        self.validate(alternatives,
-                                      f"Found {len(alternatives)} alternative codons",
-                                      {"alternatives": alternatives})
-                        # Enrich each alternative with sticky ends and context mutation positions.
-                        for alt in alternatives:
-                            candidate = alt["seq"]
-                            # Determine which positions in the codon are mutated.
-                            muts = [i for i in range(
-                                3) if candidate[i] != codon["codon_seq"][i]]
+                            site_with_indices,
+                            codon["codon_original_sequence"],
+                            codon["amino_acid"],
+                            codon["context_position"],
+                        )
 
-                            # Calculate the mutated context and record mutation positions.
-                #             mutation_info = self._calculate_mutated_context(site["context_sequence"],
-                #                                                             codon_start_in_context,
-                #                                                             codon["codon_seq"],
-                #                                                             candidate)
+                        if alternatives:
+                            site_has_alternatives = True
+                            self.log_step("Found Alternatives",
+                                          f"Found {len(alternatives)} alternative codons for {codon['codon_original_sequence']}",
+                                          {"alternatives": alternatives})
 
-                #             alt.update(mutation_info)
+                            # Attach each alternative with sticky ends and context mutation positions.
+                            for alt in alternatives:
+                                mutated_context, mutated_context_first_mutation_index, mutated_context_last_mutation_index = self.get_mutated_context(
+                                    context_sequence=site["context_sequence"],
+                                    codon_context_position=codon["context_position"],
+                                    new_codon_sequence=alt["seq"],
+                                    mutated_context_mutated_bases=alt["mutations"],
+                                )
+                                alt["mutated_context"] = mutated_context
+                                alt["sticky_ends"] = self._calculate_sticky_ends_with_context(
+                                    mutated_context,
+                                    mutated_context_first_mutation_index,
+                                    mutated_context_last_mutation_index
+                                )
+                                # Note: Ensure that alt also includes "mutation_positions_in_context"
 
-                #             alt["sticky_ends"] = self._calculate_sticky_ends_with_context(site["context_sequence"],
-                #                                                                           mutation_info["mutated_context"],
-                #                                                                           codon_start_in_context,
-                #                                                                           muts)
-                #         site_mutations["codons"].append({
-                #             "original_codon_sequence": codon["codon_seq"],
-                #             "position": codon["position"],
-                #             "amino_acid": codon["amino_acid"],
-                #             "alternative_codons": alternatives
-                #         })
-                #     mutation_options[f"mutation_{site_mutations['position']}"] = site_mutations
-                #     self.log_step("Site Result",
-                #                   f"Completed analysis for site at position {site['position']}",
-                #                   {"alternatives_found": sum(len(c["alternative_codons"]) for c in site_mutations["codons"])})
-                # if self.verbose:
-                #     logger.info(
-                #         f"Found {len(mutation_options)} sites with valid mutations")
-                # self.validate(mutation_options,
-                #               f"Generated mutation options for {len(mutation_options)} sites",
-                #               {"site_keys": list(mutation_options.keys())})
-                return mutation_options
+                            site_mutations["codons"].append({
+                                "original_codon_sequence": codon["codon_original_sequence"],
+                                "context_position": codon["context_position"],
+                                "amino_acid": codon["amino_acid"],
+                                "alternative_codons": alternatives
+                            })
+
+                    # After processing all codons, add the site if alternatives were found.
+                    if site_has_alternatives:
+                        mutation_options[site_key] = site_mutations
+                        self.log_step("Site Result",
+                                      f"Completed analysis for site at position {site['position']}",
+                                      {"alternatives_found": sum(len(c["alternative_codons"]) for c in site_mutations["codons"])})
+                    else:
+                        self.log_step("No Alternatives Found",
+                                      f"No alternative codons found for site at position {site['position']}",
+                                      {"site": site["position"]},
+                                      level=logging.WARNING)
+
+                    if self.verbose:
+                        logger.info(
+                            f"Found {len(mutation_options)} sites with valid mutations")
+
+                    self.validate(mutation_options,
+                                  f"Generated mutation options for {len(mutation_options)} sites",
+                                  {"site_keys": list(mutation_options.keys())})
+            return mutation_options
 
         except Exception as e:
             error_msg = f"Error in mutation analysis: {str(e)}"
@@ -207,7 +205,7 @@ class MutationAnalyzer(DebugMixin):
             return mutation_options
 
     @DebugMixin.debug_wrapper
-    def _find_alternative_codons(self, site: Dict, original_codon: str, amino_acid: str) -> List[Dict]:
+    def _find_alternative_codons(self, site: Dict, original_codon: str, amino_acid: str, codon_context_position: int) -> List[Dict]:
         for key in ["overlapping_indices", "sequence", "context_sequence"]:
             if key not in site:
                 self.log_step("Site Validation",
@@ -233,20 +231,28 @@ class MutationAnalyzer(DebugMixin):
                               f"Candidate {cand} has {len(muts)} mutations (max: {self.max_mutations})",
                               {"mutations": muts}, level=logging.DEBUG)
                 continue
+
+            # Always use the provided codon_context_position to calculate the mutation positions.
+            mutation_positions_in_context = [
+                codon_context_position + i for i in muts]
+
             changes = [i for i in muts if i in site["overlapping_indices"]]
             if not changes:
                 self.log_step("Skip Candidate",
                               f"Candidate {cand} doesn't alter recognition region",
                               {"mutations": muts,
-                                  "overlapping_indices": site["overlapping_indices"]},
+                               "overlapping_indices": site["overlapping_indices"]},
                               level=logging.DEBUG)
                 continue
             mut_tuple = tuple(
                 1 if cand[i] != original_codon[i] else 0 for i in range(3))
             usage = self.utils.get_codon_usage(
                 cand, amino_acid, self.codon_usage_dict)
-            candidate_info = {"seq": cand, "usage": usage,
-                              "mutations": mut_tuple, "changes_in_site": changes}
+            candidate_info = {"seq": cand,
+                              "usage": usage,
+                              "mutations": mut_tuple,
+                              "changes_in_site": changes,
+                              "mutation_positions_in_context": mutation_positions_in_context}
             valid.append(candidate_info)
             self.log_step("Valid Alternative",
                           f"Candidate {cand} accepted",
@@ -257,100 +263,107 @@ class MutationAnalyzer(DebugMixin):
                       {"original": original_codon, "amino_acid": amino_acid})
         return valid
 
-    def _calculate_sticky_ends_with_context(self, original_ctx: str, mutated_ctx: str, codon_start: int, mutation_positions: List[int]) -> Dict:
+    def _calculate_sticky_ends_with_context(self, mutated_ctx: str, first_mut_idx: int, last_mut_idx: int) -> Dict:
         sticky = {}
-        for pos in mutation_positions:
-            m_pos = codon_start + pos
+        print(f"first_mut_idx: {first_mut_idx}, last_mut_idx: {last_mut_idx}")
+        # Use a set to ensure unique positions (if only one mutation exists, for example)
+        for pos in sorted({first_mut_idx, last_mut_idx}):
             pos_sticky = {"top_strand": [], "bottom_strand": []}
-            ranges = [range(m_pos - 3, m_pos + 1),
-                      range(m_pos - 2, m_pos + 2),
-                      range(m_pos - 1, m_pos + 3),
-                      range(m_pos, m_pos + 4)]
+            # For each boundary, generate 4 possible 4nt windows (offsets mimic bsai and bsmbi sticky end options)
+            ranges = [
+                range(pos - 3, pos + 1),
+                range(pos - 2, pos + 2),
+                range(pos - 1, pos + 3),
+                range(pos, pos + 4)
+            ]
             self.log_step("Calculate Sticky Ends",
-                          f"Calculating sticky ends for mutation at position {pos}",
-                          {"mutation_pos_in_context": m_pos,
-                              "sticky_positions": [list(r) for r in ranges]},
+                          f"Calculating sticky ends for mutation boundary at position {pos}",
+                          {"mutation_pos_in_context": pos,
+                           "sticky_positions": [list(r) for r in ranges]},
                           level=logging.DEBUG)
             for r in ranges:
+                # Check that the range is within bounds of mutated_ctx
                 if 0 <= min(r) and max(r) < len(mutated_ctx):
+                    # Since pos is a boundary of the mutated block, every window here includes at least one mutated base.
                     top = "".join(mutated_ctx[i] for i in r)
                     bottom = self.utils.reverse_complement(top)
                     pos_sticky["top_strand"].append(
-                        {"seq": top, "start_index": r.start})
+                        {"seq": top, "overhang_start_index": r.start})
                     pos_sticky["bottom_strand"].append(
-                        {"seq": bottom, "start_index": r.start})
+                        {"seq": bottom, "overhang_start_index": r.start})
                     self.log_step("Sticky End",
                                   f"Generated sticky end for range {list(r)}",
-                                  {"top_strand": {"seq": top, "start_index": r.start},
-                                   "bottom_strand": {"seq": bottom, "start_index": r.start}},
+                                  {"top_strand": {"seq": top, "overhang_start_index": r.start},
+                                   "bottom_strand": {"seq": bottom, "overhang_start_index": r.start}},
                                   level=logging.DEBUG)
             sticky[f"position_{pos}"] = pos_sticky
         return sticky
 
     @DebugMixin.debug_wrapper
-    def _calculate_mutated_context(self, original_context: str, codon_start_in_context: int,
-                                   original_codon: str, candidate_codon: str) -> Dict[str, Any]:
+    def get_mutated_context(self,
+                            context_sequence: str,
+                            codon_context_position: int,
+                            new_codon_sequence: str,
+                            mutated_context_mutated_bases: tuple) -> tuple:
         """
-        Calculates the mutated context for a candidate codon by performing only point mutations.
-        The mutated context will retain the full length of the original context.
+        Replace the codon in the context_sequence at the specified codon_context_position with new_codon_sequence.
 
         Parameters:
-            original_context (str): The full context string (e.g. 66 bp).
-            codon_start_in_context (int): The starting index of the codon within the original_context.
-            original_codon (str): The original codon sequence (length 3).
-            candidate_codon (str): The candidate alternative codon (length 3).
+            context_sequence (str): The original context sequence.
+            codon_context_position (int): The starting index in the context_sequence where the codon is located.
+            new_codon_sequence (str): The new codon sequence (must be exactly 3 nucleotides).
+            mutated_context_mutated_bases (tuple): A tuple indicating mutation positions (1 for mutation, 0 for no mutation).
 
         Returns:
-            dict: Contains:
-                - "mutated_context": The context string after applying the point mutation(s).
-                - "mutation_positions_in_context": A list of indices (absolute in original_context)
-                where the mutation(s) occurred.
+            tuple: The mutated context sequence, index of the first mutation, index of the last mutation.
 
         Raises:
-            ValueError: If the codon indices are out of bounds or the mutated context length doesn't match.
+            ValueError: If new_codon_sequence is not exactly 3 nucleotides long or if the position is invalid.
         """
-        # Validate input codon lengths.
-        if len(original_codon) != 3 or len(candidate_codon) != 3:
-            error_msg = "Both original and candidate codons must be of length 3."
-            self.log_step("Input Error", error_msg, level=logging.ERROR)
-            raise ValueError(error_msg)
+        self.log_step("get_mutated_context",
+                      f"Starting codon swap at position {codon_context_position} with new codon '{new_codon_sequence}'")
 
-        expected_length = len(original_context)
+        if len(new_codon_sequence) != 3:
+            raise ValueError("New codon must be 3 nucleotides long.")
 
-        # Check boundaries: ensure the codon (3 bp) fits within the original_context.
-        if codon_start_in_context < 0 or codon_start_in_context + 3 > expected_length:
-            error_msg = (f"Codon start index {codon_start_in_context} with codon length 3 "
-                         f"is out of bounds for context of length {expected_length}.")
-            self.log_step("Boundary Error", error_msg, level=logging.ERROR)
-            raise ValueError(error_msg)
+        if codon_context_position < 0 or codon_context_position + 3 > len(context_sequence):
+            raise ValueError(
+                "Invalid codon_context_position or context_sequence too short for the swap.")
 
-        # Perform point mutation: replace only the differing base(s) without changing overall length.
-        mutated_ctx_list = list(original_context)
-        mutation_positions = []
-        for i in range(3):
-            if candidate_codon[i] != original_codon[i]:
-                pos = codon_start_in_context + i
-                mutated_ctx_list[pos] = candidate_codon[i]
-                mutation_positions.append(pos)
+        mutated_context = (context_sequence[:codon_context_position] +
+                           new_codon_sequence +
+                           context_sequence[codon_context_position + 3:])
 
-        mutated_context = "".join(mutated_ctx_list)
+        # Compute mutation indices
+        try:
+            first_mutation_index = mutated_context_mutated_bases.index(
+                1)
+            last_mutation_index = len(
+                mutated_context_mutated_bases) - 1 - mutated_context_mutated_bases[::-1].index(1)
+        except ValueError:
+            first_mutation_index = None
+            last_mutation_index = None
 
-        # Verify the length remains unchanged.
-        if len(mutated_context) != expected_length:
-            error_msg = (f"Mutated context length ({len(mutated_context)}) does not match "
-                         f"original context length ({expected_length}).")
-            self.log_step("Length Mismatch", error_msg, level=logging.ERROR)
-            raise ValueError(error_msg)
+        # Validate mutation indices
+        self.validate(isinstance(first_mutation_index, int),
+                      "cannot calculate mutated context, no mutated base")
 
-        result = {
-            "mutated_context": mutated_context,
-            "mutation_positions_in_context": mutation_positions
-        }
-        self.log_step("Mutated Context",
-                      "Calculated mutated context for candidate codon",
-                      result,
-                      level=logging.DEBUG)
-        return result
+        num_mutations = mutated_context_mutated_bases.count(1)
+        self.validate(
+            (first_mutation_index == last_mutation_index and num_mutations == 1) or
+            (first_mutation_index !=
+             last_mutation_index and num_mutations > 1),
+            "Mutation indices do not match the expected number of mutated bases"
+        )
+
+        self.log_step("get_mutated_context", "Codon swap complete",
+                      data={"mutated_context": mutated_context,
+                            "first_mutation_index": first_mutation_index,
+                            "last_mutation_index": last_mutation_index})
+
+        mutated_context_first_mutation_index = first_mutation_index + codon_context_position
+        mutated_context_last_mutation_index = last_mutation_index + codon_context_position
+        return mutated_context, mutated_context_first_mutation_index, mutated_context_last_mutation_index
 
     @DebugMixin.debug_wrapper
     def _create_mutation_entry(self, site_sequence: str, site_start: int, codon_start: int, codon_pos: int,

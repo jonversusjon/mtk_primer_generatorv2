@@ -72,6 +72,7 @@ class GoldenGateProtocol(DebugMixin):
         Returns:
             dict: A dictionary containing protocol details.
         """
+        print(f"Starting Golden Gate protocol creation...")
         logger.info("Starting Golden Gate protocol creation...")
 
         result_data = {}
@@ -96,7 +97,7 @@ class GoldenGateProtocol(DebugMixin):
             # 1. Preprocess sequence (remove start/stop codons, etc.)
             with debug_context("Preprocessing sequence"):
                 processed_seq, message, _ = self.sequence_preparator.preprocess_sequence(
-                    single_seq)
+                    single_seq, mtk_part_left)
 
                 if message:
                     sequence_data["messages"].append(message)
@@ -106,15 +107,15 @@ class GoldenGateProtocol(DebugMixin):
 
             # 2. Find restriction sites
             with debug_context("Finding restriction sites"):
-                sites_to_mutate = self.sequence_preparator.find_and_summarize_sites(
+                sites_to_mutate = self.sequence_preparator.find_sites_to_mutate(
                     processed_seq, idx)
+
                 sequence_data["restriction_sites"] = sites_to_mutate
 
             # 3. Mutation analysis and mutation primer design
             mutation_primers = {}
 
             if sites_to_mutate:
-
                 with debug_context("Mutation analysis"):
                     mutation_options = self.mutation_analyzer.get_all_mutations(
                         sites_to_mutate)
@@ -131,8 +132,8 @@ class GoldenGateProtocol(DebugMixin):
                         }
 
                 with debug_context("Mutation primer design"):
+
                     mutation_primers = self.primer_designer.design_mutation_primers(
-                        full_sequence=processed_seq,
                         mutation_sets=optimized_mutations,
                         comp_matrices=compatibility_matrices,
                         primer_name=seq_object.get(

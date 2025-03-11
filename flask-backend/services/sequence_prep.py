@@ -48,7 +48,7 @@ class SequencePreparator:
             'restriction_sites': {}
         }
 
-    def preprocess_sequence(self, sequence: Union[str, Seq]) -> Tuple[Optional[Seq], str, bool]:
+    def preprocess_sequence(self, sequence: Union[str, Seq], matk_part_left: str) -> Tuple[Optional[Seq], str, bool]:
         """
         Processes a DNA sequence by removing start/stop codons and ensuring proper frame.
         """
@@ -67,15 +67,15 @@ class SequencePreparator:
             trim_stop_codon = False
             in_frame = sequence_length % 3 == 0
 
-            # Check for start codon
-            if len(cleaned_sequence) >= 3 and cleaned_sequence[0:3] == "ATG":
+            # Check for start codon only if matk_part_left is "3" or "3a"
+            if matk_part_left in {"3", "3a"} and len(cleaned_sequence) >= 3 and cleaned_sequence[:3] == "ATG":
                 cleaned_sequence = cleaned_sequence[3:]
                 trim_start_codon = True
                 logger.info(
                     'Start codon removed from the beginning of the sequence')
 
             # Check for stop codons
-            stop_codons = ["TAA", "TAG", "TGA"]
+            stop_codons = {"TAA", "TAG", "TGA"}
             if len(cleaned_sequence) >= 3 and cleaned_sequence[-3:] in stop_codons:
                 cleaned_sequence = cleaned_sequence[:-3]
                 trim_stop_codon = True
@@ -87,10 +87,10 @@ class SequencePreparator:
 
             if remainder != 0:
                 if trim_start_codon:
-                    # If we removed start codon, trim from the end
+                    # Trim from the end
                     cleaned_sequence = cleaned_sequence[:-remainder]
                 elif trim_stop_codon:
-                    # If we removed stop codon, trim from the beginning
+                    # Trim from the beginning
                     cleaned_sequence = cleaned_sequence[remainder:]
 
             # Create message
@@ -140,36 +140,35 @@ class SequencePreparator:
             sites_to_mutate.sort(key=lambda site: site['position'])
             return sites_to_mutate
 
-    def get_codons(self, seq, start_index, length, frame):
+    def get_codons(self, context_seq, recognition_start_index, length, frame):
         """
-        Extracts codons spanned by the recognition site.
+        Extracts codons spanned by the recognition site from a context sequence.
         """
         with debug_context("find_codons"):
             codons = []
             translation_table = CodonTable.unambiguous_dna_by_id[1]
 
             if frame == 0:
-                codon_positions = [start_index, start_index + 3]
+                codon_positions = [recognition_start_index,
+                                   recognition_start_index + 3]
             elif frame == 1:
-                codon_positions = [start_index - 1,
-                                   start_index + 2, start_index + 5]
+                codon_positions = [recognition_start_index - 1,
+                                   recognition_start_index + 2, recognition_start_index + 5]
             elif frame == 2:
-                codon_positions = [start_index - 2,
-                                   start_index + 1, start_index + 4]
+                codon_positions = [recognition_start_index - 2,
+                                   recognition_start_index + 1, recognition_start_index + 4]
             else:
                 return []
 
-            # Extract codons
-            for codon_pos in codon_positions:
-                if 0 <= codon_pos <= len(seq) - 3:
-                    codon_dict = {}
-                    codon_seq = seq[codon_pos:codon_pos + 3]
-                    codon_dict["codon_seq"] = str(codon_seq)
-                    codon_dict["amino_acid"] = translation_table.forward_table.get(
-                        str(codon_seq), 'X')
-                    # Removed +1 for 0-indexing
-                    codon_dict["position"] = codon_pos
-                    codons.append(codon_dict)
+            # Extract codons using positions relative to the context sequence
+            for pos in codon_positions:
+                if 0 <= pos <= len(context_seq) - 3:
+                    codon_seq = context_seq[pos: pos + 3]
+                    codons.append({
+                        "codon_seq": str(codon_seq),
+                        "amino_acid": translation_table.forward_table.get(str(codon_seq), 'X'),
+                        "context_position": pos  # relative position in context_seq
+                    })
 
             return codons
 
@@ -178,25 +177,30 @@ class SequencePreparator:
         site_details = []
         seq_str = str(seq)
 
+        # Forward strand matches
         forward_matches = list(re.finditer(
             re.escape(recognition_seq), seq_str))
-
         for match in forward_matches:
             index = match.start()
             frame = index % 3
-            codons = self.get_codons(seq, index, len(recognition_seq), frame)
 
             # Get context sequence (30bp upstream and 30bp downstream)
             start_context = max(0, index - 30)
             end_context = min(len(seq_str), index + len(recognition_seq) + 30)
             context_seq = seq_str[start_context:end_context]
 
-            # Calculate mutated base indices relative to the context sequence
+            # Compute the relative index of the recognition site within the context
+            relative_index = index - start_context
+
+            codons = self.get_codons(
+                context_seq, relative_index, len(recognition_seq), frame)
+
+            # Calculate recognition site indices relative to the context sequence
             context_recognition_site_indices = [
                 i - start_context for i in range(index, index + len(recognition_seq))]
 
             site_details.append({
-                'position': index,  # Removed +1 for 0-indexing
+                'position': index,  # 0-indexed overall sequence position
                 'recognition_sequence': recognition_seq,
                 'frame': frame,
                 'codons': codons,
@@ -208,23 +212,23 @@ class SequencePreparator:
         # Reverse strand matches
         rev_comp = str(Seq(recognition_seq).reverse_complement())
         reverse_matches = list(re.finditer(re.escape(rev_comp), seq_str))
-
         for match in reverse_matches:
             index = match.start()
             frame = index % 3
-            codons = self.get_codons(seq, index, len(recognition_seq), frame)
 
-            # Get context sequence (30bp upstream and 30bp downstream)
             start_context = max(0, index - 30)
             end_context = min(len(seq_str), index + len(recognition_seq) + 30)
             context_seq = seq_str[start_context:end_context]
 
-            # Calculate mutated base indices relative to the context sequence
+            relative_index = index - start_context
+            codons = self.get_codons(
+                context_seq, relative_index, len(recognition_seq), frame)
+
             context_recognition_site_indices = [
                 i - start_context for i in range(index, index + len(rev_comp))]
 
             site_details.append({
-                'position': index,  # Removed +1 for 0-indexing
+                'position': index,
                 'sequence': rev_comp,
                 'frame': frame,
                 'codons': codons,
@@ -275,9 +279,9 @@ class SequencePreparator:
             logger.info("\nRestriction Site Analysis Summary:")
             logger.info(f"\n{str(table)}")
 
-    def find_and_summarize_sites(self, sequence: Seq, index: int) -> List[Dict]:
+    def find_sites_to_mutate(self, sequence: Seq, index: int) -> List[Dict]:
         """Finds and summarizes restriction sites needing mutation."""
-        with debug_context("find_and_summarize_sites"):
+        with debug_context("find_sites_to_mutate"):
             sites_to_mutate = self.find_bsmbi_bsai_sites(
                 sequence, self.verbose)
             if sites_to_mutate:
