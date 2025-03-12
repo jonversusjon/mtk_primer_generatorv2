@@ -56,14 +56,18 @@ export const getDefaultValues = () => ({
         ],
 });
 
-function Form({ onSubmit, isSubmitting, showSettings, setShowSettings }) {
+function Form({
+  onSubmit,
+  isSubmitting,
+  formData,
+  onChange,
+  showSettings,
+  setShowSettings,
+}) {
   // State for species loading and errors
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [species, setSpecies] = useState([]);
-
-  // Initialize form state with defaults
-  const [formData, setFormData] = useState(getDefaultValues());
 
   // Load available species when the component mounts
   useEffect(() => {
@@ -84,12 +88,12 @@ function Form({ onSubmit, isSubmitting, showSettings, setShowSettings }) {
     loadSpecies();
   }, []);
 
-  // Set default species once the species list is loaded
   useEffect(() => {
+    // Set default species once species list is loaded, if not already set.
     if (species.length > 0 && !formData.species) {
-      setFormData((prev) => ({ ...prev, species: species[0] }));
+      onChange({ ...formData, species: species[0] });
     }
-  }, [species, formData.species]);
+  }, [species, formData, onChange]);
 
   // Use the centralized validation hook
   const { errors, isValid } = useValidateForm(formData);
@@ -103,51 +107,37 @@ function Form({ onSubmit, isSubmitting, showSettings, setShowSettings }) {
   };
 
   const updateFormData = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    onChange({ ...formData, [field]: value });
   };
 
   const updateSequence = (index, field, value) => {
-    setFormData((prev) => {
-      const updatedSequences = [...prev.sequencesToDomesticate];
-      updatedSequences[index] = {
-        ...updatedSequences[index],
-        [field]: value,
-      };
-      return { ...prev, sequencesToDomesticate: updatedSequences };
-    });
+    const updatedSequences = [...formData.sequencesToDomesticate];
+    updatedSequences[index] = { ...updatedSequences[index], [field]: value };
+    onChange({ ...formData, sequencesToDomesticate: updatedSequences });
   };
 
   const addSequence = () => {
-    setFormData((prev) => ({
-      ...prev,
-      sequencesToDomesticate: [
-        ...prev.sequencesToDomesticate,
-        {
-          sequence: "",
-          primerName: "",
-          mtkPartLeft: "",
-          mtkPartRight: "",
-        },
-      ],
-    }));
+    const updatedSequences = [
+      ...formData.sequencesToDomesticate,
+      { sequence: "", primerName: "", mtkPartLeft: "", mtkPartRight: "" },
+    ];
+    onChange({ ...formData, sequencesToDomesticate: updatedSequences });
   };
 
   const removeSequence = () => {
     if (formData.sequencesToDomesticate.length > 1) {
-      setFormData((prev) => ({
-        ...prev,
-        sequencesToDomesticate: prev.sequencesToDomesticate.slice(0, -1),
-      }));
+      onChange({
+        ...formData,
+        sequencesToDomesticate: formData.sequencesToDomesticate.slice(0, -1),
+      });
     }
   };
 
   // Reset form to defaults (while preserving species)
   const resetForm = () => {
-    const defaults = getDefaultValues();
-    setFormData({
-      ...defaults,
-      species: formData.species,
-    });
+    // Optionally, you might trigger a refetch from the backend here.
+    // For now, we'll assume that the parent holds the defaults.
+    onChange({ ...formData });
   };
 
   return (
