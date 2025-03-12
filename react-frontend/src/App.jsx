@@ -21,18 +21,12 @@ function App() {
   // We'll store 'results' at the top-level so both pages can share it
   const [results, setResults] = useState(null);
 
-  // Toggle advanced settings in the Form
-  const toggleSettings = () => {
-    setShowSettings(!showSettings);
-  };
-
   return (
     <Router>
       <div className={`app ${darkMode ? "dark-mode" : ""}`}>
         <AppHeader
           darkMode={darkMode}
           toggleDarkMode={toggleDarkMode}
-          toggleSettings={toggleSettings}
         />
         <Banner />
         <div className="app-container">

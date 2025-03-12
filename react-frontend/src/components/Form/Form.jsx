@@ -122,11 +122,11 @@ function Form({ onSubmit, isSubmitting, showSettings, setShowSettings }) {
       ...prev,
       sequencesToDomesticate: [
         ...prev.sequencesToDomesticate,
-        { 
-          sequence: "", 
-          primerName: "", 
-          mtkPartLeft: "", 
-          mtkPartRight: "" 
+        {
+          sequence: "",
+          primerName: "",
+          mtkPartLeft: "",
+          mtkPartRight: "",
         },
       ],
     }));
@@ -152,7 +152,19 @@ function Form({ onSubmit, isSubmitting, showSettings, setShowSettings }) {
 
   return (
     <form id="primer-form" onSubmit={handleSubmit}>
-      <h2 className="primer-form-title">Primer Design Form</h2>
+      <div className="form-header">
+        <h2 className="primer-form-title">Primer Design Form</h2>
+        <button
+          type="button"
+          className="settings-toggle"
+          onClick={() => setShowSettings(!showSettings)}
+          aria-label={showSettings ? "Close settings" : "Open settings"}
+        >
+          <span className="icon">⚙️</span>
+          <span className="button-text">Settings</span>
+        </button>
+      </div>
+
       {loading && (
         <div className="loading-overlay">Loading species data...</div>
       )}

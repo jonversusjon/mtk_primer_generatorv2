@@ -1,7 +1,7 @@
 import React from "react";
 import "../styles/AppHeader.css";
 
-function AppHeader({ darkMode, toggleDarkMode, toggleSettings }) {
+function AppHeader({ darkMode, toggleDarkMode }) {
   return (
     <header className="app-header">
       <div className="header-left">
@@ -20,14 +20,7 @@ function AppHeader({ darkMode, toggleDarkMode, toggleSettings }) {
         <h1>MTK Advanced Primer Designer</h1>
       </div>
       <div className="header-right">
-        <button
-          className="settings-toggle"
-          onClick={toggleSettings}
-          aria-label="Open settings"
-        >
-          <span className="icon">⚙️</span>
-          <span className="button-text">Settings</span>
-        </button>
+        {/* Settings toggle moved to Form component */}
       </div>
     </header>
   );

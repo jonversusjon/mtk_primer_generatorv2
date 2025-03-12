@@ -10,7 +10,6 @@
 .app-container {
   flex: 1;
   width: 100%;
-  margin-top: 60px; /* If your header is 60px tall */
   /* No more side-by-side or forced heights */
 }
 
@@ -20,7 +19,7 @@
   width: 100%;
   box-sizing: border-box;
   margin: 0 auto;     /* Center horizontally if you set a max-width */
-  padding: 24px;      /* Spacing around content */
+  padding: 0ox 24px 24px 24px;      /* Spacing around content */
   max-width: 1000px;
 
   /* Removed overflow and fixed heights so the page itself scrolls */
@@ -29,12 +28,9 @@
 
 /* Responsive Adjustments (optional) */
 @media (max-width: 860px) {
-  .app-container {
-    margin-top: 50px; /* Adjust if needed on smaller screens */
-  }
 
   .form-container,
   .output-container {
-    padding: 16px;
+    padding: 0px 16px 16px 16px;
   }
 }
