@@ -89,12 +89,13 @@ function ResultTab({ result, index }) {
       {/* PCR Reactions */}
       {result.PCR_reactions && Object.keys(result.PCR_reactions).length > 0 && (
         <div className="pcr-summary">
-          <h4>PCR Reactions</h4>
-          {/* New Button to Copy Primers */}
-          <button onClick={copyPrimersToClipboard}>
-            {copied ? "Copied!" : "Copy Primers"}
-          </button>
-
+          <div className="section-header">
+            <h4>PCR Reactions</h4>
+            {/* New Button to Copy Primers */}
+            <button onClick={copyPrimersToClipboard} className="small-button">
+              {copied ? "Copied!" : "Copy Primers"}
+            </button>
+          </div>
           <div className="table-container">
             <table>
               <thead>

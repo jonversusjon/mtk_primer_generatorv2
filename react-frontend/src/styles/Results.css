@@ -116,3 +116,112 @@ tbody tr:nth-child(odd) {
 .results-tab-button {
     font-size: 1.6rem;
 }
+
+.output-container {
+    padding: 0 20px
+}
+
+.messages {
+    background-color: var(--form-bg);
+    border-left: 3px solid var(--primary-color);
+    padding: 12px 16px;
+    margin: 10px 0;
+    border-radius: 0 4px 4px 0;
+    box-shadow: 0 1px 3px var(--shadow-color);
+    transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
+  }
+  
+  /* Light mode styling */
+  :root .messages {
+    background-color: rgba(239, 239, 239, 0.7);
+    color: var(--text-dark);
+  }
+  
+  /* Light mode version of dark style */
+  :root.light-mode-darkstyle .messages {
+    background-color: var(--form-bg);
+    color: var(--text-dark);
+  }
+  
+  /* Dark mode styling */
+  .dark-mode .messages {
+    background-color: var(--form-bg);
+    border-left-color: var(--primary-color);
+    color: var(--text-dark);
+  }
+  
+  .messages > div {
+    margin-bottom: 8px;
+    line-height: 1.5;
+    font-size: 14px;
+  }
+  
+  .messages > div:last-child {
+    margin-bottom: 0;
+  }
+  
+  /* Add a subtle hover effect if desired */
+  .messages:hover {
+    border-left-color: var(--primary-hover);
+    box-shadow: 0 2px 5px var(--shadow-color);
+  }
+  
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center; /* Optional: vertically aligns items in the center */
+  }
+  
+  .section-header h4 {
+    /* Optional: Style the h4 element as needed */
+    margin: 0; /* Remove default margin */
+  }
+
+.small-button {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin: 6px;
+  }
+  
+  /* Light mode styling */
+  :root .small-button {
+    background-color: #f1f1f1;
+    border-color: var(--border-color);
+    color: var(--text-muted);
+  }
+  
+  /* Light mode version of dark style */
+  :root.light-mode-darkstyle .small-button {
+    background-color: var(--form-bg);
+    border-color: var(--border-color);
+    color: var(--text-dark);
+  }
+  
+  /* Dark mode styling */
+  .dark-mode .small-button {
+    background-color: var(--form-bg);
+    border-color: var(--border-color);
+    color: var(--text-muted);
+  }
+  
+  .small-button:hover {
+    background-color: var(--primary-inactive);
+    color: var(--text-dark);
+    border-color: var(--primary-color);
+  }
+  
+  .small-button:active {
+    transform: scale(0.97);
+    background-color: var(--primary-hover);
+    color: #ffffff;
+  }
+  
+  /* Special state for "Copied!" */
+  .small-button.copied {
+    background-color: var(--success-inactive);
+    color: var(--text-dark);
+    border-color: var(--success-color);
+  }
