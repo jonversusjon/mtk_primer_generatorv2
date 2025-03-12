@@ -5,7 +5,7 @@ function RestrictionSiteSummary({ sites }) {
   if (!sites || sites.length === 0) return null;
 
   return (
-    <div className="restriction-sites-summary">
+    <div className="restriction-sites-summary section-container">
       <h3>Internal BsaI/BsmbI sites found</h3>
       <div className="restriction-site-summary-table-wrapper">
         <table>

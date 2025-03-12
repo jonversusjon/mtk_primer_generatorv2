@@ -8,7 +8,7 @@ table {
     background: var(--background-color);
     border: 1px solid var(--border-color);
     box-shadow: 0px 4px 10px var(--shadow-color);
-    font-size: 12px;
+    font-size: 14px;
     text-align: left;
     color: var(--text-dark);
 }
@@ -23,9 +23,16 @@ th, td {
 }
 
 th {
-    background: var(--color-space-cadet);
+    background: rgba(52, 51, 91, 0.8);
+    padding: 14px 18px;
     font-weight: bold;
     color: var(--color-eggshell);
+    font-size: 15px;
+}
+
+td {
+    padding: 14px 18px;
+    line-height: 1.5;
 }
 
 .dark-mode th {
@@ -66,7 +73,7 @@ tbody tr:nth-child(even) {
 }
 
 .dark-mode tbody tr:nth-child(even) {
-    background-color: var(--form-bg);
+    background-color: rgba(239, 239, 239, 0.1);
 }
 
 tbody tr:nth-child(odd) {
@@ -96,7 +103,10 @@ tbody tr:nth-child(odd) {
 
 /* Style for primer sequences (smaller text, wrapping long sequences) */
 .primer-sequence {
-    font-size: 10px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    padding: 10px;
     overflow-wrap: break-word;
     word-break: break-all;
 }
@@ -114,19 +124,32 @@ tbody tr:nth-child(odd) {
 }
 
 .results-tab-button {
-    font-size: 1.6rem;
+    font-size: 1.2rem;
 }
 
 .output-container {
     padding: 0 20px
 }
 
+.section-container {
+    margin-bottom: 32px;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.tab-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0px 24px;
+}
+
 .messages {
-    background-color: var(--form-bg);
+    background-color: rgba(52, 51, 91, 0.2);
     border-left: 3px solid var(--primary-color);
-    padding: 12px 16px;
-    margin: 10px 0;
-    border-radius: 0 4px 4px 0;
+    padding: 14px 18px;
+    margin: 16px 0;
+    border-radius: 6px;
     box-shadow: 0 1px 3px var(--shadow-color);
     transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
   }
