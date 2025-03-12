@@ -5,6 +5,7 @@ from services.protocol import GoldenGateProtocol
 from flask_cors import CORS
 import json
 import logging
+import os
 
 api = Blueprint("api", __name__, url_prefix="/api")
 CORS(api)  # Enable CORS for all routes in this blueprint
@@ -46,6 +47,18 @@ def get_species():
         logger.error(f"Error fetching species: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to fetch species'}), 500
 
+@api.route('/config/<preset>', methods=['GET'])
+def get_config(preset):
+    """Return the configuration preset from default_config.json."""
+    config_path = os.path.join(os.getcwd(), 'config', 'default_config.json')
+    try:
+        with open(config_path, 'r') as f:
+            configs = json.load(f)
+        # If the preset is not found, fall back to a default key (e.g., 'development')
+        config = configs.get(preset, configs.get('development', {}))
+        return jsonify(config)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @api.route("/generate_protocol", methods=["POST"])
 def generate_protocol():
