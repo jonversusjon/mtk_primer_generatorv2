@@ -15,7 +15,6 @@ function ResultTabs({ results }) {
     <div className="results-section">
       <div className="section-header">
         <div className="section-title">
-          <h3>Results</h3>
         </div>
       </div>
 
@@ -26,14 +25,16 @@ function ResultTabs({ results }) {
             <button
               key={index}
               type="button"
-              className={`tab-button ${activeTab === index ? "active" : ""}`}
+              className={`tab-button results-tab-button ${activeTab === index ? "active" : ""}`}
               onClick={() => setActiveTab(index)}
               role="tab"
               aria-selected={activeTab === index}
               aria-controls={`result-tab-${index}`}
               id={`result-tab-button-${index}`}
             >
-              Sequence {parseInt(result.sequenceNumber, 10) + 1}
+              {result.primer_name?.trim()
+                ? result.primer_name
+                : `Sequence ${index + 1}`}
             </button>
           ))}
         </div>

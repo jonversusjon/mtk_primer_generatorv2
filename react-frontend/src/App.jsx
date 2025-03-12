@@ -1,10 +1,13 @@
+// src/App.jsx
 import React, { useState } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AppHeader from "./components/AppHeader";
 import Banner from "./components/Banner";
-import Form from "./components/Form/Form";
-import Results from "./components/Results/Results";
+import FormPage from "./pages/FormPage";
+import ResultsPage from "./pages/ResultsPage";
 import { useDarkMode } from "./hooks/useDarkMode";
-import { generateProtocol } from "./api/api";
+
+// Styles
 import "./styles/app.css";
 import "./styles/base.css";
 import "./styles/dark-mode.css";
@@ -14,75 +17,53 @@ import "./styles/theme.css";
 function App() {
   const [darkMode, toggleDarkMode] = useDarkMode();
   const [showSettings, setShowSettings] = useState(false);
-  const [results, setResults] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
+  // We'll store 'results' at the top-level so both pages can share it
+  const [results, setResults] = useState(null);
+
+  // Toggle advanced settings in the Form
   const toggleSettings = () => {
     setShowSettings(!showSettings);
   };
 
-  const handleFormSubmit = async (formData) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      // This will be implemented in the API section
-      const response = await generateProtocol(formData);
-
-      console.log("📢 Received API Response from Flask:", response);
-      
-      setResults(response);
-    } catch (err) {
-      setError(
-        err.message || "An error occurred while generating the protocol"
-      );
-      console.error("Error generating protocol:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className={`app ${darkMode ? "dark-mode" : ""}`}>
-      <AppHeader
-        darkMode={darkMode}
-        toggleDarkMode={toggleDarkMode}
-        toggleSettings={toggleSettings}
-      />
-      <Banner />
-      <div className="app-container">
-        <div className="form-container">
-          <Form
-            onSubmit={handleFormSubmit}
-            isSubmitting={loading}
-            showSettings={showSettings}
-            setShowSettings={setShowSettings}
-          />
-        </div>
+    <Router>
+      <div className={`app ${darkMode ? "dark-mode" : ""}`}>
+        <AppHeader
+          darkMode={darkMode}
+          toggleDarkMode={toggleDarkMode}
+          toggleSettings={toggleSettings}
+        />
+        <Banner />
+        <div className="app-container">
+          <Routes>
+            {/* 
+              1) The Form Page ("/"): handles the form, calls API, 
+                 and navigates to /results on success.
+            */}
+            <Route
+              path="/"
+              element={
+                <FormPage
+                  showSettings={showSettings}
+                  setShowSettings={setShowSettings}
+                  setResults={setResults}
+                />
+              }
+            />
 
-        <div className="output-container">
-          {error && (
-            <div id="error-container" className="alert alert-danger">
-              {error}
-            </div>
-          )}
-
-          {loading ? (
-            <div className="loading-indicator">
-              <div className="spinner-container">
-                <div className="spinner-border" role="status">
-                  <span className="visually-hidden">Processing...</span>
-                </div>
-                <span className="loading-text">Processing your request...</span>
-              </div>
-            </div>
-          ) : (
-            results && <Results data={results} />
-          )}
+            {/* 
+              2) The Results Page ("/results"): displays the results,
+                 or redirects back to "/" if no results found. 
+            */}
+            <Route
+              path="/results"
+              element={<ResultsPage results={results} />}
+            />
+          </Routes>
         </div>
       </div>
-    </div>
+    </Router>
   );
 }
 

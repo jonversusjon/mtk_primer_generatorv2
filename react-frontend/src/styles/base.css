@@ -12,6 +12,10 @@ body {
     margin-bottom: 15px;
   }
   
+  h2 {
+    font-size: 2rem;
+  }
+
   button {
     cursor: pointer;
     font-family: inherit;

@@ -1,10 +1,10 @@
-import React, { useState } from "react";
-import PrimerAnatomy from "./PrimerAnatomy";
+// import React, { useState } from "react";
+// import PrimerAnatomy from "./PrimerAnatomy";
 import ResultTabs from "./ResultTabs";
 import "../../styles/Results.css";
 
 function Results({ data }) {
-  const [showPrimerAnatomy, setShowPrimerAnatomy] = useState(false);
+  // const [showPrimerAnatomy, setShowPrimerAnatomy] = useState(false);
 
   if (!data || Object.keys(data).length === 0) return null;
 
@@ -20,7 +20,7 @@ function Results({ data }) {
     <div className="protocol-results">
       <h2>Golden Gate Protocol Results</h2>
 
-      {/* Toggle Primer Anatomy View */}
+      {/* Toggle Primer Anatomy View
       <div className="result-actions">
         <button
           className="btn btn-secondary"
@@ -28,15 +28,15 @@ function Results({ data }) {
         >
           {showPrimerAnatomy ? "Hide" : "Show"} Primer Anatomy
         </button>
-      </div>
+      </div> */}
 
-      {showPrimerAnatomy && (
+      <ResultTabs results={resultsArray} />
+
+      {/* {showPrimerAnatomy && (
         <div className="primer-anatomy-container">
           <PrimerAnatomy />
         </div>
-      )}
-
-      <ResultTabs results={resultsArray} />
+      )} */}
     </div>
   );
 }

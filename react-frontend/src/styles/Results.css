@@ -112,3 +112,7 @@ tbody tr:nth-child(odd) {
     max-width: 100vw;
     /* No horizontal scrolling */
 }
+
+.results-tab-button {
+    font-size: 1.6rem;
+}

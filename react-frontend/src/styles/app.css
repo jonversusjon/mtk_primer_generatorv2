@@ -1,44 +1,40 @@
 .app {
+  /* Keep the app taking up the full viewport height, 
+     stacking header + page content vertically */
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
+/* This container now just holds your page content below the header */
 .app-container {
-  display: flex;
   flex: 1;
-  gap: 0px;
   width: 100%;
-  position: relative;
-  margin-top: 60px; /* Matches header height */
+  margin-top: 60px; /* If your header is 60px tall */
+  /* No more side-by-side or forced heights */
 }
 
 .form-container,
 .output-container {
-  flex: 1;
-  max-width: 50%;
-  height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  height: calc(100vh - 125px);
-  margin: 0 24px;
+  /* Each route (Form or Results) can occupy the full width */
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 auto;     /* Center horizontally if you set a max-width */
+  padding: 24px;      /* Spacing around content */
+  max-width: 1000px;
+
+  /* Removed overflow and fixed heights so the page itself scrolls */
+  /* No max-width, but feel free to add one (e.g., max-width: 800px) */
 }
 
-.hidden {
-  display: none;
-}
-
-/* Responsive Adjustments */
+/* Responsive Adjustments (optional) */
 @media (max-width: 860px) {
   .app-container {
-    flex-direction: column;
-    gap: 0;
+    margin-top: 50px; /* Adjust if needed on smaller screens */
   }
 
   .form-container,
   .output-container {
-    max-width: 100%;
-    height: auto;
-    max-height: 80vh;
+    padding: 16px;
   }
 }

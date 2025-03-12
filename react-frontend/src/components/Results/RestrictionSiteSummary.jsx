@@ -7,7 +7,7 @@ function RestrictionSiteSummary({ sites }) {
   return (
     <div className="restriction-sites-summary">
       <h3>Internal BsaI/BsmbI sites found</h3>
-      <div class="restriction-site-summary-table-wrapper">
+      <div className="restriction-site-summary-table-wrapper">
         <table>
           <thead>
             <tr>
@@ -28,7 +28,7 @@ function RestrictionSiteSummary({ sites }) {
             ))}
           </tbody>
         </table>
-        </div>
+      </div>
     </div>
   );
 }

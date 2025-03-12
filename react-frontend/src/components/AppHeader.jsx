@@ -17,7 +17,7 @@ function AppHeader({ darkMode, toggleDarkMode, toggleSettings }) {
         </button>
       </div>
       <div className="header-center">
-        <h1>MTK Primer Domesticator</h1>
+        <h1>MTK Advanced Primer Designer</h1>
       </div>
       <div className="header-right">
         <button
