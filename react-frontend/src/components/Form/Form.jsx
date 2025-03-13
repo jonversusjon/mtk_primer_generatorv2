@@ -3,7 +3,7 @@ import TemplateSequence from "./TemplateSequence";
 import SequenceTabs from "./SequenceTabs";
 import { fetchAvailableSpecies } from "../../api/api";
 
-function Form({
+const Form = ({
   onSubmit,
   formData,
   setFormData,
@@ -11,20 +11,25 @@ function Form({
   isValid,
   activeTabIndex,
   setActiveTabIndex,
-}) {
+}) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [species, setSpecies] = useState([]);
   const speciesDefaultSet = useRef(false);
 
-  // Load species
+  // Load species and update formData with availableSpecies
   useEffect(() => {
     const loadSpecies = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        setLoading(true);
-        setError(null);
         const speciesData = await fetchAvailableSpecies();
         setSpecies(speciesData.species);
+        // Update formData so that Settings (in Sidebar) can use the species list
+        setFormData((prev) => ({
+          ...prev,
+          availableSpecies: speciesData.species,
+        }));
       } catch (err) {
         console.error("Failed to load species data:", err);
         setError("Failed to load species data. Please try again later.");
@@ -33,75 +38,78 @@ function Form({
       }
     };
     loadSpecies();
-  }, []);
+  }, [setFormData]);
 
-  // Ensure default species is set once
+  // Set default species if not already set
   useEffect(() => {
     if (
       species.length > 0 &&
       (!formData.species || formData.species === "") &&
       !speciesDefaultSet.current
     ) {
-      setFormData({ ...formData, species: species[0] });
+      setFormData((prev) => ({ ...prev, species: species[0] }));
       speciesDefaultSet.current = true;
     }
-  }, [species, formData, setFormData]);
+  }, [species, formData.species, setFormData]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Safeguard for species
+    // Ensure species is set in the submitted data
     const finalFormData =
       (!formData.species || formData.species === "") && species.length > 0
         ? { ...formData, species: species[0] }
         : formData;
-
     if (isValid) {
       onSubmit(finalFormData);
     }
   };
 
-  // Wrap updates in useCallback if desired
+  // Functional updates to formData
   const updateFormData = useCallback(
     (field, value) => {
-      setFormData({ ...formData, [field]: value });
+      setFormData((prev) => ({ ...prev, [field]: value }));
     },
-    [formData, setFormData]
+    [setFormData]
   );
 
   const updateSequence = useCallback(
     (index, field, value) => {
-      if (formData.sequencesToDomesticate[index]?.[field] === value) return;
-      const updatedSequences = [...formData.sequencesToDomesticate];
-      updatedSequences[index] = {
-        ...updatedSequences[index],
-        [field]: value,
-      };
-      setFormData({ ...formData, sequencesToDomesticate: updatedSequences });
+      setFormData((prev) => {
+        const updatedSequences = [...prev.sequencesToDomesticate];
+        if (updatedSequences[index]?.[field] === value) return prev;
+        updatedSequences[index] = {
+          ...updatedSequences[index],
+          [field]: value,
+        };
+        return { ...prev, sequencesToDomesticate: updatedSequences };
+      });
     },
-    [formData, setFormData]
+    [setFormData]
   );
 
   const addSequence = useCallback(() => {
-    const updatedSequences = [
-      ...formData.sequencesToDomesticate,
-      { sequence: "", primerName: "", mtkPartLeft: "", mtkPartRight: "" },
-    ];
-    setFormData({ ...formData, sequencesToDomesticate: updatedSequences });
-  }, [formData, setFormData]);
+    setFormData((prev) => ({
+      ...prev,
+      sequencesToDomesticate: [
+        ...prev.sequencesToDomesticate,
+        { sequence: "", primerName: "", mtkPartLeft: "", mtkPartRight: "" },
+      ],
+    }));
+  }, [setFormData]);
 
   const removeSequence = useCallback(() => {
-    if (formData.sequencesToDomesticate.length > 1) {
-      setFormData({
-        ...formData,
-        sequencesToDomesticate: formData.sequencesToDomesticate.slice(0, -1),
-      });
-    }
-  }, [formData, setFormData]);
+    setFormData((prev) => {
+      if (prev.sequencesToDomesticate.length <= 1) return prev;
+      return {
+        ...prev,
+        sequencesToDomesticate: prev.sequencesToDomesticate.slice(0, -1),
+      };
+    });
+  }, [setFormData]);
 
   const resetForm = useCallback(() => {
-    // If you have "default form data" you can pass that in
-    setFormData({ ...formData, templateSequence: "", species: "" });
-  }, [formData, setFormData]);
+    setFormData((prev) => ({ ...prev, templateSequence: "", species: "" }));
+  }, [setFormData]);
 
   return (
     <form id="primer-form" onSubmit={handleSubmit}>
@@ -138,6 +146,6 @@ function Form({
       </div>
     </form>
   );
-}
+};
 
 export default Form;

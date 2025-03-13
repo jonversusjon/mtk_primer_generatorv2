@@ -1,18 +1,17 @@
-import React, { useRef } from "react";
+import React, { useRef, useCallback } from "react";
 import "../../styles/Settings.css";
 
-function Settings({
+const Settings = ({
   show,
   onClose,
   formData,
   updateFormData,
   availableSpecies = [],
   settingsToggleRef,
-}) {
-  // Ref for the modal content to detect outside clicks
+}) => {
   const modalContentRef = useRef(null);
 
-  const getSettingsPosition = () => {
+  const getSettingsPosition = useCallback(() => {
     if (!settingsToggleRef?.current) return {};
 
     const toggleRect = settingsToggleRef.current.getBoundingClientRect();
@@ -26,23 +25,24 @@ function Settings({
       position: "absolute",
       top: `${toggleRect.bottom - sidebarRect.top + 10}px`, // Position under the button
       left: `${toggleRect.left - sidebarRect.left}px`, // Align with toggle button
-      width: "90%", // Prevents overflow
+      width: "90%",
       zIndex: 10,
     };
-  };
+  }, [settingsToggleRef]);
 
-  // If settings modal is not shown, return null immediately
+  const handleOutsideClick = useCallback(
+    (e) => {
+      if (modalContentRef.current && !modalContentRef.current.contains(e.target)) {
+        onClose();
+      }
+    },
+    [onClose]
+  );
+
   if (!show) return null;
 
-  // Handle clicks outside the modal content
-  const handleOutsideClick = (e) => {
-    if (
-      modalContentRef.current &&
-      !modalContentRef.current.contains(e.target)
-    ) {
-      onClose();
-    }
-  };
+  const speciesValue =
+    formData.species || (availableSpecies.length > 0 ? availableSpecies[0] : "");
 
   return (
     <div
@@ -57,10 +57,7 @@ function Settings({
           <select
             id="species-select"
             className="form-control"
-            value={
-              formData.species ||
-              (availableSpecies.length > 0 ? availableSpecies[0] : "")
-            }
+            value={speciesValue}
             onChange={(e) =>
               updateFormData({ ...formData, species: e.target.value })
             }
@@ -105,7 +102,7 @@ function Settings({
             onChange={(e) =>
               updateFormData({
                 ...formData,
-                max_mut_per_site: parseInt(e.target.value),
+                max_mut_per_site: parseInt(e.target.value, 10),
               })
             }
           >
@@ -126,7 +123,9 @@ function Settings({
               updateFormData({
                 ...formData,
                 results_limit:
-                  e.target.value === "all" ? "all" : parseInt(e.target.value),
+                  e.target.value === "all"
+                    ? "all"
+                    : parseInt(e.target.value, 10),
               })
             }
           >
@@ -157,6 +156,6 @@ function Settings({
       </div>
     </div>
   );
-}
+};
 
 export default Settings;
