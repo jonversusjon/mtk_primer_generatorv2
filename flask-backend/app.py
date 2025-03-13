@@ -1,10 +1,59 @@
+import os
+import importlib.util
+
+import argparse
+from flask import Flask, send_from_directory, jsonify
 from flask_cors import CORS
 from config.logging_config import logger
-from flask import Flask, send_from_directory
 from routes.main import main
 from routes.api import api
 from config.settings import Config, TestConfig
-import os
+
+
+def load_python_config(module_path, env="development"):
+    """Dynamically load a Python config module and return the correct environment settings."""
+    try:
+        spec = importlib.util.find_spec(module_path)
+        if spec is None:
+            raise ImportError(f"Module '{module_path}' not found.")
+
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        if hasattr(module, "CONFIG"):
+            config_data = module.CONFIG
+            # Print full config
+            print(f"🔍 DEBUG: Full CONFIG dictionary: {config_data}")
+
+            # If CONFIG contains multiple environments, extract the correct one
+            if isinstance(config_data, dict) and env in config_data:
+                selected_config = config_data[env]
+                print(f"✅ DEBUG: Extracted '{env}' config: {selected_config}")
+                return selected_config
+            return config_data  # If it's not environment-based, return as is
+        else:
+            raise AttributeError(
+                f"Module '{module_path}' does not contain a 'CONFIG' dictionary.")
+    except Exception as e:
+        logger.error(f"Error loading config module '{module_path}': {e}")
+        return {}
+
+
+# Argument parsing for config file
+parser = argparse.ArgumentParser(
+    description="Start the Flask app with a custom config file.")
+parser.add_argument("--config", type=str, default="config.default_config",
+                    help="Path to the config module (dot notation).")
+parser.add_argument("--env", type=str, default="development",
+                    help="Configuration environment (development/testing/production).")
+args = parser.parse_args()
+
+CONFIG_MODULE = args.config
+ENVIRONMENT = args.env
+
+print(f"🔍 DEBUG: Loading {CONFIG_MODULE} with environment '{ENVIRONMENT}'")
+
+app_config = load_python_config(CONFIG_MODULE, ENVIRONMENT)
 
 
 def configure_werkzeug_logging():
@@ -21,8 +70,9 @@ def create_app():
     config_class = TestConfig if testing_env else Config
 
     app = Flask(__name__)
-    app.config.from_object(config_class)
+    app.config["ACTIVE_CONFIG"] = app_config
     logger.info(f"TESTING mode: {app.config['TESTING']}")
+    logger.info(f"🔍 DEBUG: Loaded config: {app.config['ACTIVE_CONFIG']}")
 
     # Enable CORS for the entire app
     CORS(app, resources={
@@ -42,7 +92,7 @@ def create_app():
 
     @app.route('/species', methods=['GET', 'OPTIONS'])
     def species_redirect():
-        # You can either redirect or implement the same functionality here
+        """Redirect /species to /api/species."""
         from flask import redirect
         return redirect('/api/species')
 
@@ -58,22 +108,26 @@ def create_app():
     # Serve static files
     @app.route('/static/<path:path>')
     def serve_static(path):
+        """Serve static files."""
         return send_from_directory('static', path)
 
     # Serve React app - in production, this would be handled by a web server
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
     def serve_react(path):
+        """Serve React frontend files."""
         return send_from_directory('static/react', 'index.html')
 
     # Error handlers
     @app.errorhandler(404)
     def not_found(error):
-        return {'error': 'Resource not found'}, 404
+        """Handle 404 errors with JSON response."""
+        return jsonify({'error': 'Resource not found'}), 404
 
     @app.errorhandler(500)
     def server_error(error):
-        return {'error': 'Internal server error'}, 500
+        """Handle 500 errors with JSON response."""
+        return jsonify({'error': 'Internal server error'}), 500
 
     return app
 

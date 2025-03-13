@@ -47,18 +47,14 @@ def get_species():
         logger.error(f"Error fetching species: {str(e)}", exc_info=True)
         return jsonify({'error': 'Failed to fetch species'}), 500
 
-@api.route('/config/<preset>', methods=['GET'])
-def get_config(preset):
-    """Return the configuration preset from default_config.json."""
-    config_path = os.path.join(os.getcwd(), 'config', 'default_config.json')
-    try:
-        with open(config_path, 'r') as f:
-            configs = json.load(f)
-        # If the preset is not found, fall back to a default key (e.g., 'development')
-        config = configs.get(preset, configs.get('development', {}))
-        return jsonify(config)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+
+@api.route('/config', methods=['GET'])
+def get_config():
+    """Return the currently loaded configuration from app.py."""
+    config = current_app.config.get("ACTIVE_CONFIG", {})
+    print(f"Current config: {config}")
+    return jsonify(config)
+
 
 @api.route("/generate_protocol", methods=["POST"])
 def generate_protocol():
