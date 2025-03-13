@@ -1,0 +1,98 @@
+.sidebar {
+  position: sticky;
+  left: 0;
+  top: 0;
+  width: 250px;
+  height: 100vh;
+  background: var(--background-color);
+  border-right: 1px solid var(--border-color);
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.sidebar h3 {
+  text-align: center;
+  margin-top: 0;
+  color: var(--text-dark);
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-dark);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* Different active states for light and dark modes */
+.sidebar-item.active {
+  background-color: var(--primary-inactive);
+}
+
+.dark-mode .sidebar-item.active {
+  background-color: rgba(217, 3, 104, 0.3); /* Adjusted opacity for dark mode */
+  color: var(--foreground-color);
+}
+
+/* Different hover states */
+.sidebar-item:hover {
+  background-color: var(--primary-hover);
+  color: var(--foreground-color);
+}
+
+.dark-mode .sidebar-item:hover {
+  background-color: var(--primary-hover);
+  color: var(--foreground-color);
+}
+
+.sidebar-item-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.error-icon {
+  margin-left: 5px;
+  color: var(--error-color);
+}
+
+/* For better dark mode contrast on light elements */
+.dark-mode .sidebar {
+  box-shadow: 0 0 10px var(--shadow-color);
+}
+
+.error-badge-container {
+  position: relative;
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: red;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  text-align: center;
+  line-height: 24px;
+  cursor: pointer;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+.error-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.checkmark-container {
+  color: limegreen;
+  font-size: 24px;
+}

@@ -3,9 +3,7 @@
 
 /* Settings Modal */
 .settings-modal {
-  position: fixed;
-  top: 60px; /* Below the toggle button */
-  right: 20px;
+  position: absolute;
   width: 300px;
   background-color: white;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);

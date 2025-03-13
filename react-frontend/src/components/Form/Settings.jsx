@@ -6,14 +6,30 @@ function Settings({
   onClose,
   formData,
   updateFormData,
-  availableSpecies,
+  availableSpecies = [],
+  settingsToggleRef,
 }) {
-  // Create a ref for the modal content - hooks must be called unconditionally
+  // Ref for the modal content to detect outside clicks
   const modalContentRef = useRef(null);
+
+  // Compute modal position dynamically
+  const getSettingsPosition = () => {
+    if (!settingsToggleRef?.current) return {};
+
+    const toggleRect = settingsToggleRef.current.getBoundingClientRect();
+    return {
+      position: "absolute",
+      top: `${toggleRect.bottom + window.scrollY + 10}px`,
+      left: `${toggleRect.left + window.scrollX}px`,
+      zIndex: 1000,
+    };
+  };
+
+  // If settings modal is not shown, return null immediately
+  if (!show) return null;
 
   // Handle clicks outside the modal content
   const handleOutsideClick = (e) => {
-    // If we click outside the modal content, close the modal
     if (
       modalContentRef.current &&
       !modalContentRef.current.contains(e.target)
@@ -22,11 +38,12 @@ function Settings({
     }
   };
 
-  // If not shown, return null - but AFTER calling hooks
-  if (!show) return null;
-
   return (
-    <div className="settings-modal" onClick={handleOutsideClick}>
+    <div
+      className="settings-modal"
+      style={getSettingsPosition()}
+      onClick={handleOutsideClick}
+    >
       <div className="settings-content" ref={modalContentRef}>
         {/* Species Selection */}
         <div className="form-group">
@@ -34,14 +51,25 @@ function Settings({
           <select
             id="species-select"
             className="form-control"
-            value={formData.species || availableSpecies[0] || ""}
-            onChange={(e) => updateFormData("species", e.target.value)}
+            value={
+              formData.species ||
+              (availableSpecies.length > 0 ? availableSpecies[0] : "")
+            }
+            onChange={(e) =>
+              updateFormData({ ...formData, species: e.target.value })
+            }
           >
-            {availableSpecies.map((species) => (
-              <option key={species} value={species}>
-                {species}
+            {availableSpecies.length > 0 ? (
+              availableSpecies.map((species) => (
+                <option key={species} value={species}>
+                  {species}
+                </option>
+              ))
+            ) : (
+              <option value="" disabled>
+                No species available
               </option>
-            ))}
+            )}
           </select>
         </div>
 
@@ -51,8 +79,10 @@ function Settings({
           <select
             id="kozak-select"
             className="form-control"
-            value={formData.kozak}
-            onChange={(e) => updateFormData("kozak", e.target.value)}
+            value={formData.kozak || ""}
+            onChange={(e) =>
+              updateFormData({ ...formData, kozak: e.target.value })
+            }
           >
             <option value="MTK">MTK</option>
             <option value="Canonical">Canonical</option>
@@ -65,9 +95,12 @@ function Settings({
           <select
             id="mutations-select"
             className="form-control"
-            value={formData.max_mut_per_site}
+            value={formData.max_mut_per_site || 1}
             onChange={(e) =>
-              updateFormData("max_mut_per_site", parseInt(e.target.value))
+              updateFormData({
+                ...formData,
+                max_mut_per_site: parseInt(e.target.value),
+              })
             }
           >
             <option value="1">1</option>
@@ -82,12 +115,13 @@ function Settings({
           <select
             id="results-select"
             className="form-control"
-            value={formData.results_limit}
+            value={formData.results_limit || 1}
             onChange={(e) =>
-              updateFormData(
-                "results_limit",
-                e.target.value === "all" ? "all" : parseInt(e.target.value)
-              )
+              updateFormData({
+                ...formData,
+                results_limit:
+                  e.target.value === "all" ? "all" : parseInt(e.target.value),
+              })
             }
           >
             {[...Array(6).keys()].map((i) => (
@@ -105,15 +139,15 @@ function Settings({
             type="checkbox"
             className="form-check-input"
             id="verbose-mode"
-            checked={formData.verbose_mode}
-            onChange={(e) => updateFormData("verbose_mode", e.target.checked)}
+            checked={!!formData.verbose_mode}
+            onChange={(e) =>
+              updateFormData({ ...formData, verbose_mode: e.target.checked })
+            }
           />
           <label className="form-check-label" htmlFor="verbose-mode">
             Verbose
           </label>
         </div>
-
-        {/* No footer with close button - will close by clicking outside or toggling settings button */}
       </div>
     </div>
   );
