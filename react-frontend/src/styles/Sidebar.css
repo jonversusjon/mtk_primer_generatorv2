@@ -1,5 +1,5 @@
 .sidebar {
-  position: sticky;
+  position: relative;
   left: 0;
   top: 0;
   width: 250px;
@@ -16,6 +16,9 @@
   color: var(--text-dark);
 }
 
+.sidebar-header {
+  margin-top: 40px;
+}
 .sidebar ul {
   list-style: none;
   padding: 0;
@@ -25,7 +28,7 @@
 .sidebar-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px; /* Adds spacing between elements */
   padding: 8px;
   cursor: pointer;
   border-bottom: 1px solid var(--border-color);
@@ -72,12 +75,12 @@
 .error-badge-container {
   position: relative;
   display: inline-block;
-  width: 24px;
-  height: 24px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: red;
   color: white;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: bold;
   text-align: center;
   line-height: 24px;
@@ -95,4 +98,25 @@
 .checkmark-container {
   color: limegreen;
   font-size: 24px;
+}
+
+.sidebar-item-info {
+  display: flex;
+  flex-direction: row; /* Ensure items stay in a row */
+  align-items: center;
+  gap: 8px; /* Adjust spacing between icon, primer name, and length */
+  flex-grow: 1; /* Allow it to take up remaining space */
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.primer-name {
+  flex-grow: 1; /* Allow primer name to take up available space */
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.primer-length {
+  font-size: 14px;
+  color: var(--text-light);
 }

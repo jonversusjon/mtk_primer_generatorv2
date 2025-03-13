@@ -120,6 +120,11 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
           errorsBySequence={errorsBySequence}
           onSelectTab={setActiveTabIndex}
           activeTabIndex={activeTabIndex}
+          settingsToggleRef={settingsToggleRef}
+          setShowSettings={setShowSettings}
+          showSettings={showSettings}
+          formData={formData}
+          setFormData={setFormData}
         />
 
         {/* Form on the right */}

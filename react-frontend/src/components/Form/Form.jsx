@@ -1,20 +1,16 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import TemplateSequence from "./TemplateSequence";
 import SequenceTabs from "./SequenceTabs";
-import Settings from "./Settings";
 import { fetchAvailableSpecies } from "../../api/api";
 
 function Form({
   onSubmit,
   formData,
   setFormData,
-  showSettings,
-  setShowSettings,
   errors,
   isValid,
   activeTabIndex,
   setActiveTabIndex,
-  settingsToggleRef,
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -113,24 +109,6 @@ function Form({
         <div className="loading-overlay">Loading species data...</div>
       )}
       {error && <div className="error-message">{error}</div>}
-
-      <button
-        ref={settingsToggleRef}
-        type="button"
-        className="settings-toggle"
-        onClick={() => setShowSettings(!showSettings)}
-        aria-label={showSettings ? "Close settings" : "Open settings"}
-      >
-        <span className="icon">⚙️</span>
-        <span className="button-text">Settings</span>
-      </button>
-      <Settings
-        show={showSettings}
-        onClose={() => setShowSettings(false)}
-        formData={formData}
-        updateFormData={setFormData}
-        settingsToggleRef={settingsToggleRef}
-      />
 
       <TemplateSequence
         value={formData.templateSequence}

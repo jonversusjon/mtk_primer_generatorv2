@@ -12,16 +12,22 @@ function Settings({
   // Ref for the modal content to detect outside clicks
   const modalContentRef = useRef(null);
 
-  // Compute modal position dynamically
   const getSettingsPosition = () => {
     if (!settingsToggleRef?.current) return {};
 
     const toggleRect = settingsToggleRef.current.getBoundingClientRect();
+    const sidebarRect = settingsToggleRef.current
+      .closest(".sidebar")
+      ?.getBoundingClientRect();
+
+    if (!sidebarRect) return {};
+
     return {
       position: "absolute",
-      top: `${toggleRect.bottom + window.scrollY + 10}px`,
-      left: `${toggleRect.left + window.scrollX}px`,
-      zIndex: 1000,
+      top: `${toggleRect.bottom - sidebarRect.top + 10}px`, // Position under the button
+      left: `${toggleRect.left - sidebarRect.left}px`, // Align with toggle button
+      width: "90%", // Prevents overflow
+      zIndex: 10,
     };
   };
 
