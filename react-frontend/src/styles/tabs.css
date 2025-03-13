@@ -186,13 +186,6 @@
     resize: vertical;
 }
 
-/* Error Messages */
-.error-message {
-    color: #dc2626;
-    font-size: 0.75rem;
-    margin-top: 0.25rem;
-}
-
 /* Character Counter */
 .char-count-label {
     font-size: 0.75rem;

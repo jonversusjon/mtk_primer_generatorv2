@@ -1,76 +1,30 @@
-/* Base styles */
-:root {
-  /* Primary Colors */
-  --color-indigo: #541388;
-  --color-dogwood-rose: #D90368;
-  --color-eggshell: #F9F6F0;
-  --color-space-cadet: #2E294E;
-  --color-gold: #FFD400;
-
-  /* Functional Colors - Light Mode */
-  --primary-color: var(--color-dogwood-rose);
-  --primary-hover: #b80258;
-  --primary-active: #a1024d;
-  --primary-inactive: rgba(217, 3, 104, 0.5);
-  
-  --warning-color: var(--color-gold);
-  --warning-hover: #e6bf00;
-  --warning-active: #cca900;
-  --warning-inactive: rgba(255, 212, 0, 0.5);
-  
-  --error-color: var(--color-dogwood-rose);
-  --error-hover: #b80258;
-  --error-active: #a1024d;
-  --error-inactive: rgba(217, 3, 104, 0.5);
-  
-  --success-color: var(--color-indigo);
-  --success-hover: #47107a;
-  --success-active: #3a0e64;
-  --success-inactive: rgba(84, 19, 136, 0.5);
-  
-  --border-color: var(--color-space-cadet);
-  --text-dark: black;
-  --text-muted: #414d5a;
-  --background-color: #ffffff;
-  --shadow-color: rgba(0, 0, 0, 0.1);
-  --form-bg: #EFEFEF;
-}
-
-/* Dark mode colors */
-.dark-mode {
-  --background-color: #100E1B;
-  --foreground-color: #F9F6F0;
-  
-  --primary-color: #D90368;
-  --primary-hover: #f0157e;
-  --primary-active: #ff2a90;
-  --primary-inactive: rgba(217, 3, 104, 0.6);
-  
-  --warning-color: #FFD400;
-  --warning-hover: #ffe040;
-  --warning-active: #ffea73;
-  --warning-inactive: rgba(255, 212, 0, 0.6);
-  
-  --error-color: #D90368;
-  --error-hover: #f0157e;
-  --error-active: #ff2a90;
-  --error-inactive: rgba(217, 3, 104, 0.6);
-  
-  --success-color: #541388;
-  --success-hover: #6a17ac;
-  --success-active: #7e1ccb;
-  --success-inactive: rgba(84, 19, 136, 0.6);
-  
-  --border-color: #BFAFDE;
-  --text-dark: #F1E9DA;
-  --text-muted: #d8d2c8;
-  --form-bg: #1F1C35;
-  --shadow-color: rgba(0, 0, 0, 0.3);
-}
-
 /* form.css */
-/* Input Fields */
-textarea, input, select {
+
+/* --- Form Structure --- */
+#primer-form {
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 5px 5px 10px var(--shadow-color);
+}
+
+.primer-form-title {
+  text-align: center;
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.form-row input, 
+.form-row select {
+  flex: 1;
+}
+
+/* --- Input Fields --- */
+textarea, input, select, .form-control {
   width: 100%;
   padding: 10px;
   font-size: 1rem;
@@ -85,236 +39,269 @@ textarea {
   resize: vertical;
 }
 
-#primer-form {
-padding: 20px;
-border-radius: 12px;
-box-shadow: 5px 5px 10px var(--shadow-color);
+.input-field {
+  transition: all 0.3s ease;
+  border: 2px solid var(--border-color);
 }
 
-.primer-form-title {
+.input-field.valid {
+  border-color: var(--success-color);
+}
+
+.input-field.invalid {
+  border-color: var(--error-color) !important;
+  background-color: rgba(255, 0, 0, 0.1);
+  animation: shake 0.3s ease-in-out;
+}
+
+/* --- Checkboxes --- */
+.form-check {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.form-check-input {
+  margin-right: 8px;
+  width: auto;
+}
+
+/* --- Button Container --- */
+.button-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-top: 20px;
+  padding: 0 20px 20px 20px;
+}
+
+#clearForm {
+  width: 200px;
+}
+
+/* --- Button Base Styles --- */
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  width: 48%;
   text-align: center;
 }
 
-/* Form Row: Align Inputs Properly */
-.form-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.form-row input, 
-.form-row select {
-  flex: 1;
-}
-
-
-
-.button-container {
-display: flex;
-justify-content: space-between;
-align-items: flex-start;
-margin-top: 20px;
-padding: 0 20px 20px 20px;
-}
-
-/* Button styles */
-.btn {
-padding: 0.5rem 1rem;
-border-radius: 4px;
-font-weight: 500;
-cursor: pointer;
-transition: all 0.2s ease-in-out;
-width: 48%;
-text-align: center;
-}
-
-/* Button sizes */
 .btn-sm {
-padding: 5px 10px;
-font-size: 0.875rem;
+  padding: 5px 10px;
+  font-size: 0.875rem;
 }
 
+.btn:disabled {
+  cursor: not-allowed;
+}
+
+/* --- Solid Button Variants --- */
 /* Primary Button */
 .btn-primary {
-background-color: var(--primary-color);
-color: white;
-border: 1px solid var(--primary-color);
+  background-color: var(--primary-color);
+  color: white;
+  border: 1px solid var(--primary-color);
 }
 .btn-primary:hover {
-background-color: var(--primary-hover);
-border-color: var(--primary-hover);
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
 }
 .btn-primary:active {
-background-color: var(--primary-active);
-border-color: var(--primary-active);
+  background-color: var(--primary-active);
+  border-color: var(--primary-active);
 }
 .btn-primary:disabled {
-background-color: var(--primary-inactive);
-border-color: var(--primary-inactive);
-cursor: not-allowed;
+  background-color: var(--primary-inactive);
+  border-color: var(--primary-inactive);
+}
+.btn-primary.validation-failed {
+  background-color: #dc3545;
+  border-color: #dc3545;
 }
 
 /* Warning Button */
 .btn-warning {
-background-color: var(--warning-color);
-border: 1px solid var(--warning-color);
+  background-color: var(--warning-color);
+  border: 1px solid var(--warning-color);
 }
 .btn-warning:hover {
-background-color: var(--warning-hover);
-border-color: var(--warning-hover);
+  background-color: var(--warning-hover);
+  border-color: var(--warning-hover);
 }
 .btn-warning:active {
-background-color: var(--warning-active);
-border-color: var(--warning-active);
+  background-color: var(--warning-active);
+  border-color: var(--warning-active);
 }
 .btn-warning:disabled {
-background-color: var(--warning-inactive);
-border-color: var(--warning-inactive);
-cursor: not-allowed;
+  background-color: var(--warning-inactive);
+  border-color: var(--warning-inactive);
 }
 
 /* Error Button */
 .btn-error {
-background-color: var(--error-color);
-color: white;
-border: 1px solid var(--error-color);
+  background-color: var(--error-color);
+  color: white;
+  border: 1px solid var(--error-color);
 }
 .btn-error:hover {
-background-color: var(--error-hover);
-border-color: var(--error-hover);
+  background-color: var(--error-hover);
+  border-color: var(--error-hover);
 }
 .btn-error:active {
-background-color: var(--error-active);
-border-color: var(--error-active);
+  background-color: var(--error-active);
+  border-color: var(--error-active);
 }
 .btn-error:disabled {
-background-color: var(--error-inactive);
-border-color: var(--error-inactive);
-cursor: not-allowed;
+  background-color: var(--error-inactive);
+  border-color: var(--error-inactive);
 }
 
 /* Success Button */
 .btn-success {
-background-color: var(--success-color);
-color: white;
-border: 1px solid var(--success-color);
+  background-color: var(--success-color);
+  color: white;
+  border: 1px solid var(--success-color);
 }
 .btn-success:hover {
-background-color: var(--success-hover);
-border-color: var(--success-hover);
+  background-color: var(--success-hover);
+  border-color: var(--success-hover);
 }
 .btn-success:active {
-background-color: var(--success-active);
-border-color: var(--success-active);
+  background-color: var(--success-active);
+  border-color: var(--success-active);
 }
 .btn-success:disabled {
-background-color: var(--success-inactive);
-border-color: var(--success-inactive);
-cursor: not-allowed;
+  background-color: var(--success-inactive);
+  border-color: var(--success-inactive);
 }
 
-/* Outline Button Variants */
+/* --- Outline Button Variants --- */
 .btn-outline-primary {
-background-color: transparent;
-color: var(--primary-color);
-border: 1px solid var(--primary-color);
+  background-color: transparent;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
 }
 .btn-outline-primary:hover {
-background-color: rgba(217, 3, 104, 0.1);
+  background-color: rgba(217, 3, 104, 0.1);
 }
 .btn-outline-primary:active {
-background-color: rgba(217, 3, 104, 0.2);
+  background-color: rgba(217, 3, 104, 0.2);
 }
 .btn-outline-primary:disabled {
-color: var(--primary-inactive);
-border-color: var(--primary-inactive);
-cursor: not-allowed;
+  color: var(--primary-inactive);
+  border-color: var(--primary-inactive);
 }
 
 .btn-outline-success {
-background-color: transparent;
-color: var(--border-color);
-border: 1px solid var(--border-color);
+  background-color: transparent;
+  color: var(--border-color);
+  border: 1px solid var(--border-color);
 }
 .btn-outline-success:hover {
-background-color: var(--success-color);
-color: white;
+  background-color: var(--success-color);
+  color: white;
 }
 .btn-outline-success:active {
-background-color: var(--success-active);
-color: white;
+  background-color: var(--success-active);
+  color: white;
 }
 .btn-outline-success:disabled {
-color: var(--success-inactive);
-border-color: var(--success-inactive);
-cursor: not-allowed;
+  color: var(--success-inactive);
+  border-color: var(--success-inactive);
 }
 
 .btn-outline-danger {
-background-color: transparent;
-color: var(--error-color);
-border: 1px solid var(--error-color);
+  background-color: transparent;
+  color: var(--error-color);
+  border: 1px solid var(--error-color);
 }
 .btn-outline-danger:hover {
-background-color: var(--error-color);
-color: white;
+  background-color: var(--error-color);
+  color: white;
 }
 .btn-outline-danger:active {
-background-color: var(--error-active);
-color: white;
+  background-color: var(--error-active);
+  color: white;
 }
 .btn-outline-danger:disabled {
-color: var(--error-inactive);
-border-color: var(--error-inactive);
-cursor: not-allowed;
+  color: var(--error-inactive);
+  border-color: var(--error-inactive);
 }
 
+/* --- Loading States --- */
 .spinner {
-display: inline-block;
-width: 1rem;
-height: 1rem;
-border: 2px solid rgba(255, 255, 255, 0.3);
-border-radius: 50%;
-border-top-color: white;
-animation: spin 1s linear infinite;
-margin-right: 8px;
-}
-
-@keyframes spin {
-to {
-  transform: rotate(360deg);
-}
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s linear infinite;
+  margin-right: 8px;
 }
 
 .processing {
-opacity: 0.8;
-cursor: wait;
+  opacity: 0.8;
+  cursor: wait;
 }
 
-#clearForm {
-width: 200px;
+/* --- Toggle Settings Button --- */
+#toggle-settings {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background-color: var(--text-dark);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 5px;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  border: none;
+  max-width: 120px;
+  transition: background-color 0.3s ease;
+  z-index: 1000;
+  transform: scale(0.8);
 }
 
-/* Dark Mode */
+#toggle-settings:hover {
+  background-color: #1e1b38;
+}
+
+/* --- Animations --- */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* --- Dark Mode --- */
 .dark-mode #primer-form {
-box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.5);
+  box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.5);
 }
 
 .dark-mode .spinner {
-border-color: rgba(0, 0, 0, 0.3);
-border-top-color: var(--foreground-color);
+  border-color: rgba(0, 0, 0, 0.3);
+  border-top-color: var(--foreground-color);
 }
 
-/* Responsive */
+/* --- Responsive --- */
 @media (max-width: 768px) {
-.button-container {
-  flex-direction: column;
-  gap: 10px;
-}
+  .button-container {
+    flex-direction: column;
+    gap: 10px;
+  }
 
-#clearForm {
-  width: 100%;
+  #clearForm {
+    width: 100%;
+  }
 }
-}
-

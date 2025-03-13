@@ -1,0 +1,30 @@
+/* --- Buttons --- */
+button {
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+.btn {
+    padding: 8px 12px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .btn-primary {
+    background-color: var(--primary-color);
+    color: #fff;
+  }
+  
+  .btn-primary:hover {
+    background-color: var(--primary-hover);
+  }
+  
+  .btn-warning {
+    background-color: var(--warning-color);
+    color: #fff;
+  }
+  
+  .btn-warning:hover {
+    background-color: var(--warning-hover);
+  }

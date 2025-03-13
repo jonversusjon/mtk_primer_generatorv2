@@ -34,7 +34,7 @@ function Settings({
           <select
             id="species-select"
             className="form-control"
-            value={formData.species}
+            value={formData.species || availableSpecies[0] || ""}
             onChange={(e) => updateFormData("species", e.target.value)}
           >
             {availableSpecies.map((species) => (

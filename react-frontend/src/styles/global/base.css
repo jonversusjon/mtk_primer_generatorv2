@@ -15,37 +15,6 @@ body {
   h2 {
     font-size: 2rem;
   }
-
-  button {
-    cursor: pointer;
-    font-family: inherit;
-  }
-  
-  /* Alerts */
-  .alert {
-    padding: 15px;
-    margin-bottom: 20px;
-    border: 1px solid transparent;
-    border-radius: 4px;
-  }
-  
-  .alert-danger {
-    color: #721c24;
-    background-color: #f8d7da;
-    border-color: #f5c6cb;
-  }
-  
-  .alert-warning {
-    color: #856404;
-    background-color: #fff3cd;
-    border-color: #ffeeba;
-  }
-  
-  .alert-success {
-    color: #155724;
-    background-color: #d4edda;
-    border-color: #c3e6cb;
-  }
   
   /* Loading Indicator */
   .loading-indicator {
@@ -83,33 +52,11 @@ body {
     color: var(--text-muted);
   }
   
-  /* Forms */
-  .form-control {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    background-color: var(--background-color);
-    color: var(--text-dark);
-  }
   
-  .form-check {
-    display: flex;
-    align-items: center;
-    margin-bottom: 16px;
-  }
-  
-  .form-check-input {
-    margin-right: 8px;
-    width: auto;
-  }
   
   /* Responsive Adjustments */
   @media (max-width: 860px) {
-    .app-container {
-      flex-direction: column;
-      gap: 0;
-    }
+
   
     .form-container,
     .output-container {
@@ -118,4 +65,10 @@ body {
       max-height: 80vh;
     }
   }
+
+  /* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
   

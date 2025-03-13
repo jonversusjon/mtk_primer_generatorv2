@@ -1,0 +1,166 @@
+/* Base Message Styles */
+.message {
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .message-icon {
+    flex-shrink: 0;
+  }
+  
+  .message-content {
+    flex: 1;
+  }
+  
+  /* Light Mode Message Styles */
+  :root {
+    /* Error Messages */
+    --error-bg: rgba(217, 3, 104, 0.1);
+    --error-border: var(--error-color);
+    --error-text: var(--error-color);
+    
+    /* Warning Messages */
+    --warning-bg: rgba(255, 212, 0, 0.1);
+    --warning-border: var(--warning-color);
+    --warning-text: #966c00; /* Darker for readability */
+    
+    /* Success Messages */
+    --success-bg: rgba(84, 19, 136, 0.1);
+    --success-border: var(--success-color);
+    --success-text: var(--success-color);
+    
+    /* Info Messages */
+    --info-bg: rgba(46, 41, 78, 0.1);
+    --info-border: var(--border-color);
+    --info-text: var(--text-dark);
+  }
+  
+  /* Dark Mode Message Styles */
+  .dark-mode {
+    /* Error Messages */
+    --error-bg: rgba(217, 3, 104, 0.15);
+    --error-border: var(--error-color);
+    --error-text: #ff3385; /* Brighter for dark backgrounds */
+    
+    /* Warning Messages */
+    --warning-bg: rgba(255, 212, 0, 0.15);
+    --warning-border: var(--warning-color);
+    --warning-text: #ffe040; /* Brighter for dark backgrounds */
+    
+    /* Success Messages */
+    --success-bg: rgba(84, 19, 136, 0.15);
+    --success-border: var(--success-color);
+    --success-text: #7e1ccb; /* Brighter for dark backgrounds */
+    
+    /* Info Messages */
+    --info-bg: rgba(191, 175, 222, 0.15);
+    --info-border: var(--border-color);
+    --info-text: var(--text-dark);
+  }
+  
+  /* Message Types */
+  .message.error {
+    background-color: var(--error-bg);
+    border-left: 3px solid var(--error-border);
+    color: var(--error-text);
+  }
+  
+  .message.warning {
+    background-color: var(--warning-bg);
+    border-left: 3px solid var(--warning-border);
+    color: var(--warning-text);
+  }
+  
+  .message.success {
+    background-color: var(--success-bg);
+    border-left: 3px solid var(--success-border);
+    color: var(--success-text);
+  }
+  
+  .message.info {
+    background-color: var(--info-bg);
+    border-left: 3px solid var(--info-border);
+    color: var(--info-text);
+  }
+  
+  /* Inline Form Validation Messages */
+  .validation-message {
+    margin: 0.375rem 0 0 0;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  
+  .validation-message.error {
+    color: var(--error-text);
+  }
+  
+  .validation-message.warning {
+    color: var(--warning-text);
+  }
+  
+  /* Legacy support for existing classes */
+  .error-message {
+    color: var(--error-text);
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+  }
+  
+  /* Toast Messages (Popup Notifications) */
+  .toast {
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    box-shadow: 0 2px 10px var(--shadow-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .toast.error {
+    background-color: var(--error-color);
+    color: white;
+  }
+  
+  .toast.warning {
+    background-color: var(--warning-color);
+    color: #333; /* Dark text for yellow background */
+  }
+  
+  .toast.success {
+    background-color: var(--success-color);
+    color: white;
+  }
+
+  /* Alerts */
+  .alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+  }
+  
+  .alert-danger {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+  }
+  
+  .alert-warning {
+    color: #856404;
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+  }
+  
+  .alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+  }

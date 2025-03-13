@@ -1,12 +1,10 @@
 // Form.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import TemplateSequence from "./TemplateSequence";
 import SequenceTabs from "./SequenceTabs";
 import Settings from "./Settings";
 import { fetchAvailableSpecies } from "../../api/api";
-import { defaultParameters } from "../../config/defaultParameters";
 import useValidateForm from "../../hooks/useValidateForm";
-import "../../styles/form.css";
 
 // formSchema.js - Define your data structure clearly in one place
 export const formSchema = {
@@ -32,30 +30,6 @@ export const formSchema = {
   },
 };
 
-export const getDefaultValues = () => ({
-  templateSequence: defaultParameters.templateSequence || "",
-  species: "",
-  kozak: "MTK",
-  max_mut_per_site: 1,
-  verbose_mode: true,
-  sequencesToDomesticate:
-    defaultParameters.sequencesToDomesticate?.length > 0
-      ? defaultParameters.sequencesToDomesticate.map((seq, index) => ({
-          sequence: seq,
-          primerName: defaultParameters.primerNames[index] || "",
-          mtkPartLeft: defaultParameters.mtkPartNums[index] || "",
-          mtkPartRight: defaultParameters.mtkPartNums[index] || "",
-        }))
-      : [
-          {
-            sequence: "",
-            primerName: "",
-            mtkPartLeft: "",
-            mtkPartRight: "",
-          },
-        ],
-});
-
 function Form({
   onSubmit,
   isSubmitting,
@@ -68,6 +42,9 @@ function Form({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [species, setSpecies] = useState([]);
+
+  // Ref to ensure we set default species only once
+  const speciesDefaultSet = useRef(false);
 
   // Load available species when the component mounts
   useEffect(() => {
@@ -88,10 +65,15 @@ function Form({
     loadSpecies();
   }, []);
 
+  // Set default species in formData only once if it's blank
   useEffect(() => {
-    // Set default species once species list is loaded, if not already set.
-    if (species.length > 0 && !formData.species) {
+    if (
+      species.length > 0 &&
+      (!formData.species || formData.species === "") &&
+      !speciesDefaultSet.current
+    ) {
       onChange({ ...formData, species: species[0] });
+      speciesDefaultSet.current = true;
     }
   }, [species, formData, onChange]);
 
@@ -100,9 +82,17 @@ function Form({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Ensure species is set before submission.
+    // This is an extra safeguard so the backend never gets a blank species.
+    const finalFormData =
+      (!formData.species || formData.species === "") && species.length > 0
+        ? { ...formData, species: species[0] }
+        : formData;
+
     if (isValid && !isSubmitting) {
-      console.log("Form data being sent:", formData);
-      onSubmit(formData);
+      console.log("Form data being sent:", finalFormData);
+      onSubmit(finalFormData);
     }
   };
 
@@ -111,6 +101,10 @@ function Form({
   };
 
   const updateSequence = (index, field, value) => {
+    // Prevent unnecessary updates if the value hasn't changed
+    if (formData.sequencesToDomesticate[index]?.[field] === value) {
+      return;
+    }
     const updatedSequences = [...formData.sequencesToDomesticate];
     updatedSequences[index] = { ...updatedSequences[index], [field]: value };
     onChange({ ...formData, sequencesToDomesticate: updatedSequences });
@@ -135,8 +129,6 @@ function Form({
 
   // Reset form to defaults (while preserving species)
   const resetForm = () => {
-    // Optionally, you might trigger a refetch from the backend here.
-    // For now, we'll assume that the parent holds the defaults.
     onChange({ ...formData });
   };
 
@@ -184,13 +176,15 @@ function Form({
       />
 
       {/* Optionally, render global error messages */}
-      <div className="global-errors">
-        {Object.entries(errors).map(([field, message]) => (
-          <div key={field} className="error-message">
-            {message}
-          </div>
-        ))}
-      </div>
+      {!loading && species.length > 0 && (
+        <div className="global-errors">
+          {Object.entries(errors).map(([field, message]) => (
+            <div key={field} className="error-message">
+              {message}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Form Buttons */}
       <div className="button-container">

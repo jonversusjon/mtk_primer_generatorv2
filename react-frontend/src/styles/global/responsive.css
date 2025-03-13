@@ -117,6 +117,10 @@ body {
     /* Centers the app container horizontally */
 }
 
+.app-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
 /* Add this media query for responsive layout */
 @media (max-width: 860px) {
     .app-container {

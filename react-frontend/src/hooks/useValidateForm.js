@@ -38,8 +38,10 @@ const useValidateForm = (formData) => {
       newErrors.sequencesToDomesticate = "At least one sequence is required.";
     } else {
       formData.sequencesToDomesticate.forEach((seq, index) => {
+        const trimmedSequence =
+          typeof seq.sequence === "string" ? seq.sequence.trim() : "";
         // Validate sequence: non-empty and passes custom DNA rules
-        if (!seq.sequence || seq.sequence.trim() === "") {
+        if (!trimmedSequence) {
           newErrors[`sequencesToDomesticate[${index}].sequence`] =
             "Sequence cannot be empty.";
         } else {

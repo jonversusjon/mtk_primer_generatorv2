@@ -1,5 +1,4 @@
 import React from "react";
-import "../../styles/RestrictionSiteSummary.css";
 
 function RestrictionSiteSummary({ sites }) {
   if (!sites || sites.length === 0) return null;

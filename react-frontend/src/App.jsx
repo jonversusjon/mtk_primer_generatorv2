@@ -8,11 +8,7 @@ import ResultsPage from "./pages/ResultsPage";
 import { useDarkMode } from "./hooks/useDarkMode";
 
 // Styles
-import "./styles/app.css";
-import "./styles/base.css";
-import "./styles/dark-mode.css";
-import "./styles/scrollbar.css";
-import "./styles/theme.css";
+import "./styles/_styles.css";
 
 function App() {
   const [darkMode, toggleDarkMode] = useDarkMode();
@@ -24,10 +20,7 @@ function App() {
   return (
     <Router>
       <div className={`app ${darkMode ? "dark-mode" : ""}`}>
-        <AppHeader
-          darkMode={darkMode}
-          toggleDarkMode={toggleDarkMode}
-        />
+        <AppHeader darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
         <Banner />
         <div className="app-container">
           <Routes>

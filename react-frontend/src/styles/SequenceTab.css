@@ -21,15 +21,6 @@
     color: #666;
   }
   
-  .validation-message {
-    margin: 0 12px 12px 12px;
-    font-size: 0.7em;
-  }
-  
-  .validation-message.error {
-    color: #ef4444;
-  }
-  
   .sequence-metadata {
     display: flex;
     flex-wrap: wrap;
@@ -104,14 +95,6 @@
     .form-group {
       min-width: 100%;
     }
-  }
-  
-  .validation-message.error {
-    color: red;
-  }
-  
-  .validation-message.advisory {
-    color: var(--warning-color);
   }
 
   .mtk-parts-row {

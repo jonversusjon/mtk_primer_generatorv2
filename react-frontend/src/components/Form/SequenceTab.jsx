@@ -31,7 +31,8 @@ function SequenceTab({ sequence, index, updateSequence, mtkPartOptions }) {
 
   useEffect(() => {
     // Update character count
-    setCharCount(sequence.sequence.length);
+    const safeValue = sequence.sequence || ""; // Fallback to empty string if undefined
+    setCharCount(safeValue.length);
 
     // Validate DNA sequence if one is provided
     if (sequence.sequence) {

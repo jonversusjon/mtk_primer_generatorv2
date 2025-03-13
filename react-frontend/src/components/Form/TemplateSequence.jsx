@@ -8,8 +8,8 @@ function TemplateSequence({ value, onChange }) {
   const [charCount, setCharCount] = useState(0);
 
   useEffect(() => {
-    // Update character count when value changes
-    setCharCount(value.length);
+    const safeValue = value || "";
+    setCharCount(safeValue.length);
 
     // Validate template sequence (optional field)
     if (value) {
@@ -40,13 +40,14 @@ function TemplateSequence({ value, onChange }) {
         <div className="char-count">Length: {charCount} bp</div>
       </div>
 
-      <SequenceInput
-        id="templateSequence"
-        value={value}
-        onChange={handleChange}
-        placeholder="Paste your template DNA sequence here (optional)"
-      />
-
+      <div className="tab-content">
+        <SequenceInput
+          id="templateSequence"
+          value={value}
+          onChange={handleChange}
+          placeholder="Paste your template DNA sequence here (optional)"
+        />
+      </div>
       {validationMessage && (
         <div className="validation-message error">{validationMessage}</div>
       )}

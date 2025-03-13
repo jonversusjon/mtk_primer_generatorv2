@@ -40,15 +40,6 @@
     color: #666;
   }
   
-  .validation-message {
-    margin-top: 5px;
-    font-size: 0.8em;
-  }
-  
-  .validation-message.error {
-    color: #ef4444;
-  }
-  
   /* Dark Mode */
   .dark-mode .section-title h3 {
     color: #fff;

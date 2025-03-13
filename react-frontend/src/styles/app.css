@@ -6,27 +6,15 @@
   min-height: 100vh;
 }
 
-/* This container now just holds your page content below the header */
-.app-container {
-  flex: 1;
-  width: 100%;
-  /* No more side-by-side or forced heights */
-}
-
 .form-container,
 .output-container {
-  /* Each route (Form or Results) can occupy the full width */
   width: 100%;
   box-sizing: border-box;
   margin: 0 auto;     /* Center horizontally if you set a max-width */
-  padding: 0ox 24px 24px 24px;      /* Spacing around content */
+  padding: 0ox 24px 24px 24px;
   max-width: 1000px;
-
-  /* Removed overflow and fixed heights so the page itself scrolls */
-  /* No max-width, but feel free to add one (e.g., max-width: 800px) */
 }
 
-/* Responsive Adjustments (optional) */
 @media (max-width: 860px) {
 
   .form-container,

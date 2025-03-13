@@ -1,43 +1,94 @@
 {
-    "version": "2.0.0",
-    "tasks": [
+  "version": "2.0.0",
+  "tasks": [
       {
-        "label": "Start Backend (Flask)",
-        "type": "shell",
-        "command": "python app.py",
-        "options": {
-          "cwd": "${workspaceFolder}/flask-backend"
-        },
-        "presentation": {
-          "reveal": "always",
-          "panel": "new",
-          "group": "develop"
-        },
-        "problemMatcher": []
+          "label": "Start Backend (Flask) (Dev Config)",
+          "type": "shell",
+          "command": "python app.py --config config.test_config --env development",
+          "options": {
+              "cwd": "${workspaceFolder}/flask-backend"
+          },
+          "presentation": {
+              "reveal": "always",
+              "panel": "new",
+              "group": "develop"
+          },
+          "problemMatcher": []
       },
       {
-        "label": "Start Frontend (React)",
+        "label": "Start Backend (Flask) (Testing Config)",
         "type": "shell",
-        "command": "npm start",
+        "command": "python app.py --config config.test_config --env testing",
         "options": {
-          "cwd": "${workspaceFolder}/react-frontend"
+            "cwd": "${workspaceFolder}/flask-backend"
         },
         "presentation": {
-          "reveal": "always",
-          "panel": "new",
-          "group": "develop"
+            "reveal": "always",
+            "panel": "new",
+            "group": "develop"
         },
         "problemMatcher": []
+    }
+    ,
+      {
+          "label": "Start Backend (Flask) (Production Config)",
+          "type": "shell",
+          "command": "python app.py",
+        //   "command": "python app.py",
+
+          "options": {
+              "cwd": "${workspaceFolder}/flask-backend"
+          },
+          "presentation": {
+              "reveal": "always",
+              "panel": "new",
+              "group": "develop"
+          },
+          "problemMatcher": []
       },
       {
-        "label": "Start Full Stack App",
-        "dependsOn": ["Start Backend (Flask)", "Start Frontend (React)"],
-        "dependsOrder": "parallel",
-        "presentation": {
-          "reveal": "always",
-          "panel": "new"
-        },
-        "problemMatcher": []
+          "label": "Start Frontend (React)",
+          "type": "shell",
+          "command": "npm start",
+          "options": {
+              "cwd": "${workspaceFolder}/react-frontend"
+          },
+          "presentation": {
+              "reveal": "always",
+              "panel": "new",
+              "group": "develop"
+          },
+          "problemMatcher": []
+      },
+      {
+          "label": "Start Full Stack App (Dev Config)",
+          "dependsOn": ["Start Backend (Flask) (Dev Config)", "Start Frontend (React)"],
+          "dependsOrder": "parallel",
+          "presentation": {
+              "reveal": "always",
+              "panel": "new"
+          },
+          "problemMatcher": []
+      },
+      {
+          "label": "Start Full Stack App (Testing Config)",
+          "dependsOn": ["Start Backend (Flask) (Testing Config)", "Start Frontend (React)"],
+          "dependsOrder": "parallel",
+          "presentation": {
+              "reveal": "always",
+              "panel": "new"
+          },
+          "problemMatcher": []
+      },
+      {
+          "label": "Start Full Stack App (Production Config)",
+          "dependsOn": ["Start Backend (Flask) (Production Config)", "Start Frontend (React)"],
+          "dependsOrder": "parallel",
+          "presentation": {
+              "reveal": "always",
+              "panel": "new"
+          },
+          "problemMatcher": []
       }
-    ]
-  }
+  ]
+}

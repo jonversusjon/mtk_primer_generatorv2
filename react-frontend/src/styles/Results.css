@@ -106,11 +106,6 @@ tbody tr:nth-child(odd) {
     background-color: var(--warning-inactive);
 }
 
-/* Style for error cells */
-.error {
-    background-color: var(--error-inactive);
-}
-
 /* Style for success cells */
 .success {
     background-color: var(--success-inactive);
@@ -153,8 +148,6 @@ tbody tr:nth-child(odd) {
 }
 
 .tab-content {
-    display: flex;
-    justify-content: space-between;
     align-items: center;
     padding: 0px 24px;
 }
@@ -262,3 +255,18 @@ tbody tr:nth-child(odd) {
     color: var(--text-dark);
     border-color: var(--success-color);
   }
+
+  /* --- Results Section --- */
+#results {
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 5px;
+  border: 1px solid var(--border-color);
+  margin-top: 20px;
+}
+
+.char-count-label {
+  font-size: 0.8em;
+  color: var(--text-dark);
+  margin: 4px 0 0 12px;
+}

@@ -38,3 +38,27 @@
     border-color: #48A9FF;
     box-shadow: 0 0 0 0.2rem rgba(72, 169, 255, 0.25);
   }
+
+  /* --- Sequence Section --- */
+.sequence-content {
+  max-width: 800px;
+  margin: 10px auto;
+  background: var(--color-eggshell);
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.sequence-input,
+.dynamic-sequence-input {
+  min-width: 100%;
+  overflow-wrap: break-word;
+  color: var(--text-muted);
+  font-family: "Fira Code", Consolas, Monaco, monospace;
+  width: 100%;
+  min-height: 8rem; /* Equivalent to 80px */
+  font-size: 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.375rem;
+  background-color: white;
+  resize: vertical;
+  margin-top: 0.5rem; /* added from dynamic-sequence-input */
+}

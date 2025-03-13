@@ -88,3 +88,160 @@
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+#verbose_mode_container {
+  margin-left: 0;
+  transform: scale(0.6);
+}
+
+#verbose_mode {
+  width: 30px;
+  margin-left: 12px;
+}
+
+/* --- Settings Card --- */
+#settings-card {
+  position: fixed;
+  top: 60px;
+  right: 20px;
+  width: 320px;
+  background-color: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  z-index: 1000;
+  transition: all 0.3s ease-in-out;
+  transform: scale(0.8);
+}
+
+/* Form Layout */
+#settings-card .form-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-direction: row;
+}
+
+/* Make labels wider */
+#settings-card .form-group label {
+  flex: 0 0 170px; /* Fixed width of 200px, adjust as needed */
+  /* or */
+  min-width: 170px; /* Minimum width of 200px */
+}
+
+/* Let the select/input take remaining space */
+#settings-card .form-group select,
+#settings-card .form-group input {
+  flex: 1;
+}
+
+#settings-card .form-group label {
+  width: 40%;
+  font-weight: 500;
+  color: var(--text-dark);
+}
+
+#settings-card .form-group select {
+  width: 60%;
+  padding: 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  font-size: 14px;
+  background-color: var(--color-eggshell);
+}
+
+/* Close Button */
+#close-settings {
+  display: block;
+  width: 100%;
+  background-color: var(--error-color);
+  color: #fff;
+  border: none;
+  padding: 8px;
+  font-size: 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 12px;
+  text-align: center;
+  transition: background-color 0.3s ease;
+}
+
+#close-settings:hover {
+  background-color: #a50147; /* A darker shade of dogwood rose */
+}
+
+
+/* Settings Modal */
+.settings-modal {
+  position: fixed;
+  top: 60px; /* Below the toggle button */
+  right: 20px;
+  width: 300px;
+  background-color: var(--form-bg);
+  color: var(--text-dark);
+  box-shadow: 0 4px 12px var(--shadow-color);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  z-index: 999;
+  padding: 16px;
+  max-height: 80vh;
+  overflow-y: auto;
+  transition: all 0.3s ease;
+}
+
+.settings-content {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.settings-modal .form-group {
+  margin-bottom: 16px;
+}
+
+.settings-modal label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: var(--text-dark);
+}
+
+.settings-modal .form-control {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--background-color);
+  color: var(--text-dark);
+}
+
+.settings-modal .form-check {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.settings-modal .form-check-input {
+  margin-right: 8px;
+  width: auto;
+}
+
+/* Modal Footer */
+.settings-footer {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.settings-footer button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.settings-footer button:hover {
+  background-color: var(--primary-hover);
+}

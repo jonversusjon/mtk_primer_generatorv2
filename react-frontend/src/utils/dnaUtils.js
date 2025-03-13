@@ -15,7 +15,9 @@ export const validateDnaSequence = (
   requireInFrame = true
 ) => {
   // Check for empty sequence if required
-  if (isRequired && (!sequence || sequence.trim() === "")) {
+  const trimmedSequence = typeof sequence === "string" ? sequence.trim() : "";
+
+  if (isRequired && !trimmedSequence) {
     return {
       isValid: false,
       message: "Sequence cannot be empty",

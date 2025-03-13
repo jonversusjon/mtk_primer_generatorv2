@@ -160,3 +160,8 @@
     gap: 12px;
   }
 }
+
+#numSequences {
+  width: 40px;
+  padding: 6px;
+}
