@@ -23,8 +23,8 @@ const Settings = ({
 
     return {
       position: "absolute",
-      top: `${toggleRect.bottom - sidebarRect.top + 10}px`, // Position under the button
-      left: `${toggleRect.left - sidebarRect.left}px`, // Align with toggle button
+      top: `${toggleRect.bottom - sidebarRect.top}px`, // Position under the button
+      left: `${sidebarRect.left}px`, // Align with toggle button
       width: "90%",
       zIndex: 10,
     };
@@ -32,7 +32,10 @@ const Settings = ({
 
   const handleOutsideClick = useCallback(
     (e) => {
-      if (modalContentRef.current && !modalContentRef.current.contains(e.target)) {
+      if (
+        modalContentRef.current &&
+        !modalContentRef.current.contains(e.target)
+      ) {
         onClose();
       }
     },
@@ -42,7 +45,8 @@ const Settings = ({
   if (!show) return null;
 
   const speciesValue =
-    formData.species || (availableSpecies.length > 0 ? availableSpecies[0] : "");
+    formData.species ||
+    (availableSpecies.length > 0 ? availableSpecies[0] : "");
 
   return (
     <div
