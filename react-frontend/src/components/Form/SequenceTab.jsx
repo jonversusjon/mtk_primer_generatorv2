@@ -19,12 +19,21 @@ function SequenceTab({ sequence, index, updateSequence, mtkPartOptions }) {
   const hasInitialized = useRef(false);
   useEffect(() => {
     if (!hasInitialized.current && mtkPartOptions.length > 0) {
-      const initialValue = mtkPartOptions[0];
-      updateSequence("mtkPartLeft", initialValue);
-      updateSequence("mtkPartRight", initialValue);
+      // Only update if the current values are empty
+      if (!sequence.mtkPartLeft || sequence.mtkPartLeft.trim() === "") {
+        updateSequence("mtkPartLeft", mtkPartOptions[0]);
+      }
+      if (!sequence.mtkPartRight || sequence.mtkPartRight.trim() === "") {
+        updateSequence("mtkPartRight", mtkPartOptions[0]);
+      }
       hasInitialized.current = true;
     }
-  }, [mtkPartOptions, updateSequence]);
+  }, [
+    mtkPartOptions,
+    updateSequence,
+    sequence.mtkPartLeft,
+    sequence.mtkPartRight,
+  ]);
 
   useEffect(() => {
     console.log(`SequenceTab ${index} - sequence received:`, sequence.sequence); // DEBUG log
