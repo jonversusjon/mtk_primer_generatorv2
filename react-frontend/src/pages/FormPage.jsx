@@ -30,6 +30,9 @@ const defaultSequence = {
 function FormPage({ showSettings, setShowSettings, setResults }) {
   const [formData, setFormData] = useState({
     sequencesToDomesticate: [defaultSequence],
+    // availableSpecies will be added from the species API
+    availableSpecies: [],
+    species: ""
   });
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
@@ -42,6 +45,7 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
     console.log("FormPage formData:", formData);
   }, [formData]);
 
+  // Fetch initial configuration
   useEffect(() => {
     const fetchConfig = async () => {
       try {
@@ -57,7 +61,7 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
                 sequence: Array.isArray(seq.sequence) ? seq.sequence.join("") : seq.sequence,
               }));
           }
-          setFormData(parsedData);
+          setFormData((prev) => ({ ...prev, ...parsedData }));
         } else {
           const response = await fetch("http://localhost:5000/api/config");
           const data = await response.json();
@@ -78,18 +82,40 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
             };
           }
           console.log("New formData set from API:", newData);
-          setFormData(newData);
+          setFormData((prev) => ({ ...prev, ...newData }));
         }
         setInitialized(true);
       } catch (err) {
         console.error("Error fetching defaults from API:", err);
-        setFormData({ sequencesToDomesticate: [defaultSequence] });
+        setFormData((prev) => ({ ...prev, sequencesToDomesticate: [defaultSequence] }));
         setInitialized(true);
       } finally {
         setLoading(false);
       }
     };
     fetchConfig();
+  }, []);
+
+  // Fetch available species and update formData
+  useEffect(() => {
+    const fetchSpecies = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/species");
+        const speciesData = await response.json();
+        console.log("Fetched species from API:", speciesData);
+        setFormData((prev) => ({
+          ...prev,
+          availableSpecies: speciesData.species,
+          // If no species is selected, default to the first available species.
+          species: prev.species || (speciesData.species.length > 0 ? speciesData.species[0] : "")
+        }));
+      } catch (err) {
+        console.error("Error fetching species:", err);
+        // Optionally, set availableSpecies to an empty array or fallback options.
+        setFormData((prev) => ({ ...prev, availableSpecies: [] }));
+      }
+    };
+    fetchSpecies();
   }, []);
 
   // Pass the initialized flag so that validation waits until formData is ready

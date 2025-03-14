@@ -25,6 +25,7 @@ const Form = ({
       try {
         const speciesData = await fetchAvailableSpecies();
         setSpecies(speciesData.species);
+        console.log("Species data loaded:", speciesData.species);
         // Update formData so that Settings (in Sidebar) can use the species list
         setFormData((prev) => ({
           ...prev,
@@ -42,7 +43,10 @@ const Form = ({
 
   // Set default species if available and not already set
   useEffect(() => {
-    if (species.length > 0 && (!formData.species || formData.species.trim() === "")) {
+    if (
+      species.length > 0 &&
+      (!formData.species || formData.species.trim() === "")
+    ) {
       setFormData((prev) => ({ ...prev, species: species[0] }));
     }
   }, [species, formData.species, setFormData]);
@@ -51,7 +55,8 @@ const Form = ({
     e.preventDefault();
     // Ensure species is set before submitting
     const finalFormData =
-      (!formData.species || formData.species.trim() === "") && species.length > 0
+      (!formData.species || formData.species.trim() === "") &&
+      species.length > 0
         ? { ...formData, species: species[0] }
         : formData;
     // Only submit if the form is valid and fully initialized
@@ -63,7 +68,9 @@ const Form = ({
   // Curried updateSequence function so that SequenceTabs (and its children) can call it as updateSequence(index)(field, value)
   const updateSequence = useCallback(
     (index) => (field, value) => {
-      console.log(`updateSequence - index: ${index}, field: ${field}, value: ${value}`);
+      console.log(
+        `updateSequence - index: ${index}, field: ${field}, value: ${value}`
+      );
       setFormData((prev) => {
         const updatedSequences = [...prev.sequencesToDomesticate];
         if (updatedSequences[index]?.[field] === value) return prev;
@@ -71,7 +78,10 @@ const Form = ({
           ...updatedSequences[index],
           [field]: value,
         };
-        console.log("Updated formData:", { ...prev, sequencesToDomesticate: updatedSequences });
+        console.log("Updated formData:", {
+          ...prev,
+          sequencesToDomesticate: updatedSequences,
+        });
         return { ...prev, sequencesToDomesticate: updatedSequences };
       });
     },

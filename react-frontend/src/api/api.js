@@ -7,6 +7,7 @@ import { API_BASE_URL } from "../config/config.js";
 export const fetchAvailableSpecies = async () => {
   try {
     const response = await fetchWithErrorHandling("/api/species");
+    console.log("Available species:", response);
     return response;
   } catch (error) {
     console.error("Error fetching species:", error);
