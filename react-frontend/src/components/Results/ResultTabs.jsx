@@ -1,3 +1,4 @@
+// ResultTabs.jsx
 import React, { useState, useEffect } from "react";
 import ResultTab from "./ResultTab";
 
@@ -25,15 +26,17 @@ function ResultTabs({ results }) {
             <button
               key={index}
               type="button"
-              className={`tab-button results-tab-button ${activeTab === index ? "active" : ""}`}
+              className={`tab-button results-tab-button ${
+                activeTab === index ? "active" : ""
+              }`}
               onClick={() => setActiveTab(index)}
               role="tab"
               aria-selected={activeTab === index}
               aria-controls={`result-tab-${index}`}
               id={`result-tab-button-${index}`}
             >
-              {result.primer_name?.trim()
-                ? result.primer_name
+              {result.primerName?.trim()
+                ? result.primerName
                 : `Sequence ${index + 1}`}
             </button>
           ))}

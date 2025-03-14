@@ -1,5 +1,11 @@
 /* form.css */
 
+.initialization-message {
+  font-size: 2rem;
+  text-align: center;
+  margin-bottom: 20px;
+  color: var(--text-dark);
+}
 /* --- Form Structure --- */
 #primer-form {
   padding: 20px;

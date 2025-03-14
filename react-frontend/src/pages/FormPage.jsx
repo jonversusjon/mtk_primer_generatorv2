@@ -35,13 +35,16 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
     species: "",
   });
   const [loading, setLoading] = useState(true);
+  const [configLoaded, setConfigLoaded] = useState(false);
+  const [speciesLoaded, setSpeciesLoaded] = useState(false);
+  const defaultsLoaded = configLoaded && speciesLoaded;
+
   const [processing, setProcessing] = useState(false);
   const [progressStatus, setProgressStatus] = useState({
     message: "",
     percentage: 0,
     step: "",
   });
-  const [initialized, setInitialized] = useState(false);
   const [error, setError] = useState(null);
   const settingsToggleRef = useRef(null);
   const [activeTabIndex, setActiveTabIndex] = useState(0);
@@ -95,16 +98,15 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
           console.log("New formData set from API:", newData);
           setFormData((prev) => ({ ...prev, ...newData }));
         }
-        setInitialized(true);
       } catch (err) {
         console.error("Error fetching defaults from API:", err);
         setFormData((prev) => ({
           ...prev,
           sequencesToDomesticate: [defaultSequence],
         }));
-        setInitialized(true);
       } finally {
         setLoading(false);
+        setConfigLoaded(true);
       }
     };
     fetchConfig();
@@ -128,6 +130,8 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
       } catch (err) {
         console.error("Error fetching species:", err);
         setFormData((prev) => ({ ...prev, availableSpecies: [] }));
+      } finally {
+        setSpeciesLoaded(true);
       }
     };
     fetchSpecies();
@@ -143,7 +147,7 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
   }, []);
 
   // Wait for the form to be initialized before running validations
-  const { errors, isValid } = useValidateForm(formData, initialized);
+  const { errors, isValid } = useValidateForm(formData, defaultsLoaded);
   const errorsBySequence = getErrorsBySequence(
     errors,
     formData.sequencesToDomesticate.length
@@ -160,22 +164,25 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
 
     try {
       sessionStorage.setItem("formData", JSON.stringify(data));
-      // Generate a job ID and include it in your data payload
       const jobId = Date.now().toString();
 
-      // Call generateProtocol with the onStatusUpdate callback.
-      // The API function will handle creating and managing the SSE connection.
-      const result = await generateProtocol({ ...data, jobId }, (status) => {
-        setProgressStatus(status);
-      });
+      // Pass an onStatusUpdate callback that logs the status update.
+      const initialResult = await generateProtocol(
+        { ...data, jobId },
+        (status) => {
+          console.log("SSE status update:", status);
+          setProgressStatus(status);
+        }
+      );
 
-      // Optionally store the eventSource for cleanup if needed.
-      if (result.eventSource) {
-        eventSourceRef.current = result.eventSource;
+      console.log("Initial protocol response:", initialResult);
+
+      if (initialResult.eventSource) {
+        eventSourceRef.current = initialResult.eventSource;
       }
 
-      sessionStorage.setItem("results", JSON.stringify(result));
-      setResults(result);
+      sessionStorage.setItem("results", JSON.stringify(initialResult));
+      setResults(initialResult);
       navigate("/results");
     } catch (err) {
       setError(
@@ -187,8 +194,10 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
     }
   };
 
-  if (loading) {
-    return <p>Loading defaults...</p>;
+  if (loading || !defaultsLoaded) {
+    return (
+      <div className="initialization-message">Getting things ready...</div>
+    );
   }
 
   return (
@@ -242,7 +251,7 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
             settingsToggleRef={settingsToggleRef}
             errors={errors}
             isValid={isValid}
-            initialized={initialized}
+            initialized={defaultsLoaded}
             activeTabIndex={activeTabIndex}
             setActiveTabIndex={setActiveTabIndex}
           />

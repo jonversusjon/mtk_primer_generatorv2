@@ -63,6 +63,18 @@ def run_protocol_job(job_id, data):
         result = protocol_maker.create_gg_protocol()
         serializable_result = utils.convert_non_serializable(result)
 
+        # Merge primer names from the submitted data into the results.
+        # If your result is a list (one per sequence), merge each primerName.
+        if isinstance(serializable_result, list):
+            for i, seq in enumerate(sequencesToDomesticate):
+                primer_name = seq.get("primerName")
+                if primer_name and i < len(serializable_result):
+                    serializable_result[i]["primerName"] = primer_name
+        else:
+            # If the result is a single object, you can merge data in a different way.
+            # For example, you could include the entire submitted sequences.
+            serializable_result["submittedSequences"] = sequencesToDomesticate
+
         # Check for errors in the protocol generation
         if serializable_result.get("has_errors", False):
             job_status[job_id] = {
@@ -90,7 +102,7 @@ def run_protocol_job(job_id, data):
 def generate_protocol():
     """
     Start a protocol generation job in the background and immediately
-    return a jobId for the frontend to use with the SSE endpoint.
+    return a jobId and the submitted data for the frontend to use.
     """
     try:
         data = request.json
@@ -102,8 +114,12 @@ def generate_protocol():
         thread = Thread(target=run_protocol_job, args=(job_id, data))
         thread.start()
 
-        # Immediately return the job id with a 202 Accepted status.
-        return jsonify({"jobId": job_id, "message": "Job started"}), 202
+        # Immediately return the job id and the submitted data
+        return jsonify({
+            "jobId": job_id,
+            "message": "Job started",
+            "submittedData": data
+        }), 202
     except Exception as e:
         logger.error(
             f"Error starting protocol generation: {str(e)}", exc_info=True)
