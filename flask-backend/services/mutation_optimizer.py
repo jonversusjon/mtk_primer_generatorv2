@@ -81,7 +81,7 @@ class MutationOptimizer(DebugMixin):
             self.logger.info(
                 "🔍 Debug mode enabled with detailed logging and validation")
 
-        self.compatibility_table = self.utils._load_compatibility_table(
+        self.compatibility_table = self.utils.load_compatibility_table(
             'static/data/compatibility_table.bin')
         self.logger.debug(
             "MutationOptimizer initialized with compatibility table.")

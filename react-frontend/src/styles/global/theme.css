@@ -32,6 +32,7 @@
   --border-color: var(--color-space-cadet);
   --text-dark: black;
   --text-muted: #414d5a;
+  --text-info: #337ab7;
   --background-color: #ffffff;
   --foreground-color: #2E294E; /* Added for consistency */
   --shadow-color: rgba(0, 0, 0, 0.1);
@@ -104,6 +105,7 @@
   --border-color: #BFAFDE;
   --text-dark: #F1E9DA;
   --text-muted: #d8d2c8;
+  --text-info: #5293cd;
   --form-bg: #1F1C35;
   --shadow-color: rgba(0, 0, 0, 0.3);
 }

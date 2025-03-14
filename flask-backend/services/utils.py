@@ -107,57 +107,12 @@ class GoldenGateUtils:
 
         return [codon for codon, aa in table.forward_table.items() if aa == amino_acid]
 
-    def export_primers_to_tsv(
-        self,
-        forward_primers: List[tuple],
-        reverse_primers: List[tuple],
-        filename: str = "primers.tsv"
-    ) -> None:
-        """Exports primers to TSV file."""
-        with debug_context("export_primers"):
-            filepath = os.path.join(self.data_dir, filename)
-
-            try:
-                with open(filepath, mode='w', newline='') as file:
-                    writer = csv.writer(file, delimiter='\t')
-
-                    for name, sequence in forward_primers:
-                        writer.writerow([
-                            name,
-                            sequence,
-                            "Generated for Golden Gate Assembly"
-                        ])
-
-                    for name, sequence in reverse_primers:
-                        writer.writerow([
-                            name,
-                            sequence,
-                            "Generated for Golden Gate Assembly"
-                        ])
-
-                logger.info(f"Primers exported to {filepath}")
-
-            except Exception as e:
-                logger.error(f"Error exporting primers: {str(e)}")
-                raise
-
     def gc_content(self, seq: str) -> float:
         """Computes GC content of a DNA sequence."""
         if not seq:
             return 0
         gc_count = sum(1 for nt in seq.upper() if nt in "GC")
         return gc_count / len(seq)
-
-    def translate_codon(self, codon: str) -> str:
-        """Translates a codon into its corresponding amino acid."""
-        with debug_context("translate_codon"):
-            try:
-                codon = codon.upper().replace("U", "T")
-                standard_table = CodonTable.unambiguous_dna_by_id[1]
-                return standard_table.forward_table.get(codon, "?")
-            except Exception as e:
-                logger.error(f"Error translating codon {codon}: {str(e)}")
-                return "?"
 
     def seq_to_index(self, seq: str) -> int:
         """Converts a 4-nucleotide sequence to its corresponding matrix index."""
@@ -194,7 +149,7 @@ class GoldenGateUtils:
         else:
             return []
 
-    def _load_compatibility_table(self, path: str) -> np.ndarray:
+    def load_compatibility_table(self, path: str) -> np.ndarray:
         """Loads the binary compatibility table into a numpy array."""
         with open(path, 'rb') as f:
             binary_data = f.read()
@@ -262,18 +217,104 @@ class GoldenGateUtils:
                 return f"Overhang {seq} has 100% GC content (all G/C)."
         return "Unknown reason (should not happen)."
 
-    def save_primers_to_tsv(self, primer_data: List[List[str]], output_tsv_path: str) -> None:
-        """Saves primer data to a TSV file."""
-        with debug_context("save_primers_to_tsv"):
-            if not primer_data:
-                logger.warning("No primer data to save.")
-                return
+    def calculate_optimal_primer_length(self, sequence: str, position: int, direction='forward') -> int:
+        self.log_step("Calculate Primer Length", f"Optimal {direction} primer from pos {position}",
+                      {"sequence_length": len(sequence)})
+        min_length, max_length, target_tm = 18, 30, 60
+        optimal_length = min_length
+
+        if direction == 'forward':
+            for length in range(min_length, min(max_length + 1, len(sequence) - position)):
+                primer_seq = sequence[position:position + length]
+                tm = self._calculate_tm(primer_seq)
+                self.log_step("Length Iteration", f"Length {length}", {
+                              "tm": tm, "target": target_tm})
+                if tm >= target_tm:
+                    optimal_length = length
+                    break
+        else:
+            for length in range(min_length, min(max_length + 1, position + 1)):
+                if position - length < 0:
+                    break
+                primer_seq = sequence[position - length:position]
+                tm = self._calculate_tm(primer_seq)
+                self.log_step("Length Iteration", f"Length {length}", {
+                              "tm": tm, "target": target_tm})
+                if tm >= target_tm:
+                    optimal_length = length
+                    break
+
+        self.validate(
+            optimal_length >= min_length,
+            f"Calculated optimal primer length: {optimal_length}",
+            {"direction": direction, "min_length": min_length, "max_length": max_length}
+        )
+        return optimal_length
+
+    def calculate_tm(self, sequence: str) -> float:
+        if not sequence:
+            return 0.0
+        sequence = sequence.upper()
+        length = len(sequence)
+        a_count = sequence.count("A")
+        t_count = sequence.count("T")
+        g_count = sequence.count("G")
+        c_count = sequence.count("C")
+        if length < 14:
+            tm = (a_count + t_count) * 2 + (g_count + c_count) * 4
+        else:
+            tm = 64.9 + (41 * (g_count + c_count - 16.4)) / length
+        return round(tm, 2)
+
+    def export_primers_to_tsv(
+        self,
+        output_tsv_path: str,
+        primer_data: Optional[List[List[str]]] = None,
+        forward_primers: Optional[List[tuple]] = None,
+        reverse_primers: Optional[List[tuple]] = None,
+        header: Optional[List[str]] = None
+    ) -> None:
+        """
+        Exports primers to a TSV file.
+
+        The function works in one of two modes:
+        1. If `primer_data` is provided, it writes that data as rows (assuming each row is a list of strings).
+        2. If `primer_data` is None but both `forward_primers` and `reverse_primers` are provided,
+            it writes both lists as rows with a default message in the third column.
+
+        Optionally, a custom header can be provided; otherwise, a default header is used.
+        """
+        with debug_context("export_primers_to_tsv"):
+            # Define a default header if none is provided
+            if header is None:
+                header = ["Primer Name", "Sequence", "Amplicon"]
 
             try:
-                with open(output_tsv_path, "w") as tsv_file:
-                    tsv_file.write("Primer Name\tSequence\tAmplicon\n")
-                    for row in primer_data:
-                        tsv_file.write("\t".join(map(str, row)) + "\n")
+                with open(output_tsv_path, mode="w", newline="") as tsv_file:
+                    writer = csv.writer(tsv_file, delimiter="\t")
+                    writer.writerow(header)
+
+                    # If primer_data is provided, write it directly
+                    if primer_data is not None:
+                        if not primer_data:
+                            logger.warning("No primer data to save.")
+                            return
+                        for row in primer_data:
+                            writer.writerow(list(map(str, row)))
+                    # Otherwise, if forward and reverse primers are provided, merge them.
+                    elif forward_primers is not None and reverse_primers is not None:
+                        # Define the default message for assembly
+                        assembly_message = "Generated for Golden Gate Assembly"
+                        for name, sequence in forward_primers:
+                            writer.writerow([name, sequence, assembly_message])
+                        for name, sequence in reverse_primers:
+                            writer.writerow([name, sequence, assembly_message])
+                    else:
+                        logger.error("Insufficient primer data provided.")
+                        raise ValueError(
+                            "Either primer_data or both forward_primers and reverse_primers must be provided.")
+
+                logger.info(f"Primers exported to {output_tsv_path}")
             except IOError as e:
                 logger.error(f"Error writing to file {output_tsv_path}: {e}")
                 raise

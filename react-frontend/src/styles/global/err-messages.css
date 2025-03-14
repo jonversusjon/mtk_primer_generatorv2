@@ -90,7 +90,7 @@
   
   /* Inline Form Validation Messages */
   .validation-message {
-    margin: 0.375rem 0 0 0;
+    margin: 0.375rem 0.5rem;
     font-size: 0.75rem;
     display: flex;
     align-items: center;
@@ -101,10 +101,16 @@
     color: var(--error-text);
   }
   
-  .validation-message.warning {
-    color: var(--warning-text);
+  .validation-message.warning,
+  .validation-message.advisory {
+    color: var(--text-info);
   }
   
+  /* .dark-mode .validation-message.warning,
+  .dark-mode .validation-message.advisory {
+    color: #5293cd;
+  } */
+
   /* Legacy support for existing classes */
   .error-message {
     color: var(--error-text);
