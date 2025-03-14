@@ -33,6 +33,10 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
     sequencesToDomesticate: [defaultSequence],
     availableSpecies: [],
     species: "",
+    kozak: "MTK",
+    maxMutationsPerSite: 1,
+    maxResults: 1,
+    verboseMode:false,
   });
   const [loading, setLoading] = useState(true);
   const [configLoaded, setConfigLoaded] = useState(false);
@@ -93,6 +97,18 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
                       : seq.sequence,
                   }))
                 : [defaultSequence],
+              // If config supplies these values, they’ll be merged;
+              // otherwise they remain undefined or null.
+              species: data.species || "",
+              kozak: data.kozak || "",
+              maxMutationsPerSite:
+                data.maxMutationsPerSite !== undefined
+                  ? data.maxMutationsPerSite
+                  : null,
+              max_results:
+                data.max_results !== undefined ? data.max_results : null,
+              verboseMode:
+                data.verboseMode !== undefined ? data.verboseMode : null,
             };
           }
           console.log("New formData set from API:", newData);
@@ -122,10 +138,28 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
         setFormData((prev) => ({
           ...prev,
           availableSpecies: speciesData.species,
-          // If no species is selected, default to the first available species.
+          // For species and kozak, use the value from session/config if present, else default to species[0]
           species:
             prev.species ||
             (speciesData.species.length > 0 ? speciesData.species[0] : ""),
+            kozak:
+            prev.kozak ||
+            (speciesData.species.length > 0 ? speciesData.species[0] : ""),
+          // For maxMutationsPerSite and max_results, default to 1 if not provided
+          maxMutationsPerSite:
+            prev.maxMutationsPerSite !== null &&
+            prev.maxMutationsPerSite !== undefined
+              ? prev.maxMutationsPerSite
+              : 1,
+          max_results:
+            prev.max_results !== null && prev.max_results !== undefined
+              ? prev.max_results
+              : 1,
+          // For verboseMode, default to false if not provided
+          verboseMode:
+            prev.verboseMode !== null && prev.verboseMode !== undefined
+              ? prev.verboseMode
+              : false,
         }));
       } catch (err) {
         console.error("Error fetching species:", err);

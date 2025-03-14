@@ -6,10 +6,15 @@ const useValidateForm = (formData, shouldValidate = true) => {
   const [advisories, setAdvisories] = useState({});
 
   useEffect(() => {
-    console.log("useValidateForm - formData:", formData, "shouldValidate:", shouldValidate);
+    console.log(
+      "useValidateForm - formData:",
+      formData,
+      "shouldValidate:",
+      shouldValidate
+    );
 
     if (!shouldValidate) {
-      // Clear errors while form is still loading or initializing
+      console.log("Validation skipped because shouldValidate is false.");
       setErrors({});
       setAdvisories({});
       return;
@@ -23,54 +28,138 @@ const useValidateForm = (formData, shouldValidate = true) => {
       // Validate species selection (required)
       if (!formData.species || formData.species.trim() === "") {
         newErrors.species = "Species is required.";
+        console.log(
+          "Validation error: species is empty. formData.species:",
+          formData.species
+        );
+      } else {
+        console.log("Species validated successfully:", formData.species);
       }
 
       // Validate template sequence (optional field)
-      if (formData.templateSequence && formData.templateSequence.trim() !== "") {
-        const tempValidation = validateDnaSequence(formData.templateSequence, false, false);
+      if (
+        formData.templateSequence &&
+        formData.templateSequence.trim() !== ""
+      ) {
+        const tempValidation = validateDnaSequence(
+          formData.templateSequence,
+          false,
+          false
+        );
         if (!tempValidation.isValid && !tempValidation.isAdvisory) {
           newErrors.templateSequence = tempValidation.message;
+          console.log(
+            "Validation error in templateSequence:",
+            formData.templateSequence,
+            tempValidation.message
+          );
         } else if (tempValidation.isAdvisory) {
           newAdvisories.templateSequence = tempValidation.message;
+          console.log(
+            "Advisory for templateSequence:",
+            formData.templateSequence,
+            tempValidation.message
+          );
+        } else {
+          console.log(
+            "Template sequence validated successfully:",
+            formData.templateSequence
+          );
         }
+      } else {
+        console.log(
+          "Template sequence is empty or not provided; skipping validation."
+        );
       }
 
       // Validate sequencesToDomesticate array
-      if (!formData.sequencesToDomesticate || formData.sequencesToDomesticate.length === 0) {
+      if (
+        !formData.sequencesToDomesticate ||
+        formData.sequencesToDomesticate.length === 0
+      ) {
         newErrors.sequencesToDomesticate = "At least one sequence is required.";
+        console.log("Validation error: sequencesToDomesticate array is empty.");
       } else {
         formData.sequencesToDomesticate.forEach((seq, index) => {
-          const trimmedSequence = typeof seq.sequence === "string" ? seq.sequence.trim() : "";
+          console.log(`Validating sequence at index ${index}:`, seq);
+          const trimmedSequence =
+            typeof seq.sequence === "string" ? seq.sequence.trim() : "";
           if (!trimmedSequence) {
-            newErrors[`sequencesToDomesticate[${index}].sequence`] = "Sequence cannot be empty.";
+            newErrors[`sequencesToDomesticate[${index}].sequence`] =
+              "Sequence cannot be empty.";
+            console.log(
+              `Validation error at sequence index ${index}: sequence is empty.`
+            );
           } else {
             const seqValidation = validateDnaSequence(seq.sequence, true, true);
-            console.log(`Validation for sequence at index ${index}:`, seqValidation);
+            console.log(
+              `Validation result for sequence at index ${index}:`,
+              seqValidation
+            );
             if (!seqValidation.isValid && !seqValidation.isAdvisory) {
-              newErrors[`sequencesToDomesticate[${index}].sequence`] = seqValidation.message;
+              newErrors[`sequencesToDomesticate[${index}].sequence`] =
+                seqValidation.message;
+              console.log(
+                `Validation error at sequence index ${index}:`,
+                seqValidation.message
+              );
             } else if (seqValidation.isAdvisory) {
-              newAdvisories[`sequencesToDomesticate[${index}].sequence`] = seqValidation.message;
+              newAdvisories[`sequencesToDomesticate[${index}].sequence`] =
+                seqValidation.message;
+              console.log(
+                `Validation advisory at sequence index ${index}:`,
+                seqValidation.message
+              );
+            } else {
+              console.log(`Sequence at index ${index} validated successfully.`);
             }
           }
 
           // Validate primer name (required)
           if (!seq.primerName || seq.primerName.trim() === "") {
-            newErrors[`sequencesToDomesticate[${index}].primerName`] = "Primer name is required.";
+            newErrors[`sequencesToDomesticate[${index}].primerName`] =
+              "Primer name is required.";
+            console.log(
+              `Validation error at sequence index ${index}: Primer name is empty.`
+            );
+          } else {
+            console.log(
+              `Primer name validated at index ${index}:`,
+              seq.primerName
+            );
           }
 
           // Validate MTK Part Left (required)
           if (!seq.mtkPartLeft || seq.mtkPartLeft.trim() === "") {
-            newErrors[`sequencesToDomesticate[${index}].mtkPartLeft`] = "MTK Part Left is required.";
+            newErrors[`sequencesToDomesticate[${index}].mtkPartLeft`] =
+              "MTK Part Left is required.";
+            console.log(
+              `Validation error at sequence index ${index}: MTK Part Left is empty.`
+            );
+          } else {
+            console.log(
+              `MTK Part Left validated at index ${index}:`,
+              seq.mtkPartLeft
+            );
           }
 
           // Validate MTK Part Right (required)
           if (!seq.mtkPartRight || seq.mtkPartRight.trim() === "") {
-            newErrors[`sequencesToDomesticate[${index}].mtkPartRight`] = "MTK Part Right is required.";
+            newErrors[`sequencesToDomesticate[${index}].mtkPartRight`] =
+              "MTK Part Right is required.";
+            console.log(
+              `Validation error at sequence index ${index}: MTK Part Right is empty.`
+            );
+          } else {
+            console.log(
+              `MTK Part Right validated at index ${index}:`,
+              seq.mtkPartRight
+            );
           }
         });
       }
 
-      console.log("Validation errors:", newErrors);
+      console.log("Final validation errors:", newErrors);
       setErrors(newErrors);
       setAdvisories(newAdvisories);
     }, 300);
@@ -80,6 +169,7 @@ const useValidateForm = (formData, shouldValidate = true) => {
 
   // Overall form is valid if there are no required errors.
   const isValid = Object.keys(errors).length === 0;
+  console.log("Form validation status: isValid =", isValid, "errors:", errors);
   return { errors, advisories, isValid };
 };
 
