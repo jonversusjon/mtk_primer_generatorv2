@@ -54,67 +54,106 @@ class PrimerDesigner(DebugMixin):
         )
 
     @DebugMixin.debug_wrapper
-    def design_mutation_primers(self, mutation_sets: list, comp_matrices: list, primer_name: str = None):
+    def design_mutation_primers(self, mutation_sets: list, comp_matrices: list, primer_name: str = None, max_results: int = 1):
         """
         Designs mutation primers for the provided mutation sets using compatibility matrices.
+
+        For each mutation set, this function calculates primers for every valid overhang combination.
+        If max_results == 0, all valid combinations (i.e. the entire Cartesian product of valid silent mutations)
+        are processed. Otherwise, up to max_results random combinations per mutation set are used.
+
+        Returns:
+            A dict mapping each mutation set index to a list of MutationPrimer objects.
         """
+        all_primers = {}
+
         for set_index, mutation_set in enumerate(mutation_sets):
             self.state['current_mutation'] = set_index
             comp_matrix = comp_matrices[set_index]
+
+            # Get all valid overhang combinations for the mutation set.
             valid_coords = np.argwhere(comp_matrix == 1)
             self.validate(
                 valid_coords.size > 0,
                 f"Found {np.count_nonzero(comp_matrix)} valid overhang combinations",
                 {"matrix_size": comp_matrix.size}
             )
-
-            # Randomly select one valid coordinate set
-            selected_coords = valid_coords[np.random.choice(
-                valid_coords.shape[0])].tolist()
-
             self.log_step(
                 "Debug Info", f"Mutation set {set_index+1}: Valid coordinates: {valid_coords.tolist()}")
-            self.log_step(
-                "Debug Info", f"Mutation set {set_index+1}: Selected coordinates: {selected_coords}")
             self.log_step("Matrix Visualization", f"Compatibility matrix for set {set_index+1}",
                           visualize_matrix(comp_matrix))
 
-            # Process each mutation site in the set
-            for i, site_data in enumerate(mutation_set):
-                overhang_options = site_data["overhangs"].get(
-                    "overhang_options", [])
-                if i >= len(valid_coords):
-                    raise IndexError(f"valid_coords index {i} out of range")
-                selected_overhang = selected_coords[i]
-                overhang_data = overhang_options[selected_overhang]
-
-                # Log overhang sequences
-                try:
-                    top_seq = overhang_data["top_overhang"]["seq"]
-                    bottom_seq = overhang_data["bottom_overhang"]["seq"]
-                    self.log_step("Overhang Sequences",
-                                  f"Top: {top_seq}, Bottom: {bottom_seq}")
-                except KeyError as e:
-                    raise KeyError(
-                        f"Missing expected key in overhang_data: {e}")
-
+            # Determine which coordinate combinations to process.
+            if max_results == 0:
+                coords_to_process = valid_coords.tolist()
                 self.log_step(
-                    "Site Data", f"Processing mutation site: {site_data}")
+                    "Debug Info", f"Processing all {len(coords_to_process)} valid coordinate combination(s).")
+            else:
+                sample_size = min(max_results, valid_coords.shape[0])
+                selected_indices = np.random.choice(
+                    valid_coords.shape[0], size=sample_size, replace=False)
+                coords_to_process = [valid_coords[i].tolist()
+                                     for i in selected_indices]
+                self.log_step(
+                    "Debug Info", f"Randomly selected {sample_size} coordinate combination(s): {coords_to_process}")
 
-            # Construct MutationPrimer objects for the current mutation set
-            mutation_primers = self._construct_mutation_primers(
-                mutation_set=mutation_set,
-                selected_coords=selected_coords,
-                primer_name=primer_name
-            )
-            self.validate(
-                mutation_primers is not None,
-                "Successfully constructed mutation primers",
-                {"primer_count": len(mutation_primers)
-                 if mutation_primers else 0}
-            )
-            if mutation_primers:
-                return mutation_primers
+            primers_for_set = []
+            for coords in coords_to_process:
+                self.log_step(
+                    "Debug Info", f"Processing coordinate combination: {coords}")
+                # Ensure the length of the coordinate combination matches the number of mutation sites.
+                if len(coords) != len(mutation_set):
+                    raise ValueError(
+                        f"Coordinate length {len(coords)} does not match number of mutation sites {len(mutation_set)}")
+
+                # Process each mutation site in the set using the current combination.
+                for i, site_data in enumerate(mutation_set):
+                    overhang_options = site_data["overhangs"].get(
+                        "overhang_options", [])
+                    selected_overhang = coords[i]
+                    if selected_overhang >= len(overhang_options):
+                        raise IndexError(
+                            f"Selected overhang index {selected_overhang} out of range for site {i}")
+                    overhang_data = overhang_options[selected_overhang]
+
+                    # Log overhang sequences.
+                    try:
+                        top_seq = overhang_data["top_overhang"]["seq"]
+                        bottom_seq = overhang_data["bottom_overhang"]["seq"]
+                        self.log_step("Overhang Sequences",
+                                      f"Top: {top_seq}, Bottom: {bottom_seq}")
+                    except KeyError as e:
+                        raise KeyError(
+                            f"Missing expected key in overhang_data: {e}")
+
+                    self.log_step(
+                        "Site Data", f"Processing mutation site: {site_data}")
+
+                # Construct MutationPrimer objects for the current mutation set with this coordinate combination.
+                mutation_primers = self._construct_mutation_primers(
+                    mutation_set=mutation_set,
+                    selected_coords=coords,
+                    primer_name=primer_name
+                )
+                self.validate(
+                    mutation_primers is not None,
+                    "Successfully constructed mutation primers",
+                    {"primer_count": len(mutation_primers)
+                     if mutation_primers else 0}
+                )
+                if mutation_primers:
+                    self.log_step(
+                        "Debug Info", f"Constructed mutation primers for combination {coords}: {mutation_primers}")
+                    primers_for_set.extend(mutation_primers)
+
+            self.log_step(
+                "Debug Info", f"Total primers constructed for mutation set {set_index+1}: {len(primers_for_set)}")
+            all_primers[set_index] = primers_for_set
+
+        if all_primers:
+            self.log_step(
+                "Debug Info", f"All mutation primers constructed: {all_primers}")
+            return all_primers
 
         if self.debugger:
             self.debugger.log_warning(

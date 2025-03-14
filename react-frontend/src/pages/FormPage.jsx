@@ -1,3 +1,4 @@
+// FormPage.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Form from "../components/Form/Form";
@@ -30,16 +31,22 @@ const defaultSequence = {
 function FormPage({ showSettings, setShowSettings, setResults }) {
   const [formData, setFormData] = useState({
     sequencesToDomesticate: [defaultSequence],
-    // availableSpecies will be added from the species API
     availableSpecies: [],
-    species: ""
+    species: "",
   });
   const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
+  const [progressStatus, setProgressStatus] = useState({
+    message: "",
+    percentage: 0,
+    step: "",
+  });
   const [initialized, setInitialized] = useState(false);
   const [error, setError] = useState(null);
   const settingsToggleRef = useRef(null);
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const navigate = useNavigate();
+  const eventSourceRef = useRef(null);
 
   useEffect(() => {
     console.log("FormPage formData:", formData);
@@ -58,7 +65,9 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
             parsedData.sequencesToDomesticate =
               parsedData.sequencesToDomesticate.map((seq) => ({
                 ...seq,
-                sequence: Array.isArray(seq.sequence) ? seq.sequence.join("") : seq.sequence,
+                sequence: Array.isArray(seq.sequence)
+                  ? seq.sequence.join("")
+                  : seq.sequence,
               }));
           }
           setFormData((prev) => ({ ...prev, ...parsedData }));
@@ -76,7 +85,9 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
               sequencesToDomesticate: data.sequencesToDomesticate
                 ? data.sequencesToDomesticate.map((seq) => ({
                     ...seq,
-                    sequence: Array.isArray(seq.sequence) ? seq.sequence.join("") : seq.sequence,
+                    sequence: Array.isArray(seq.sequence)
+                      ? seq.sequence.join("")
+                      : seq.sequence,
                   }))
                 : [defaultSequence],
             };
@@ -87,7 +98,10 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
         setInitialized(true);
       } catch (err) {
         console.error("Error fetching defaults from API:", err);
-        setFormData((prev) => ({ ...prev, sequencesToDomesticate: [defaultSequence] }));
+        setFormData((prev) => ({
+          ...prev,
+          sequencesToDomesticate: [defaultSequence],
+        }));
         setInitialized(true);
       } finally {
         setLoading(false);
@@ -107,18 +121,28 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
           ...prev,
           availableSpecies: speciesData.species,
           // If no species is selected, default to the first available species.
-          species: prev.species || (speciesData.species.length > 0 ? speciesData.species[0] : "")
+          species:
+            prev.species ||
+            (speciesData.species.length > 0 ? speciesData.species[0] : ""),
         }));
       } catch (err) {
         console.error("Error fetching species:", err);
-        // Optionally, set availableSpecies to an empty array or fallback options.
         setFormData((prev) => ({ ...prev, availableSpecies: [] }));
       }
     };
     fetchSpecies();
   }, []);
 
-  // Pass the initialized flag so that validation waits until formData is ready
+  // Clean up event source when component unmounts
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+    };
+  }, []);
+
+  // Wait for the form to be initialized before running validations
   const { errors, isValid } = useValidateForm(formData, initialized);
   const errorsBySequence = getErrorsBySequence(
     errors,
@@ -126,19 +150,40 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
   );
 
   const handleFormSubmit = async (data) => {
-    setLoading(true);
+    setProcessing(true);
     setError(null);
+    setProgressStatus({
+      message: "Initializing protocol generation...",
+      percentage: 0,
+      step: "init",
+    });
+
     try {
       sessionStorage.setItem("formData", JSON.stringify(data));
-      const response = await generateProtocol(data);
-      sessionStorage.setItem("results", JSON.stringify(response));
-      setResults(response);
+      // Generate a job ID and include it in your data payload
+      const jobId = Date.now().toString();
+
+      // Call generateProtocol with the onStatusUpdate callback.
+      // The API function will handle creating and managing the SSE connection.
+      const result = await generateProtocol({ ...data, jobId }, (status) => {
+        setProgressStatus(status);
+      });
+
+      // Optionally store the eventSource for cleanup if needed.
+      if (result.eventSource) {
+        eventSourceRef.current = result.eventSource;
+      }
+
+      sessionStorage.setItem("results", JSON.stringify(result));
+      setResults(result);
       navigate("/results");
     } catch (err) {
-      setError(err.message || "An error occurred while generating the protocol");
+      setError(
+        err.message || "An error occurred while generating the protocol"
+      );
       console.error("Error generating protocol:", err);
     } finally {
-      setLoading(false);
+      setProcessing(false);
     }
   };
 
@@ -163,8 +208,31 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
           formData={formData}
           setFormData={setFormData}
         />
-        <div className="form-container" style={{ flex: 1, paddingLeft: "20px" }}>
+        <div
+          className="form-container"
+          style={{ flex: 1, paddingLeft: "20px" }}
+        >
           {error && <div className="alert alert-danger">{error}</div>}
+
+          {processing && (
+            <div className="processing-status">
+              <div className="progress">
+                <div
+                  className="progress-bar"
+                  role="progressbar"
+                  style={{ width: `${progressStatus.percentage}%` }}
+                  aria-valuenow={progressStatus.percentage}
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                >
+                  {progressStatus.percentage}%
+                </div>
+              </div>
+              <p>{progressStatus.message}</p>
+              <p>Current step: {progressStatus.step}</p>
+            </div>
+          )}
+
           <Form
             onSubmit={handleFormSubmit}
             formData={formData}

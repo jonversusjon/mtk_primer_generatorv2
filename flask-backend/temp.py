@@ -1,4 +1,4 @@
-# services/api.py
+# api.py
 from flask import Blueprint, request, jsonify, current_app, Response
 from config.logging_config import logger
 from services.utils import GoldenGateUtils
@@ -130,51 +130,3 @@ def stream_status(job_id):
                 break
             time.sleep(1)
     return Response(event_stream(), mimetype="text/event-stream")
-
-
-@api.route("/export", methods=["POST"])
-def export_protocol():
-    """Export protocol results as a TSV file"""
-    try:
-        data = request.get_json()
-        primers = data.get("primers", [])
-
-        if not primers:
-            return jsonify({"error": "No primers to export"}), 400
-
-        # Generate a unique filename
-        filename = f"primers_{utils.generate_unique_id()}.tsv"
-        filepath = f"static/exports/{filename}"
-
-        # Export primers to TSV
-        with open(filepath, "w") as f:
-            f.write("Primer Name\tSequence\tAmplicon\n")
-            for primer in primers:
-                f.write(f"{primer[0]}\t{primer[1]}\t{primer[2]}\n")
-
-        # Return the download URL
-        download_url = f"/static/exports/{filename}"
-        return jsonify({"download_url": download_url})
-
-    except Exception as e:
-        logger.error(f"Error exporting protocol: {str(e)}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
-
-
-@api.route("/species", methods=["GET"])
-def get_species():
-    """Return available species as JSON"""
-    try:
-        species = utils.get_available_species()
-        return jsonify({"species": species})
-    except Exception as e:
-        logger.error(f"Error fetching species: {str(e)}", exc_info=True)
-        return jsonify({'error': 'Failed to fetch species'}), 500
-
-
-@api.route('/config', methods=['GET'])
-def get_config():
-    """Return the currently loaded configuration from app.py."""
-    config = current_app.config.get("ACTIVE_CONFIG", {})
-    print(f"Current config: {config}")
-    return jsonify(config)

@@ -12,6 +12,8 @@ const Form = ({
   activeTabIndex,
   setActiveTabIndex,
 }) => {
+  // No local species state or fetching here.
+
   const handleSubmit = (e) => {
     e.preventDefault();
     // Ensure species is set before submitting.
@@ -29,9 +31,6 @@ const Form = ({
   // Curried updateSequence function so that SequenceTabs (and its children) can call it as updateSequence(index)(field, value)
   const updateSequence = useCallback(
     (index) => (field, value) => {
-      console.log(
-        `updateSequence - index: ${index}, field: ${field}, value: ${value}`
-      );
       setFormData((prev) => {
         const updatedSequences = [...prev.sequencesToDomesticate];
         if (updatedSequences[index]?.[field] === value) return prev;
@@ -39,10 +38,6 @@ const Form = ({
           ...updatedSequences[index],
           [field]: value,
         };
-        console.log("Updated formData:", {
-          ...prev,
-          sequencesToDomesticate: updatedSequences,
-        });
         return { ...prev, sequencesToDomesticate: updatedSequences };
       });
     },

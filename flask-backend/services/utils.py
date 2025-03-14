@@ -9,9 +9,10 @@ from typing import Dict, List, Optional, Any
 import numpy as np
 from config.logging_config import logger
 from .base import debug_context
+from services.debug.debug_mixin import DebugMixin
 
 
-class GoldenGateUtils:
+class GoldenGateUtils(DebugMixin):
     def __init__(self, verbose: bool = False):
         self.verbose = verbose
         self.logger = logger.getChild("GoldenGateUtils")
@@ -226,7 +227,7 @@ class GoldenGateUtils:
         if direction == 'forward':
             for length in range(min_length, min(max_length + 1, len(sequence) - position)):
                 primer_seq = sequence[position:position + length]
-                tm = self._calculate_tm(primer_seq)
+                tm = self.calculate_tm(primer_seq)
                 self.log_step("Length Iteration", f"Length {length}", {
                               "tm": tm, "target": target_tm})
                 if tm >= target_tm:
@@ -237,7 +238,7 @@ class GoldenGateUtils:
                 if position - length < 0:
                     break
                 primer_seq = sequence[position - length:position]
-                tm = self._calculate_tm(primer_seq)
+                tm = self.calculate_tm(primer_seq)
                 self.log_step("Length Iteration", f"Length {length}", {
                               "tm": tm, "target": target_tm})
                 if tm >= target_tm:
@@ -318,3 +319,19 @@ class GoldenGateUtils:
             except IOError as e:
                 logger.error(f"Error writing to file {output_tsv_path}: {e}")
                 raise
+
+    def get_nested_keys(self, item, prefix='', depth=0, max_depth=100):
+        """Recursively collect keys from dictionaries and lists."""
+        if depth > max_depth:
+            return [f"Max recursion depth ({max_depth}) exceeded."]
+        keys = []
+        if isinstance(item, dict):
+            for k, v in item.items():
+                full_key = f"{prefix}.s{k}" if prefix else k
+                keys.append(full_key)
+                keys.extend(self.get_nested_keys(v, full_key, depth + 1, max_depth))
+        elif isinstance(item, list):
+            for index, element in enumerate(item):
+                indexed_prefix = f"{prefix}[{index}]"
+                keys.extend(self.get_nested_keys(element, indexed_prefix, depth + 1, max_depth))
+        return keys

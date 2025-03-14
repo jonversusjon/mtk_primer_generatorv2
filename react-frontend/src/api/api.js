@@ -30,18 +30,70 @@ export const validateSequence = async (sequence) => {
 };
 
 /**
+ * Create an SSE connection to monitor protocol generation progress
+ * @param {string} jobId - The job ID to monitor
+ * @param {Function} onStatusUpdate - Callback for status updates
+ * @returns {EventSource} The event source object
+ */
+export const monitorProtocolProgress = (jobId, onStatusUpdate) => {
+  console.log(`Setting up SSE connection for job ${jobId}`);
+
+  const eventSource = new EventSource(`${API_BASE_URL}/api/status/${jobId}`);
+
+  eventSource.onmessage = (event) => {
+    try {
+      const statusData = JSON.parse(event.data);
+      console.log(`Progress update for job ${jobId}:`, statusData);
+      onStatusUpdate(statusData);
+
+      // Close connection when complete
+      if (statusData.percentage === 100) {
+        console.log(`Job ${jobId} complete, closing SSE connection`);
+        eventSource.close();
+      }
+    } catch (error) {
+      console.error("Error processing SSE message:", error);
+    }
+  };
+
+  eventSource.onerror = (error) => {
+    console.error("SSE connection error:", error);
+    eventSource.close();
+    onStatusUpdate({
+      message: "Connection to server lost. The job is still processing.",
+      percentage: -1,
+      step: "error",
+    });
+  };
+
+  return eventSource;
+};
+
+/**
  * Generate a protocol based on form data
  * @param {Object} formData - Form data containing sequence info
+ * @param {Function} onStatusUpdate - Optional callback for status updates
  * @returns {Promise<Object>} Protocol results
  */
-export const generateProtocol = async (formData) => {
+export const generateProtocol = async (formData, onStatusUpdate = null) => {
   console.group("Protocol Generation Process");
   console.log(
     "Starting protocol generation with data:",
     JSON.stringify(formData, null, 2)
   );
 
+  // Generate a job ID if not provided
+  const jobId = formData.jobId || Date.now().toString();
+  const dataWithJobId = { ...formData, jobId };
+
+  let eventSource = null;
+
   try {
+    // Set up SSE connection if status callback provided
+    if (onStatusUpdate) {
+      eventSource = monitorProtocolProgress(jobId, onStatusUpdate);
+    }
+
     console.log(`Sending request to ${API_BASE_URL}/generate_protocol`);
     console.time("Protocol generation request");
 
@@ -50,7 +102,7 @@ export const generateProtocol = async (formData) => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(formData),
+      body: JSON.stringify(dataWithJobId),
     });
 
     console.timeEnd("Protocol generation request");
@@ -64,21 +116,89 @@ export const generateProtocol = async (formData) => {
     console.log("Response headers:", headers);
 
     console.log("Processing JSON response");
-    const data = await response.json();
-    console.log("Response data:", data);
+    const initialData = await response.json();
+    console.log("Initial response data:", initialData);
 
     if (!response.ok) {
-      console.error("Server returned error:", data);
-      throw new Error(data.error || "Failed to generate protocol");
+      console.error("Server returned error:", initialData);
+      throw new Error(initialData.error || "Failed to generate protocol");
     }
 
-    console.log("Protocol generation successful");
+    // For the new SSE approach, the initial response just confirms
+    // the job was started. We need to wait for it to complete or poll for results.
+    if (initialData.jobId && !onStatusUpdate) {
+      // If no status callback is provided, poll for results
+      console.log(`Polling for results of job ${initialData.jobId}`);
+      const finalData = await pollForResults(initialData.jobId);
+      console.log("Final data from polling:", finalData);
+      console.groupEnd();
+      return finalData;
+    }
+
+    console.log("Protocol generation initiated successfully");
     console.groupEnd();
-    return data;
+    return { initialData, eventSource };
   } catch (error) {
     console.error("Protocol generation failed:", error);
     console.error("Error stack:", error.stack);
     console.groupEnd();
+    throw error;
+  }
+};
+
+/**
+ * Poll for final results
+ * @param {string} jobId - The job ID to poll for
+ * @param {number} maxAttempts - Maximum number of polling attempts
+ * @param {number} interval - Interval between polls in ms
+ * @returns {Promise<Object>} Final results
+ */
+export const pollForResults = async (
+  jobId,
+  maxAttempts = 30,
+  interval = 2000
+) => {
+  console.log(`Starting to poll for results of job ${jobId}`);
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    console.log(`Poll attempt ${attempt}/${maxAttempts}`);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/results/${jobId}`);
+      const data = await response.json();
+
+      console.log(`Poll result:`, data);
+
+      if (response.ok && data.complete) {
+        console.log(`Job ${jobId} complete, returning results`);
+        return data.data;
+      }
+
+      // If not complete, wait before trying again
+      await new Promise((resolve) => setTimeout(resolve, interval));
+    } catch (error) {
+      console.error(`Error polling for results on attempt ${attempt}:`, error);
+      // Continue polling despite errors
+    }
+  }
+
+  throw new Error(
+    `Timed out waiting for results after ${maxAttempts} attempts`
+  );
+};
+
+/**
+ * Get the current status of a job
+ * @param {string} jobId - The job ID to check
+ * @returns {Promise<Object>} Current job status
+ */
+export const getJobStatus = async (jobId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/results/${jobId}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error getting job status:", error);
     throw error;
   }
 };
@@ -115,14 +235,14 @@ export const exportProtocolAsTsv = async (protocolData) => {
 };
 
 // Utility function to add logging to the fetchWithErrorHandling function
-// Note: If fetchWithErrorHandling is defined elsewhere, you may want to modify it directly instead
 const fetchWithErrorHandling = async (url, options = {}) => {
-  console.group(`API Request: ${options.method || "GET"} ${url}`);
+  const fullUrl = url.startsWith("http") ? url : `${API_BASE_URL}${url}`;
+  console.group(`API Request: ${options.method || "GET"} ${fullUrl}`);
   console.log("Request options:", options);
 
   try {
     console.time("Request execution");
-    const response = await fetch(url, options);
+    const response = await fetch(fullUrl, options);
     console.timeEnd("Request execution");
 
     console.log(`Response status: ${response.status} ${response.statusText}`);

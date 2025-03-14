@@ -130,11 +130,7 @@ function Settings({
               )
             }
           >
-            {[...Array(6).keys()].map((i) => (
-              <option key={i} value={2 ** i}>
-                {2 ** i}
-              </option>
-            ))}
+            <option value={1}>1</option>
             <option value="all">All</option>
           </select>
         </div>
