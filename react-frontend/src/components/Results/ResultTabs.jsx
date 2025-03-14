@@ -38,6 +38,12 @@ function ResultTabs({ results }) {
               {result.primerName?.trim()
                 ? result.primerName
                 : `Sequence ${index + 1}`}
+              {/* Show a progress badge if processing is still underway */}
+              {result.progress && result.progress.percentage < 100 && (
+                <span className="progress-badge">
+                  {result.progress.percentage}%
+                </span>
+              )}
             </button>
           ))}
         </div>

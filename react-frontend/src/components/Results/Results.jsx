@@ -1,18 +1,17 @@
-// import React, { useState } from "react";
-// import PrimerAnatomy from "./PrimerAnatomy";
+// src/components/Results/Results.jsx
 import ResultTabs from "./ResultTabs";
 import "../../styles/Results.css";
 
-function Results({ data }) {
-  // const [showPrimerAnatomy, setShowPrimerAnatomy] = useState(false);
+function Results({ data, progress }) {
 
   if (!data || Object.keys(data).length === 0) return null;
 
-  // Convert data object to array for use with ResultTabs
+  // Convert the data object to an array and attach progress info (if any)
   const resultsArray = Object.entries(data).map(
-    ([sequenceNumber, sequenceData]) => ({
-      sequenceNumber,
+    ([sequenceKey, sequenceData]) => ({
+      sequenceKey,
       ...sequenceData,
+      progress: progress ? progress[sequenceKey] : null,
     })
   );
 

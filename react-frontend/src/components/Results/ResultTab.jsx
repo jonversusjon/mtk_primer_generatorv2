@@ -1,3 +1,4 @@
+// src/components/Results/ResultTab.jsx
 import React from "react";
 import RestrictionSiteSummary from "./RestrictionSiteSummary";
 
@@ -58,17 +59,29 @@ function ResultTab({ result, index }) {
     return <span className="primer-sequence">{seq}</span>;
   }
 
-  return (
+return (
     <div className="sequence-results">
-      {/* Messages */}
+      {/* Show a progress bar if processing is not yet complete */}
+      {result.progress && result.progress.percentage < 100 && (
+        <div className="progress-container">
+          <div
+            className="progress-bar"
+            style={{ width: `${result.progress.percentage}%` }}
+          ></div>
+          <div className="progress-message">{result.progress.message}</div>
+        </div>
+      )}
+
+      {/* Display messages if present */}
       {result.messages && result.messages.length > 0 && (
         <div className="messages">
-          {result.messages.map((msg, index) => (
-            <div key={index}>{msg}</div>
+          {result.messages.map((msg, idx) => (
+            <div key={idx}>{msg}</div>
           ))}
         </div>
       )}
-      {/* Display MTK Part Numbers */}
+
+      {/* MTK Part Numbers */}
       <div className="mtk-part-info">
         {mtkPartLeft === mtkPartRight ? (
           <p>
@@ -81,6 +94,7 @@ function ResultTab({ result, index }) {
           </p>
         )}
       </div>
+
       {/* Restriction Sites */}
       {result.restriction_sites && result.restriction_sites.length > 0 && (
         <RestrictionSiteSummary sites={result.restriction_sites} />
@@ -91,7 +105,6 @@ function ResultTab({ result, index }) {
         <div className="pcr-summary section-container">
           <div className="section-header">
             <h3>PCR Reactions</h3>
-            {/* New Button to Copy Primers */}
             <button onClick={copyPrimersToClipboard} className="small-button">
               {copied ? "Copied!" : "Copy Primers"}
             </button>
@@ -107,17 +120,17 @@ function ResultTab({ result, index }) {
               </thead>
               <tbody>
                 {Object.entries(result.PCR_reactions).map(
-                  ([reaction, primers], index) => (
-                    <tr key={index}>
-                      <td>{reaction}</td>
-                      <td className="primer-cell">
-                        {formatPrimers(primers.forward)}
+                  ([reaction, primers], idx) => (
+                  <tr key={idx}>
+                    <td>{reaction}</td>
+                    <td className="primer-cell">
+                      {formatPrimers(primers.forward)}
                       </td>
-                      <td className="primer-cell">
-                        {formatPrimers(primers.reverse)}
+                    <td className="primer-cell">
+                      {formatPrimers(primers.reverse)}
                       </td>
-                    </tr>
-                  )
+                  </tr>
+                )
                 )}
               </tbody>
             </table>
@@ -125,7 +138,7 @@ function ResultTab({ result, index }) {
         </div>
       )}
 
-      {/* Errors */}
+      {/* Display Errors */}
       {result.errors && (
         <div className="error-message">
           <strong>Error:</strong> {result.errors}
