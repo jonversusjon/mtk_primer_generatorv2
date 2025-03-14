@@ -32,7 +32,7 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
     sequencesToDomesticate: [defaultSequence],
   });
   const [loading, setLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false); // NEW: indicates data is fully loaded
+  const [initialized, setInitialized] = useState(false);
   const [error, setError] = useState(null);
   const settingsToggleRef = useRef(null);
   const [activeTabIndex, setActiveTabIndex] = useState(0);
@@ -48,22 +48,20 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
         const savedData = sessionStorage.getItem("formData");
         if (savedData) {
           const parsedData = JSON.parse(savedData);
-          console.log("Loaded formData from sessionStorage:", parsedData); // DEBUG log
+          console.log("Loaded formData from sessionStorage:", parsedData);
           // Normalize sequences if needed
           if (parsedData.sequencesToDomesticate) {
             parsedData.sequencesToDomesticate =
               parsedData.sequencesToDomesticate.map((seq) => ({
                 ...seq,
-                sequence: Array.isArray(seq.sequence)
-                  ? seq.sequence.join("")
-                  : seq.sequence,
+                sequence: Array.isArray(seq.sequence) ? seq.sequence.join("") : seq.sequence,
               }));
           }
           setFormData(parsedData);
         } else {
           const response = await fetch("http://localhost:5000/api/config");
           const data = await response.json();
-          console.log("Fetched formData from API:", data); // DEBUG log
+          console.log("Fetched formData from API:", data);
           let newData;
           if (!data || Object.keys(data).length === 0) {
             console.warn("API returned empty config! Using fallback defaults.");
@@ -74,19 +72,17 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
               sequencesToDomesticate: data.sequencesToDomesticate
                 ? data.sequencesToDomesticate.map((seq) => ({
                     ...seq,
-                    sequence: Array.isArray(seq.sequence)
-                      ? seq.sequence.join("")
-                      : seq.sequence,
+                    sequence: Array.isArray(seq.sequence) ? seq.sequence.join("") : seq.sequence,
                   }))
                 : [defaultSequence],
             };
           }
-          console.log("New formData set from API:", newData); // DEBUG log
+          console.log("New formData set from API:", newData);
           setFormData(newData);
         }
         setInitialized(true);
       } catch (err) {
-        console.error("Error fetching defaults from Flask:", err);
+        console.error("Error fetching defaults from API:", err);
         setFormData({ sequencesToDomesticate: [defaultSequence] });
         setInitialized(true);
       } finally {
@@ -96,7 +92,7 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
     fetchConfig();
   }, []);
 
-  // Now we pass `initialized` so that validation doesn't run until formData is ready.
+  // Pass the initialized flag so that validation waits until formData is ready
   const { errors, isValid } = useValidateForm(formData, initialized);
   const errorsBySequence = getErrorsBySequence(
     errors,
@@ -113,9 +109,7 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
       setResults(response);
       navigate("/results");
     } catch (err) {
-      setError(
-        err.message || "An error occurred while generating the protocol"
-      );
+      setError(err.message || "An error occurred while generating the protocol");
       console.error("Error generating protocol:", err);
     } finally {
       setLoading(false);
@@ -143,10 +137,7 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
           formData={formData}
           setFormData={setFormData}
         />
-        <div
-          className="form-container"
-          style={{ flex: 1, paddingLeft: "20px" }}
-        >
+        <div className="form-container" style={{ flex: 1, paddingLeft: "20px" }}>
           {error && <div className="alert alert-danger">{error}</div>}
           <Form
             onSubmit={handleFormSubmit}
@@ -157,6 +148,7 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
             settingsToggleRef={settingsToggleRef}
             errors={errors}
             isValid={isValid}
+            initialized={initialized}
             activeTabIndex={activeTabIndex}
             setActiveTabIndex={setActiveTabIndex}
           />

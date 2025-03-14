@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import TemplateSequence from "./TemplateSequence";
 import SequenceTabs from "./SequenceTabs";
 import { fetchAvailableSpecies } from "../../api/api";
@@ -9,19 +9,19 @@ const Form = ({
   setFormData,
   errors,
   isValid,
+  initialized,
   activeTabIndex,
   setActiveTabIndex,
 }) => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [loadingSpecies, setLoadingSpecies] = useState(false);
+  const [speciesError, setSpeciesError] = useState(null);
   const [species, setSpecies] = useState([]);
-  const speciesDefaultSet = useRef(false);
 
   // Load species and update formData with availableSpecies
   useEffect(() => {
     const loadSpecies = async () => {
-      setLoading(true);
-      setError(null);
+      setLoadingSpecies(true);
+      setSpeciesError(null);
       try {
         const speciesData = await fetchAvailableSpecies();
         setSpecies(speciesData.species);
@@ -32,42 +32,38 @@ const Form = ({
         }));
       } catch (err) {
         console.error("Failed to load species data:", err);
-        setError("Failed to load species data. Please try again later.");
+        setSpeciesError("Failed to load species data. Please try again later.");
       } finally {
-        setLoading(false);
+        setLoadingSpecies(false);
       }
     };
     loadSpecies();
   }, [setFormData]);
 
-  // Set default species if not already set
+  // Set default species if available and not already set
   useEffect(() => {
-    if (
-      species.length > 0 &&
-      (!formData.species || formData.species === "") &&
-      !speciesDefaultSet.current
-    ) {
+    if (species.length > 0 && (!formData.species || formData.species.trim() === "")) {
       setFormData((prev) => ({ ...prev, species: species[0] }));
-      speciesDefaultSet.current = true;
     }
   }, [species, formData.species, setFormData]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    // Ensure species is set before submitting
     const finalFormData =
-      (!formData.species || formData.species === "") && species.length > 0
+      (!formData.species || formData.species.trim() === "") && species.length > 0
         ? { ...formData, species: species[0] }
         : formData;
-    if (isValid) {
+    // Only submit if the form is valid and fully initialized
+    if (isValid && initialized) {
       onSubmit(finalFormData);
     }
   };
 
-  // Curried updateSequence so that SequenceTabs (and by extension SequenceTab)
-  // can use the returned function with signature (field, value)
+  // Curried updateSequence function so that SequenceTabs (and its children) can call it as updateSequence(index)(field, value)
   const updateSequence = useCallback(
     (index) => (field, value) => {
-      console.log(`updateSequence - index: ${index}, field: ${field}, value: ${value}`); // DEBUG log
+      console.log(`updateSequence - index: ${index}, field: ${field}, value: ${value}`);
       setFormData((prev) => {
         const updatedSequences = [...prev.sequencesToDomesticate];
         if (updatedSequences[index]?.[field] === value) return prev;
@@ -75,13 +71,12 @@ const Form = ({
           ...updatedSequences[index],
           [field]: value,
         };
-        console.log("Updated formData:", { ...prev, sequencesToDomesticate: updatedSequences }); // DEBUG log
+        console.log("Updated formData:", { ...prev, sequencesToDomesticate: updatedSequences });
         return { ...prev, sequencesToDomesticate: updatedSequences };
       });
     },
     [setFormData]
   );
-  
 
   const addSequence = useCallback(() => {
     setFormData((prev) => ({
@@ -109,22 +104,18 @@ const Form = ({
 
   return (
     <form id="primer-form" onSubmit={handleSubmit}>
-      {loading && (
-        <div className="loading-overlay">Loading species data...</div>
+      {(loadingSpecies || !initialized) && (
+        <div className="loading-overlay">Loading required data...</div>
       )}
-      {error && <div className="error-message">{error}</div>}
+      {speciesError && <div className="error-message">{speciesError}</div>}
 
       <TemplateSequence
         value={formData.templateSequence}
-        onChange={(value) => {
-          setFormData((prev) => ({ ...prev, templateSequence: value }));
-        }}
+        onChange={(value) =>
+          setFormData((prev) => ({ ...prev, templateSequence: value }))
+        }
       />
 
-      {/* 
-        Note: SequenceTabs should internally pass the correct index to updateSequence.
-        For example, it might call: updateSequence(index)(field, value)
-      */}
       <SequenceTabs
         sequencesToDomesticate={formData.sequencesToDomesticate}
         updateSequence={updateSequence}
@@ -138,7 +129,7 @@ const Form = ({
         <button
           type="submit"
           className="btn btn-primary"
-          disabled={!isValid || loading}
+          disabled={!isValid || loadingSpecies || !initialized}
         >
           Generate Protocol
         </button>
