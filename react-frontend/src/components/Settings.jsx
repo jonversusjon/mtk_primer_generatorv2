@@ -1,6 +1,46 @@
 import React, { useRef } from "react";
 import "../styles/Settings.css";
 
+// TODO: Add PCR reaction settings
+/*
+tm_threshold: 55.0
+This likely refers to a threshold for melting temperature (Tm). Some settings
+in Primer3 allow constraints based on a minimum threshold for Tm to ensure
+primer stability.
+
+min_3p_match: 10
+This specifies the minimum number of consecutive base matches at the 3' end
+between a primer and its target sequence. A higher value increases specificity,
+reducing the chance of non-specific binding.
+
+max_mismatches: 1 *** be sure this is tied to max_mut_per_site so it is never
+                      less than max_mut_per_site
+The maximum number of allowed mismatches between the primer and the target
+sequence. A lower number increases primer specificity.
+
+mv_conc: 50.0
+The monovalent cation concentration (in mM), typically sodium (Na⁺) or
+potassium (K⁺). This affects DNA stability and primer Tm calculations. The
+default for PCR is often 50 mM Na⁺.
+
+dv_conc: 1.5
+The divalent cation concentration (in mM), typically magnesium (Mg²⁺). This
+is crucial for DNA polymerase activity and affects primer binding. The default
+Mg²⁺ concentration in PCR is usually 1.5–2.5 mM.
+
+dntp_conc: 0.2
+The dNTP (deoxynucleotide triphosphate) concentration (in mM). This value refers
+to the concentration of each dNTP (dATP, dTTP, dCTP, dGTP) in the reaction. A
+typical PCR concentration is 0.2 mM per dNTP.
+
+dna_conc: 250.0
+The DNA template concentration (in nM). This represents the assumed concentration
+of single-stranded DNA in the PCR reaction, which impacts Tm calculations.
+
+min_tm: 57
+The minimum acceptable melting temperature (Tm) for a primer. This ensures that
+primers are stable and will efficiently anneal under PCR conditions.
+*/
 function Settings({
   show,
   onClose,
