@@ -109,9 +109,7 @@ function SequenceTabs({
               <SequenceTab
                 sequence={sequence}
                 index={index}
-                updateSequence={(field, value) =>
-                  updateSequence(index, field, value)
-                }
+                updateSequence={updateSequence(index)}
                 mtkPartOptions={MTK_PART_NUMS}
               />
             </div>

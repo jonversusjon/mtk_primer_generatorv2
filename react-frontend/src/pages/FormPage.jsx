@@ -6,7 +6,6 @@ import { generateProtocol } from "../api/api";
 import useValidateForm from "../hooks/useValidateForm";
 import "../styles/Form.css";
 
-// Helper function to group validation errors by sequence index
 const getErrorsBySequence = (errors, count) => {
   const errorsBySequence = Array.from({ length: count }, () => []);
   Object.entries(errors).forEach(([key, message]) => {
@@ -33,40 +32,63 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
     sequencesToDomesticate: [defaultSequence],
   });
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false); // NEW: indicates data is fully loaded
   const [error, setError] = useState(null);
-
-  // Ref for the settings button
   const settingsToggleRef = useRef(null);
-
-  // Manage which tab is active
   const [activeTabIndex, setActiveTabIndex] = useState(0);
-
   const navigate = useNavigate();
+
+  useEffect(() => {
+    console.log("FormPage formData:", formData);
+  }, [formData]);
 
   useEffect(() => {
     const fetchConfig = async () => {
       try {
         const savedData = sessionStorage.getItem("formData");
         if (savedData) {
-          setFormData(JSON.parse(savedData));
+          const parsedData = JSON.parse(savedData);
+          console.log("Loaded formData from sessionStorage:", parsedData); // DEBUG log
+          // Normalize sequences if needed
+          if (parsedData.sequencesToDomesticate) {
+            parsedData.sequencesToDomesticate =
+              parsedData.sequencesToDomesticate.map((seq) => ({
+                ...seq,
+                sequence: Array.isArray(seq.sequence)
+                  ? seq.sequence.join("")
+                  : seq.sequence,
+              }));
+          }
+          setFormData(parsedData);
         } else {
           const response = await fetch("http://localhost:5000/api/config");
           const data = await response.json();
+          console.log("Fetched formData from API:", data); // DEBUG log
+          let newData;
           if (!data || Object.keys(data).length === 0) {
             console.warn("API returned empty config! Using fallback defaults.");
-            setFormData({ sequencesToDomesticate: [defaultSequence] });
+            newData = { sequencesToDomesticate: [defaultSequence] };
           } else {
-            setFormData({
+            newData = {
               ...data,
-              sequencesToDomesticate: data.sequencesToDomesticate || [
-                defaultSequence,
-              ],
-            });
+              sequencesToDomesticate: data.sequencesToDomesticate
+                ? data.sequencesToDomesticate.map((seq) => ({
+                    ...seq,
+                    sequence: Array.isArray(seq.sequence)
+                      ? seq.sequence.join("")
+                      : seq.sequence,
+                  }))
+                : [defaultSequence],
+            };
           }
+          console.log("New formData set from API:", newData); // DEBUG log
+          setFormData(newData);
         }
+        setInitialized(true);
       } catch (err) {
         console.error("Error fetching defaults from Flask:", err);
         setFormData({ sequencesToDomesticate: [defaultSequence] });
+        setInitialized(true);
       } finally {
         setLoading(false);
       }
@@ -74,8 +96,8 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
     fetchConfig();
   }, []);
 
-  // Run validation in the parent
-  const { errors, isValid } = useValidateForm(formData);
+  // Now we pass `initialized` so that validation doesn't run until formData is ready.
+  const { errors, isValid } = useValidateForm(formData, initialized);
   const errorsBySequence = getErrorsBySequence(
     errors,
     formData.sequencesToDomesticate.length
@@ -84,7 +106,6 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
   const handleFormSubmit = async (data) => {
     setLoading(true);
     setError(null);
-
     try {
       sessionStorage.setItem("formData", JSON.stringify(data));
       const response = await generateProtocol(data);
@@ -107,14 +128,10 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
 
   return (
     <div className="form-page-container">
-      {/* Header that spans across the entire width */}
       <div className="form-header" style={{ width: "100%" }}>
         <h2 className="primer-form-title">Primer Design Form</h2>
       </div>
-
-      {/* Content container for sidebar and form side by side */}
       <div style={{ display: "flex" }}>
-        {/* Sidebar on the left */}
         <Sidebar
           sequences={formData.sequencesToDomesticate}
           errorsBySequence={errorsBySequence}
@@ -126,14 +143,11 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
           formData={formData}
           setFormData={setFormData}
         />
-
-        {/* Form on the right */}
         <div
           className="form-container"
           style={{ flex: 1, paddingLeft: "20px" }}
         >
           {error && <div className="alert alert-danger">{error}</div>}
-
           <Form
             onSubmit={handleFormSubmit}
             formData={formData}

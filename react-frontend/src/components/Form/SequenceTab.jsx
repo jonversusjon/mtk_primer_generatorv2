@@ -1,46 +1,47 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import SequenceInput from "../Form/SequenceInput";
 import { validateDnaSequence } from "../../utils/dnaUtils";
 import "../../styles/SequenceTab.css";
 
 function SequenceTab({ sequence, index, updateSequence, mtkPartOptions }) {
-  // Instead of just a string, we store both the message and whether it's advisory
   const [validation, setValidation] = useState({
     message: "",
     isAdvisory: false,
   });
-  const [charCount, setCharCount] = useState(0);
+  // Instead of a state for charCount, compute it directly:
+  const charCount = sequence.sequence ? sequence.sequence.length : 0;
   const [useSeparateParts, setUseSeparateParts] = useState(false);
 
-  // Initialize values on component mount
   useEffect(() => {
-    // If mtkPartLeft or mtkPartRight doesn't exist (first load), initialize them
-    if (!sequence.mtkPartLeft || !sequence.mtkPartRight) {
-      // Initialize with empty strings or use a reasonable default from options
-      const initialValue = mtkPartOptions.length > 0 ? mtkPartOptions[0] : "";
+    console.log(`SequenceTab ${index} - sequence:`, sequence.sequence);
+  }, [sequence.sequence, index]);
+
+  const hasInitialized = useRef(false);
+  useEffect(() => {
+    if (!hasInitialized.current && mtkPartOptions.length > 0) {
+      const initialValue = mtkPartOptions[0];
       updateSequence("mtkPartLeft", initialValue);
       updateSequence("mtkPartRight", initialValue);
+      hasInitialized.current = true;
     }
-  }, [
-    sequence.mtkPartLeft,
-    sequence.mtkPartRight,
-    updateSequence,
-    index,
-    mtkPartOptions,
-  ]);
+  }, [mtkPartOptions, updateSequence]);
 
   useEffect(() => {
-    // Update character count
-    const safeValue = sequence.sequence || ""; // Fallback to empty string if undefined
-    setCharCount(safeValue.length);
+    console.log(`SequenceTab ${index} - sequence received:`, sequence.sequence); // DEBUG log
+  }, [sequence.sequence, index]);
 
-    // Validate DNA sequence if one is provided
-    if (sequence.sequence) {
-      const validationResult = validateDnaSequence(sequence.sequence, true); // true for required validation
+  useEffect(() => {
+    const safeValue = sequence.sequence || "";
+    const validationResult = safeValue
+      ? validateDnaSequence(safeValue, true)
+      : {};
+    console.log(`SequenceTab ${index} - validation result:`, validationResult); // DEBUG log
+
+    if (safeValue) {
+      const validationResult = validateDnaSequence(safeValue, true);
       if (validationResult.isValid) {
         setValidation({ message: "", isAdvisory: false });
       } else {
-        // Store the message and its advisory status
         setValidation({
           message: validationResult.message,
           isAdvisory: validationResult.isAdvisory,
@@ -49,7 +50,7 @@ function SequenceTab({ sequence, index, updateSequence, mtkPartOptions }) {
     } else {
       setValidation({ message: "", isAdvisory: false });
     }
-  }, [sequence.sequence]);
+  }, [sequence.sequence, index]);
 
   const handleSequenceChange = (e) => {
     updateSequence("sequence", e.target.value);
@@ -61,12 +62,9 @@ function SequenceTab({ sequence, index, updateSequence, mtkPartOptions }) {
 
   const handleMtkPartChange = (partType) => (e) => {
     const newValue = e.target.value;
-
     if (useSeparateParts) {
-      // Only update the specific part that changed
       updateSequence(partType, newValue);
     } else {
-      // In single mode, update both left and right to maintain synchronization
       updateSequence("mtkPartLeft", newValue);
       updateSequence("mtkPartRight", newValue);
     }
@@ -78,7 +76,6 @@ function SequenceTab({ sequence, index, updateSequence, mtkPartOptions }) {
 
   return (
     <div className="sequence-tab-content">
-      {/* Row 1: Primer name label and input */}
       <div className="form-row primer-name-row">
         <label htmlFor={`primer-name-${index}`} className="primer-name-label">
           Primer Name:
@@ -93,18 +90,12 @@ function SequenceTab({ sequence, index, updateSequence, mtkPartOptions }) {
         />
       </div>
 
-      {/* Row 2: Sequence # left justified and charcount right justified */}
       <div className="form-row sequence-header">
         <label htmlFor={`sequence-${index}`}>Sequence {index + 1}:</label>
-        <div
-          className="char-count"
-          style={{ display: charCount > 0 ? "inline" : "none" }}
-        >
-          Length: {charCount} bp
-        </div>
+        {charCount > 0 && (
+          <div className="char-count">Length: {charCount} bp</div>
+        )}
       </div>
-
-      {/* Row 3: Textarea */}
       <div className="form-row">
         <SequenceInput
           id={`sequence-${index}`}
@@ -123,9 +114,7 @@ function SequenceTab({ sequence, index, updateSequence, mtkPartOptions }) {
         )}
       </div>
 
-      {/* Row 4: MTK part numbers - horizontal layout */}
       <div className="form-row mtk-parts-row">
-        {/* Left part always visible - label and select side by side */}
         <div className="mtk-part-container">
           <label htmlFor={`mtk-part-left-${index}`} className="mtk-part-label">
             {useSeparateParts ? "MTK Part Number Left:" : "MTK Part Number:"}
@@ -143,8 +132,6 @@ function SequenceTab({ sequence, index, updateSequence, mtkPartOptions }) {
             ))}
           </select>
         </div>
-
-        {/* Right part only visible when toggle is on - label and select side by side */}
         {useSeparateParts && (
           <div className="mtk-part-container">
             <label
@@ -169,7 +156,6 @@ function SequenceTab({ sequence, index, updateSequence, mtkPartOptions }) {
         )}
       </div>
 
-      {/* Row 5: Toggle for separate left/right */}
       <div className="form-row toggle-container">
         <label className="toggle-label">
           <input

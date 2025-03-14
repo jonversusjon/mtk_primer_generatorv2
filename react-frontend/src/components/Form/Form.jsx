@@ -54,7 +54,6 @@ const Form = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Ensure species is set in the submitted data
     const finalFormData =
       (!formData.species || formData.species === "") && species.length > 0
         ? { ...formData, species: species[0] }
@@ -64,16 +63,11 @@ const Form = ({
     }
   };
 
-  // Functional updates to formData
-  const updateFormData = useCallback(
-    (field, value) => {
-      setFormData((prev) => ({ ...prev, [field]: value }));
-    },
-    [setFormData]
-  );
-
+  // Curried updateSequence so that SequenceTabs (and by extension SequenceTab)
+  // can use the returned function with signature (field, value)
   const updateSequence = useCallback(
-    (index, field, value) => {
+    (index) => (field, value) => {
+      console.log(`updateSequence - index: ${index}, field: ${field}, value: ${value}`); // DEBUG log
       setFormData((prev) => {
         const updatedSequences = [...prev.sequencesToDomesticate];
         if (updatedSequences[index]?.[field] === value) return prev;
@@ -81,11 +75,13 @@ const Form = ({
           ...updatedSequences[index],
           [field]: value,
         };
+        console.log("Updated formData:", { ...prev, sequencesToDomesticate: updatedSequences }); // DEBUG log
         return { ...prev, sequencesToDomesticate: updatedSequences };
       });
     },
     [setFormData]
   );
+  
 
   const addSequence = useCallback(() => {
     setFormData((prev) => ({
@@ -120,9 +116,15 @@ const Form = ({
 
       <TemplateSequence
         value={formData.templateSequence}
-        onChange={(value) => updateFormData("templateSequence", value)}
+        onChange={(value) => {
+          setFormData((prev) => ({ ...prev, templateSequence: value }));
+        }}
       />
 
+      {/* 
+        Note: SequenceTabs should internally pass the correct index to updateSequence.
+        For example, it might call: updateSequence(index)(field, value)
+      */}
       <SequenceTabs
         sequencesToDomesticate={formData.sequencesToDomesticate}
         updateSequence={updateSequence}

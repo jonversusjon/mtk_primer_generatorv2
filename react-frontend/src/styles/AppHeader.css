@@ -49,6 +49,10 @@
   margin-right: 8px;
 }
 
+.settings-toggle {
+  margin: 16px;
+}
+
 /* Button styling */
 .dark-mode-btn, .settings-toggle {
   display: flex;
