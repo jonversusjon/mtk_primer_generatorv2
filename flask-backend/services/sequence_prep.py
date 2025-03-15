@@ -116,174 +116,186 @@ class SequencePreparator:
 
         return str(cleaned_sequence), message, True
 
-    def find_bsmbi_bsai_sites(self, sequence, verbose):
-        """
-        Finds BsmBI and BsaI restriction enzyme recognition sites within a DNA sequence.
-        """
-        seq = str(sequence)
+    # def find_bsmbi_bsai_sites(self, sequence, verbose):
+    #     """
+    #     Finds BsmBI and BsaI restriction enzyme recognition sites within a DNA sequence.
+    #     """
+    #     seq = str(sequence)
 
-        with debug_context("find_bsmbi_bsai_sites"):
-            recognition_sequences = {
-                'BsmBI': 'CGTCTC',
-                'BsaI': 'GGTCTC'
-            }
-            seq_obj = Seq(seq.upper())
+    #     with debug_context("find_bsmbi_bsai_sites"):
+    #         recognition_sequences = {
+    #             'BsmBI': 'CGTCTC',
+    #             'BsaI': 'GGTCTC'
+    #         }
+    #         seq_obj = Seq(seq.upper())
 
-            sites_to_mutate = []
-            for enzyme, recognition_seq in recognition_sequences.items():
-                site_details = self._find_sites_for_enzyme(
-                    seq_obj, recognition_seq)
-                for site in site_details:
-                    site['enzyme'] = enzyme
-                    sites_to_mutate.append(site)
+    #         sites_to_mutate = []
+    #         for enzyme, recognition_seq in recognition_sequences.items():
+    #             site_details = self._find_sites_for_enzyme(
+    #                 seq_obj, recognition_seq)
+    #             for site in site_details:
+    #                 site['enzyme'] = enzyme
+    #                 sites_to_mutate.append(site)
 
-            sites_to_mutate.sort(key=lambda site: site['position'])
-            return sites_to_mutate
+    #         sites_to_mutate.sort(key=lambda site: site['position'])
 
-    def get_codons(self, context_seq, recognition_start_index, length, frame):
-        """
-        Extracts codons spanned by the recognition site from a context sequence.
-        """
-        with debug_context("find_codons"):
-            codons = []
-            translation_table = CodonTable.unambiguous_dna_by_id[1]
+    #         # Pydantic validation of restriction sites
+    #         from models.mtk import RestrictionSite
+    #         validated_sites = []
+    #         for site in sites_to_mutate:
+    #             try:
+    #                 validated_site = RestrictionSite.parse_obj(site)
+    #                 validated_sites.append(validated_site.dict())
+    #             except Exception as e:
+    #                 self.logger.error(
+    #                     f"Validation error in restriction site: {e}")
+    #                 raise e
+    #         return validated_sites
 
-            if frame == 0:
-                codon_positions = [recognition_start_index,
-                                   recognition_start_index + 3]
-            elif frame == 1:
-                codon_positions = [recognition_start_index - 1,
-                                   recognition_start_index + 2, recognition_start_index + 5]
-            elif frame == 2:
-                codon_positions = [recognition_start_index - 2,
-                                   recognition_start_index + 1, recognition_start_index + 4]
-            else:
-                return []
+    # def get_codons(self, context_seq, recognition_start_index, length, frame):
+    #     """
+    #     Extracts codons spanned by the recognition site from a context sequence.
+    #     """
+    #     with debug_context("find_codons"):
+    #         codons = []
+    #         translation_table = CodonTable.unambiguous_dna_by_id[1]
 
-            # Extract codons using positions relative to the context sequence
-            for pos in codon_positions:
-                if 0 <= pos <= len(context_seq) - 3:
-                    codon_seq = context_seq[pos: pos + 3]
-                    codons.append({
-                        "codon_seq": str(codon_seq),
-                        "amino_acid": translation_table.forward_table.get(str(codon_seq), 'X'),
-                        "context_position": pos  # relative position in context_seq
-                    })
+    #         if frame == 0:
+    #             codon_positions = [recognition_start_index,
+    #                                recognition_start_index + 3]
+    #         elif frame == 1:
+    #             codon_positions = [recognition_start_index - 1,
+    #                                recognition_start_index + 2, recognition_start_index + 5]
+    #         elif frame == 2:
+    #             codon_positions = [recognition_start_index - 2,
+    #                                recognition_start_index + 1, recognition_start_index + 4]
+    #         else:
+    #             return []
 
-            return codons
+    #         # Extract codons using positions relative to the context sequence
+    #         for pos in codon_positions:
+    #             if 0 <= pos <= len(context_seq) - 3:
+    #                 codon_seq = context_seq[pos: pos + 3]
+    #                 codons.append({
+    #                     "codon_sequence": str(codon_seq),
+    #                     "amino_acid": translation_table.forward_table.get(str(codon_seq), 'X'),
+    #                     "context_position": pos  # relative position in context_seq
+    #                 })
 
-    def _find_sites_for_enzyme(self, seq: Seq, recognition_seq: str) -> list:
-        """Helper method to find sites for a specific enzyme."""
-        site_details = []
-        seq_str = str(seq)
+    #         return codons
 
-        # Forward strand matches
-        forward_matches = list(re.finditer(
-            re.escape(recognition_seq), seq_str))
-        for match in forward_matches:
-            index = match.start()
-            frame = index % 3
+    # def _find_sites_for_enzyme(self, seq: Seq, recognition_seq: str) -> list:
+    #     """Helper method to find sites for a specific enzyme."""
+    #     site_details = []
+    #     seq_str = str(seq)
 
-            # Get context sequence (30bp upstream and 30bp downstream)
-            start_context = max(0, index - 30)
-            end_context = min(len(seq_str), index + len(recognition_seq) + 30)
-            context_seq = seq_str[start_context:end_context]
+    #     # Forward strand matches
+    #     forward_matches = list(re.finditer(
+    #         re.escape(recognition_seq), seq_str))
+    #     for match in forward_matches:
+    #         index = match.start()
+    #         frame = index % 3
 
-            # Compute the relative index of the recognition site within the context
-            relative_index = index - start_context
+    #         # Get context sequence (30bp upstream and 30bp downstream)
+    #         start_context = max(0, index - 30)
+    #         end_context = min(len(seq_str), index + len(recognition_seq) + 30)
+    #         context_seq = seq_str[start_context:end_context]
 
-            codons = self.get_codons(
-                context_seq, relative_index, len(recognition_seq), frame)
+    #         # Compute the relative index of the recognition site within the context
+    #         relative_index = index - start_context
 
-            # Calculate recognition site indices relative to the context sequence
-            context_recognition_site_indices = [
-                i - start_context for i in range(index, index + len(recognition_seq))]
+    #         codons = self.get_codons(
+    #             context_seq, relative_index, len(recognition_seq), frame)
 
-            site_details.append({
-                'position': index,  # 0-indexed overall sequence position
-                'recognition_sequence': recognition_seq,
-                'frame': frame,
-                'codons': codons,
-                'strand': '+',
-                'context_sequence': context_seq,
-                'context_recognition_site_indices': context_recognition_site_indices
-            })
+    #         # Calculate recognition site indices relative to the context sequence
+    #         context_recognition_site_indices = [
+    #             i - start_context for i in range(index, index + len(recognition_seq))]
 
-        # Reverse strand matches
-        rev_comp = str(Seq(recognition_seq).reverse_complement())
-        reverse_matches = list(re.finditer(re.escape(rev_comp), seq_str))
-        for match in reverse_matches:
-            index = match.start()
-            frame = index % 3
+    #         site_details.append({
+    #             'position': index,  # 0-indexed overall sequence position
+    #             'recognition_sequence': recognition_seq,
+    #             'frame': frame,
+    #             'codons': codons,
+    #             'strand': '+',
+    #             'context_sequence': context_seq,
+    #             'context_recognition_site_indices': context_recognition_site_indices
+    #         })
 
-            start_context = max(0, index - 30)
-            end_context = min(len(seq_str), index + len(recognition_seq) + 30)
-            context_seq = seq_str[start_context:end_context]
+    #     # Reverse strand matches
+    #     rev_comp = str(Seq(recognition_seq).reverse_complement())
+    #     reverse_matches = list(re.finditer(re.escape(rev_comp), seq_str))
+    #     for match in reverse_matches:
+    #         index = match.start()
+    #         frame = index % 3
 
-            relative_index = index - start_context
-            codons = self.get_codons(
-                context_seq, relative_index, len(recognition_seq), frame)
+    #         start_context = max(0, index - 30)
+    #         end_context = min(len(seq_str), index + len(recognition_seq) + 30)
+    #         context_seq = seq_str[start_context:end_context]
 
-            context_recognition_site_indices = [
-                i - start_context for i in range(index, index + len(rev_comp))]
+    #         relative_index = index - start_context
+    #         codons = self.get_codons(
+    #             context_seq, relative_index, len(recognition_seq), frame)
 
-            site_details.append({
-                'position': index,
-                'sequence': rev_comp,
-                'frame': frame,
-                'codons': codons,
-                'strand': '-',
-                'context_sequence': context_seq,
-                'context_recognition_site_indices': context_recognition_site_indices
-            })
+    #         context_recognition_site_indices = [
+    #             i - start_context for i in range(index, index + len(rev_comp))]
 
-        return site_details
+    #         site_details.append({
+    #             'position': index,
+    #             'sequence': rev_comp,
+    #             'frame': frame,
+    #             'codons': codons,
+    #             'strand': '-',
+    #             'context_sequence': context_seq,
+    #             'context_recognition_site_indices': context_recognition_site_indices
+    #         })
 
-    def summarize_bsmbi_bsai_sites(self, site_details):
-        """Creates a formatted summary of restriction sites."""
-        with debug_context("summarize_restriction_sites"):
-            site_type_descriptions = {
-                'BsmBI': 'BsmBI Restriction Site',
-                'BsaI': 'BsaI Restriction Site',
-            }
+    #     return site_details
 
-            # Convert list to dictionary if needed
-            if isinstance(site_details, list):
-                grouped_sites = defaultdict(list)
-                for site in site_details:
-                    site_type = site.get('enzyme')
-                    grouped_sites[site_type].append(site)
-                site_details = grouped_sites
+    # def summarize_bsmbi_bsai_sites(self, site_details):
+    #     """Creates a formatted summary of restriction sites."""
+    #     with debug_context("summarize_restriction_sites"):
+    #         site_type_descriptions = {
+    #             'BsmBI': 'BsmBI Restriction Site',
+    #             'BsaI': 'BsaI Restriction Site',
+    #         }
 
-            table = PrettyTable()
-            table.field_names = ["Site Type",
-                                 "Number of Instances", "Position(s)"]
+    #         # Convert list to dictionary if needed
+    #         if isinstance(site_details, list):
+    #             grouped_sites = defaultdict(list)
+    #             for site in site_details:
+    #                 site_type = site.get('enzyme')
+    #                 grouped_sites[site_type].append(site)
+    #             site_details = grouped_sites
 
-            for site_type, details_list in site_details.items():
-                if not details_list:
-                    continue
+    #         table = PrettyTable()
+    #         table.field_names = ["Site Type",
+    #                              "Number of Instances", "Position(s)"]
 
-                site_type_description = site_type_descriptions.get(
-                    site_type, site_type)
-                # Add +1 to position for display only
-                positions = ', '.join(
-                    str(details['position'] + 1) for details in details_list)
-                number_of_instances = len(details_list)
+    #         for site_type, details_list in site_details.items():
+    #             if not details_list:
+    #                 continue
 
-                table.add_row([
-                    site_type_description,
-                    number_of_instances,
-                    positions
-                ])
+    #             site_type_description = site_type_descriptions.get(
+    #                 site_type, site_type)
+    #             # Add +1 to position for display only
+    #             positions = ', '.join(
+    #                 str(details['position'] + 1) for details in details_list)
+    #             number_of_instances = len(details_list)
 
-            logger.info("\nRestriction Site Analysis Summary:")
-            logger.info(f"\n{str(table)}")
+    #             table.add_row([
+    #                 site_type_description,
+    #                 number_of_instances,
+    #                 positions
+    #             ])
 
-    def find_sites_to_mutate(self, sequence: Seq, index: int) -> List[Dict]:
-        """Finds and summarizes restriction sites needing mutation."""
-        with debug_context("find_sites_to_mutate"):
-            sites_to_mutate = self.find_bsmbi_bsai_sites(
-                sequence, self.verbose)
-            if sites_to_mutate:
-                self.summarize_bsmbi_bsai_sites(sites_to_mutate)
-            return sites_to_mutate
+    #         logger.info("\nRestriction Site Analysis Summary:")
+    #         logger.info(f"\n{str(table)}")
+
+    # def find_sites_to_mutate(self, sequence: Seq, index: int) -> List[Dict]:
+    #     """Finds and summarizes restriction sites needing mutation."""
+    #     with debug_context("find_sites_to_mutate"):
+    #         sites_to_mutate = self.find_bsmbi_bsai_sites(
+    #             sequence, self.verbose)
+    #         if sites_to_mutate:
+    #             self.summarize_bsmbi_bsai_sites(sites_to_mutate)
+    #         return sites_to_mutate

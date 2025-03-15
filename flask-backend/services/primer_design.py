@@ -3,8 +3,10 @@ from Bio.Seq import Seq
 from .utils import GoldenGateUtils
 from config.logging_config import logger
 from services.debug.debug_utils import MutationDebugger, visualize_matrix
-from models.primer import Primer, MutationPrimer
 from services.debug.debug_mixin import DebugMixin
+
+# Import the Pydantic primer models instead of dataclasses.
+from models.mtk import Primer, MutationPrimer
 
 
 class PrimerDesigner(DebugMixin):
@@ -54,16 +56,11 @@ class PrimerDesigner(DebugMixin):
         )
 
     @DebugMixin.debug_wrapper
-    def design_mutation_primers(self, mutation_sets: list, comp_matrices: list, primer_name: str = None, max_results: int = 1):
+    def design_mutation_primers(self, mutation_sets: list, comp_matrices: list,
+                                primer_name: str = None, max_results: int = 1):
         """
         Designs mutation primers for the provided mutation sets using compatibility matrices.
-
-        For each mutation set, this function calculates primers for every valid overhang combination.
-        If max_results == 0, all valid combinations (i.e. the entire Cartesian product of valid silent mutations)
-        are processed. Otherwise, up to max_results random combinations per mutation set are used.
-
-        Returns:
-            A dict mapping each mutation set index to a list of MutationPrimer objects.
+        Returns a dict mapping each mutation set index to a list of MutationPrimer objects.
         """
         all_primers = {}
 
@@ -79,9 +76,12 @@ class PrimerDesigner(DebugMixin):
                 {"matrix_size": comp_matrix.size}
             )
             self.log_step(
-                "Debug Info", f"Mutation set {set_index+1}: Valid coordinates: {valid_coords.tolist()}")
-            self.log_step("Matrix Visualization", f"Compatibility matrix for set {set_index+1}",
-                          visualize_matrix(comp_matrix))
+                "Debug Info",
+                f"Mutation set {set_index+1}: Valid coordinates: {valid_coords.tolist()}")
+            self.log_step(
+                "Matrix Visualization",
+                f"Compatibility matrix for set {set_index+1}",
+                visualize_matrix(comp_matrix))
 
             # Determine which coordinate combinations to process.
             if max_results == 0:
@@ -95,7 +95,8 @@ class PrimerDesigner(DebugMixin):
                 coords_to_process = [valid_coords[i].tolist()
                                      for i in selected_indices]
                 self.log_step(
-                    "Debug Info", f"Randomly selected {sample_size} coordinate combination(s): {coords_to_process}")
+                    "Debug Info",
+                    f"Randomly selected {sample_size} coordinate combination(s): {coords_to_process}")
 
             primers_for_set = []
             for coords in coords_to_process:
@@ -104,9 +105,10 @@ class PrimerDesigner(DebugMixin):
                 # Ensure the length of the coordinate combination matches the number of mutation sites.
                 if len(coords) != len(mutation_set):
                     raise ValueError(
-                        f"Coordinate length {len(coords)} does not match number of mutation sites {len(mutation_set)}")
+                        f"Coordinate length {len(coords)} does not match "
+                        f"number of mutation sites {len(mutation_set)}")
 
-                # Process each mutation site in the set using the current combination.
+                # Sanity checks & logging
                 for i, site_data in enumerate(mutation_set):
                     overhang_options = site_data["overhangs"].get(
                         "overhang_options", [])
@@ -129,7 +131,7 @@ class PrimerDesigner(DebugMixin):
                     self.log_step(
                         "Site Data", f"Processing mutation site: {site_data}")
 
-                # Construct MutationPrimer objects for the current mutation set with this coordinate combination.
+                # Construct MutationPrimer objects for the current combination.
                 mutation_primers = self._construct_mutation_primers(
                     mutation_set=mutation_set,
                     selected_coords=coords,
@@ -142,19 +144,29 @@ class PrimerDesigner(DebugMixin):
                      if mutation_primers else 0}
                 )
                 if mutation_primers:
-                    self.log_step(
-                        "Debug Info", f"Constructed mutation primers for combination {coords}: {mutation_primers}")
+                    self.log_step("Debug Info",
+                                  f"Constructed mutation primers for combination {coords}: {mutation_primers}")
                     primers_for_set.extend(mutation_primers)
 
             self.log_step(
-                "Debug Info", f"Total primers constructed for mutation set {set_index+1}: {len(primers_for_set)}")
+                "Debug Info",
+                f"Total primers constructed for mutation set {set_index+1}: {len(primers_for_set)}")
             all_primers[set_index] = primers_for_set
 
+        # Now that we've processed all sets, validate the entire dictionary.
         if all_primers:
             self.log_step(
                 "Debug Info", f"All mutation primers constructed: {all_primers}")
-            return all_primers
+            from models.mtk import PrimerDesignResult
+            try:
+                validated_primers = PrimerDesignResult.model_validate(
+                    all_primers)  # Pydantic v2
+                return validated_primers.model_dump()
+            except Exception as e:
+                self.logger.error(f"Validation error in primer design: {e}")
+                raise e
 
+        # If we reach here, no primers were constructed.
         if self.debugger:
             self.debugger.log_warning(
                 "Failed to design primers for any mutation set")
@@ -191,7 +203,7 @@ class PrimerDesigner(DebugMixin):
             self.validate(
                 f_anneal[1:5].strip().upper(
                 ) == overhang_data["top_overhang"]["seq"].strip().upper(),
-                f"Forward annealing region mismatch: got {f_anneal[1:5]}",
+                f"Forward annealing region mismatch: got {f_anneal[1:5]}"
             )
             f_primer_seq = self.spacer + self.bsmbi_site + f_anneal
 
@@ -210,10 +222,10 @@ class PrimerDesigner(DebugMixin):
             self.validate(
                 r_anneal[1:5].strip().upper(
                 ) == overhang_data["bottom_overhang"]["seq"].strip().upper(),
-                f"Reverse annealing region mismatch: got {r_anneal[1:5]}",
+                f"Reverse annealing region mismatch: got {r_anneal[1:5]}"
             )
 
-            # Create primer objects
+            # Create Pydantic Primer objects
             f_primer = Primer(
                 name=(primer_name +
                       "_forward") if primer_name else f"primer_{i}_forward",

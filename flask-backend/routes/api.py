@@ -23,23 +23,14 @@ job_status = {}
 def run_protocol_job(job_id, data):
     """
     Runs the protocol generation job in a background thread and updates
-    the job_status dictionary periodically.
+    the job_status dictionary by passing a progress_callback into the
+    protocol maker. The protocol maker is expected to call progress_callback
+    at key steps in its process.
     """
     try:
         # Initial status update
         job_status[job_id] = {"percentage": 0,
                               "message": "Job started", "step": "init"}
-
-        # Simulate some initialization work
-        time.sleep(2)
-        job_status[job_id] = {
-            "percentage": 25, "message": "Initializing protocol...", "step": "init"}
-        time.sleep(2)
-        job_status[job_id] = {
-            "percentage": 50, "message": "Running protocol generation...", "step": "processing"}
-        time.sleep(2)
-        job_status[job_id] = {
-            "percentage": 75, "message": "Finalizing protocol...", "step": "finalizing"}
 
         # Extract parameters from request data
         sequencesToDomesticate = data.get("sequencesToDomesticate", [])
@@ -50,7 +41,7 @@ def run_protocol_job(job_id, data):
         template_sequence = data.get("templateSequence", "")
         max_results = data.get("max_results", 1)
 
-        # Run the actual protocol generation
+        # Create the protocol maker instance with your parameters.
         protocol_maker = GoldenGateProtocol(
             sequencesToDomesticate=sequencesToDomesticate,
             codon_usage_dict=utils.get_codon_usage_dict(species),
@@ -58,13 +49,27 @@ def run_protocol_job(job_id, data):
             template_seq=template_sequence,
             kozak=kozak,
             max_results=max_results,
-            verbose=verbose_mode
+            verbose=verbose_mode,
+            debug=False,
         )
-        result = protocol_maker.create_gg_protocol()
+
+        # Define a progress callback that updates the global job_status.
+        def progress_callback(percentage, message, step):
+            # Optionally, you can merge this update with previous details if needed.
+            job_status[job_id] = {"percentage": percentage,
+                                  "message": message, "step": step}
+            # For example, if you want to preserve per-sequence details, you could do so here.
+            # logger.debug(f"Progress update for job {job_id}: {percentage}% - {message} ({step})")
+
+        # Run the protocol generation; this function is expected to invoke progress_callback
+        # at each key processing step (e.g. after preprocessing, mutation analysis, primer design, etc.).
+        result = protocol_maker.create_gg_protocol(
+            progress_callback=progress_callback)
+
+        # Convert the result to a serializable format.
         serializable_result = utils.convert_non_serializable(result)
 
         # Merge primer names from the submitted data into the results.
-        # If your result is a list (one per sequence), merge each primerName.
         if isinstance(serializable_result, list):
             for i, seq in enumerate(sequencesToDomesticate):
                 primer_name = seq.get("primerName")
@@ -83,6 +88,7 @@ def run_protocol_job(job_id, data):
                 "step": "error"
             }
         else:
+            # Final update: set status to complete and attach the result.
             job_status[job_id] = {
                 "percentage": 100,
                 "message": "Job complete",

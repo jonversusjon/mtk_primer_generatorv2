@@ -1,9 +1,8 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple, Any
 from Bio.Seq import Seq
 import numpy as np
 from itertools import product
 from tqdm import tqdm
-import logging
 
 from services.base import debug_context
 from services.debug.debug_mixin import DebugMixin
@@ -94,7 +93,7 @@ class MutationOptimizer(DebugMixin):
                           np.ndarray), "Compatibility table is a numpy array")
 
     @DebugMixin.debug_wrapper
-    def optimize_mutations(self, mutation_options: Dict) -> List[Dict]:
+    def optimize_mutations(self, mutation_options: Dict) -> Tuple[List[Dict], Any]:
         with debug_context("mutation_optimization"):
             # 1. Generate all possible mutation sets
             self.log_step("Generate Mutation Sets",
@@ -112,7 +111,18 @@ class MutationOptimizer(DebugMixin):
             optimized = self.filter_compatible_mutations(
                 mutation_sets, matrices)
 
-            return optimized, matrices
+            # Pydantic validation of optimized mutation sets
+            from models.mtk import MutationSet
+            validated_sets = []
+            for m_set in optimized:
+                try:
+                    validated_set = MutationSet.model_validate(
+                        m_set)  # Pydantic v2 method
+                    validated_sets.append(validated_set.model_dump())
+                except Exception as e:
+                    self.logger.error(f"Validation error in mutation set: {e}")
+                    raise e
+            return validated_sets, matrices
 
     @DebugMixin.debug_wrapper
     def generate_mutation_sets(self, mutation_options: dict) -> list:

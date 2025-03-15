@@ -45,7 +45,7 @@ class RestrictionSiteDetector:
                 if 0 <= pos <= len(context_seq) - 3:
                     codon_seq = context_seq[pos: pos + 3]
                     codons.append({
-                        "codon_seq": str(codon_seq),
+                        "codon_sequence": str(codon_seq),
                         "amino_acid": translation_table.forward_table.get(str(codon_seq), 'X'),
                         "context_position": pos  # relative position in context_seq
                     })
@@ -102,7 +102,18 @@ class RestrictionSiteDetector:
                         sites_to_mutate.append(site_details)
 
             sites_to_mutate.sort(key=lambda site: site['position'])
-            return sites_to_mutate
+            
+            # Pydantic validation of the sites
+            from models.mtk import RestrictionSite
+            validated_sites = []
+            for site in sites_to_mutate:
+                try:
+                    validated_site = RestrictionSite.parse_obj(site)
+                    validated_sites.append(validated_site.dict())
+                except Exception as e:
+                    self.logger.error(f"Validation error in restriction site: {e}")
+                    raise e
+            return validated_sites
 
     def summarize_bsmbi_bsai_sites(self, site_details: Union[List[Dict], Dict[str, List[Dict]]]) -> None:
         """

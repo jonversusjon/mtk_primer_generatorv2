@@ -329,9 +329,115 @@ class GoldenGateUtils(DebugMixin):
             for k, v in item.items():
                 full_key = f"{prefix}.s{k}" if prefix else k
                 keys.append(full_key)
-                keys.extend(self.get_nested_keys(v, full_key, depth + 1, max_depth))
+                keys.extend(self.get_nested_keys(
+                    v, full_key, depth + 1, max_depth))
         elif isinstance(item, list):
             for index, element in enumerate(item):
                 indexed_prefix = f"{prefix}[{index}]"
-                keys.extend(self.get_nested_keys(element, indexed_prefix, depth + 1, max_depth))
+                keys.extend(self.get_nested_keys(
+                    element, indexed_prefix, depth + 1, max_depth))
         return keys
+
+    def print_object_schema(self, obj, indent=0, name="object"):
+        """
+        Recursively prints a text-based schema of an object.
+        For dictionaries and objects (via __dict__), if multiple keys/attributes have the same
+        structure, only one representative is printed along with a note of additional items.
+        
+        Parameters:
+        obj: The object to schematize.
+        indent: Current indentation level.
+        name: Name/label for the current object.
+        """
+        prefix = "  " * indent
+
+        if isinstance(obj, dict):
+            print(f"{prefix}{name} (dict) with {len(obj)} keys:")
+            # Group keys by the structure of their corresponding value
+            groups = {}
+            for key, value in obj.items():
+                sig = self.get_structure(value)
+                groups.setdefault(sig, []).append((key, value))
+            # Print one representative per group
+            for sig, items in groups.items():
+                # Sort keys for consistency
+                items.sort(key=lambda x: str(x[0]))
+                rep_key, rep_val = items[0]
+                key_repr = f"['{rep_key}']" if isinstance(rep_key, str) else f"[{rep_key}]"
+                self.print_object_schema(rep_val, indent + 1, f"{name}{key_repr}")
+                if len(items) > 1:
+                    print(f"{prefix}  ... ({len(items)-1} more keys with same schema)")
+
+        elif isinstance(obj, list):
+            print(f"{prefix}{name} (list) with {len(obj)} items:")
+            if not obj:
+                return
+            # Check if all list items share the same schema
+            first_sig = self.get_structure(obj[0])
+            all_same = all(self.get_structure(item) == first_sig for item in obj)
+            if all_same:
+                self.print_object_schema(obj[0], indent + 1, f"{name}[0]")
+                if len(obj) > 1:
+                    print(f"{prefix}  ... ({len(obj)-1} more items with same schema)")
+            else:
+                # Otherwise, print the schema for each item
+                for idx, item in enumerate(obj):
+                    self.print_object_schema(item, indent + 1, f"{name}[{idx}]")
+
+        elif hasattr(obj, "__dict__") and obj.__dict__:
+            print(f"{prefix}{name} (object):")
+            # Group object attributes by their schema
+            groups = {}
+            for attr, value in obj.__dict__.items():
+                sig = self.get_structure(value)
+                groups.setdefault(sig, []).append((attr, value))
+            for sig, items in groups.items():
+                items.sort(key=lambda x: str(x[0]))
+                rep_attr, rep_val = items[0]
+                self.print_object_schema(rep_val, indent + 1, f"{name}.{rep_attr}")
+                if len(items) > 1:
+                    print(f"{prefix}  ... ({len(items)-1} more attributes with same schema)")
+
+        elif hasattr(obj, "shape") and hasattr(obj, "dtype"):
+            # For array-like objects (e.g., numpy arrays, pandas DataFrames)
+            print(f"{prefix}{name} (array-like): shape={obj.shape}, dtype={obj.dtype}")
+
+        else:
+            # Primitive or other types
+            val_str = repr(obj)
+            display_val = f"{val_str[:50]}{'...' if len(val_str) > 50 else ''}"
+            print(f"{prefix}{name} ({type(obj).__name__}): {display_val}")
+
+
+    def get_structure(self, obj):
+        """
+        Recursively computes a hashable signature representing the schema of `obj`.
+        This signature can be used to compare whether two objects share the same structure.
+        
+        Returns a tuple describing the structure.
+        """
+        if isinstance(obj, dict):
+            # For dictionaries, use a sorted tuple of (key, schema) pairs.
+            structure = tuple(sorted(
+                ((str(key), self.get_structure(value)) for key, value in obj.items())
+            ))
+            return ("dict", structure)
+        elif isinstance(obj, list):
+            if not obj:
+                return ("list", "empty")
+            # Compute the structure for each item.
+            item_structs = [self.get_structure(item) for item in obj]
+            # If all items share the same structure, collapse to one signature.
+            if all(s == item_structs[0] for s in item_structs):
+                return ("list", item_structs[0])
+            else:
+                return ("list", tuple(item_structs))
+        elif hasattr(obj, "__dict__") and obj.__dict__:
+            structure = tuple(sorted(
+                ((attr, self.get_structure(value)) for attr, value in obj.__dict__.items())
+            ))
+            return ("object", structure)
+        elif hasattr(obj, "shape") and hasattr(obj, "dtype"):
+            return ("array", str(obj.shape), str(obj.dtype))
+        else:
+            return type(obj).__name__

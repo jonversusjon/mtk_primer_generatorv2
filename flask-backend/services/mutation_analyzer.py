@@ -65,32 +65,8 @@ class MutationAnalyzer(DebugMixin):
                             - "mutation_positions_in_context": A list of indices in the context where the mutation occurs.
     """
 
-    def __init__(self, codon_usage_dict: Dict[str, Dict[str, float]], max_mutations: int = 1, verbose: bool = False, debug: bool = False):
-        self.logger = logger.getChild("MutationAnalyzer")
-        self.utils = GoldenGateUtils()
-        self.state = {'current_codon': '',
-                      'current_position': 0, 'mutations_found': []}
-        self.codon_usage_dict = codon_usage_dict
-        self.max_mutations = max_mutations
-        self.verbose = verbose
-        self.debug = debug
-        if self.verbose:
-            self.logger.setLevel(logging.DEBUG)
-        if self.debug:
-            self.debugger = MutationDebugger(
-                parent_logger=logger, use_custom_format=True)
-            if hasattr(self.debugger.logger, 'propagate'):
-                self.debugger.logger.propagate = False
-            self.logger.info("Debug mode enabled for MutationAnalyzer")
-            self.validate(codon_usage_dict and isinstance(codon_usage_dict, dict),
-                          "Codon usage dictionary is valid",
-                          {"organisms": list(codon_usage_dict.keys())})
-            self.validate(isinstance(max_mutations, int) and max_mutations > 0,
-                          f"Max mutations set to {max_mutations}",
-                          {"valid_range": "1-3"})
-
     @DebugMixin.debug_wrapper
-    def get_all_mutations(self, sites_to_mutate: List[Dict]) -> Dict[str, List[Dict]]:
+    def get_all_mutations(self, sites_to_mutate: List[Dict]) -> Dict[str, Dict]:
         self.validate(sites_to_mutate and isinstance(sites_to_mutate, list),
                       f"Received {len(sites_to_mutate)} sites to mutate",
                       {"first_site": sites_to_mutate[0] if sites_to_mutate else None})
@@ -123,18 +99,21 @@ class MutationAnalyzer(DebugMixin):
 
                     for codon_idx, codon in enumerate(site["codons"]):
                         print(f" *** codon: {codon}")
-                        # Re-key "codon_seq" to "codon_original_sequence"
-                        codon["codon_original_sequence"] = codon.pop(
-                            "codon_seq")
+                        # Re-key "codon_seq" to "codon_sequence"
+                        codon["codon_sequence"] = codon.pop("codon_seq", None)
 
-                        # Use the updated key for logging.
+                        if codon["codon_sequence"] is None:
+                            self.logger.warning(
+                                f"Codon sequence missing at site {site['position']}. Skipping.")
+                            continue  # Skip this codon if data is missing
+
                         self.log_step("Process Codon",
                                       f"Analyzing codon {codon_idx+1}/{len(site['codons'])}",
-                                      {"codon_original_sequence": codon["codon_original_sequence"],
+                                      {"codon_sequence": codon["codon_sequence"],
                                        "context_position": codon["context_position"],
                                        "amino_acid": codon["amino_acid"]})
 
-                        # Inject overlapping_indices for this codon.
+                        # Inject overlapping indices
                         site_with_indices = {
                             **site,
                             "overlapping_indices": self.utils.get_recognition_site_bases(site["frame"], codon_idx)
@@ -142,7 +121,7 @@ class MutationAnalyzer(DebugMixin):
 
                         alternatives = self._find_alternative_codons(
                             site_with_indices,
-                            codon["codon_original_sequence"],
+                            codon["codon_sequence"],
                             codon["amino_acid"],
                             codon["context_position"],
                         )
@@ -150,10 +129,9 @@ class MutationAnalyzer(DebugMixin):
                         if alternatives:
                             site_has_alternatives = True
                             self.log_step("Found Alternatives",
-                                          f"Found {len(alternatives)} alternative codons for {codon['codon_original_sequence']}",
+                                          f"Found {len(alternatives)} alternative codons for {codon['codon_sequence']}",
                                           {"alternatives": alternatives})
 
-                            # Attach each alternative with sticky ends and context mutation positions.
                             for alt in alternatives:
                                 mutated_context, mutated_context_first_mutation_index, mutated_context_last_mutation_index = self.get_mutated_context(
                                     context_sequence=site["context_sequence"],
@@ -167,42 +145,49 @@ class MutationAnalyzer(DebugMixin):
                                     mutated_context_first_mutation_index,
                                     mutated_context_last_mutation_index
                                 )
-                                # Note: Ensure that alt also includes "mutation_positions_in_context"
 
                             site_mutations["codons"].append({
-                                "original_codon_sequence": codon["codon_original_sequence"],
+                                "original_codon_sequence": codon["codon_sequence"],
                                 "context_position": codon["context_position"],
                                 "amino_acid": codon["amino_acid"],
                                 "alternative_codons": alternatives
                             })
 
-                    # After processing all codons, add the site if alternatives were found.
                     if site_has_alternatives:
-                        mutation_options[site_key] = site_mutations
+                        try:
+                            from models.mtk import MutationSite
+                            validated_site = MutationSite.model_validate(
+                                site_mutations)
+                            mutation_options[site_key] = validated_site.model_dump(
+                            )
+                        except Exception as e:
+                            self.logger.error(
+                                f"Validation error for site {site['position']}: {e}")
+                            continue  # Log error and skip adding this site
+
                         self.log_step("Site Result",
                                       f"Completed analysis for site at position {site['position']}",
                                       {"alternatives_found": sum(len(c["alternative_codons"]) for c in site_mutations["codons"])})
+
                     else:
                         self.log_step("No Alternatives Found",
                                       f"No alternative codons found for site at position {site['position']}",
                                       {"site": site["position"]},
                                       level=logging.WARNING)
 
-                    if self.verbose:
-                        logger.info(
-                            f"Found {len(mutation_options)} sites with valid mutations")
+                if self.verbose:
+                    logger.info(
+                        f"Found {len(mutation_options)} sites with valid mutations")
 
-                    self.validate(mutation_options,
-                                  f"Generated mutation options for {len(mutation_options)} sites",
-                                  {"site_keys": list(mutation_options.keys())})
-            return mutation_options
+                self.validate(mutation_options,
+                              f"Generated mutation options for {len(mutation_options)} sites",
+                              {"site_keys": list(mutation_options.keys())})
+
+                return mutation_options
 
         except Exception as e:
-            error_msg = f"Error in mutation analysis: {str(e)}"
-            logger.error(error_msg)
-            if getattr(self, 'debugger', None):
-                self.debugger.log_error(error_msg)
-            return mutation_options
+            self.logger.error(f"Critical error in mutation analysis: {e}")
+            raise e  # Let the error propagate so debugging can happen
 
     @DebugMixin.debug_wrapper
     def _find_alternative_codons(self, site: Dict, original_codon: str, amino_acid: str, codon_context_position: int) -> List[Dict]:
