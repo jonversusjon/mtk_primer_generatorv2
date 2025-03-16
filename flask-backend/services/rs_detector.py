@@ -102,16 +102,17 @@ class RestrictionSiteDetector:
                         sites_to_mutate.append(site_details)
 
             sites_to_mutate.sort(key=lambda site: site['position'])
-            
+
             # Pydantic validation of the sites
-            from models.mtk import RestrictionSite
+            from models.sequences import RestrictionSite
             validated_sites = []
             for site in sites_to_mutate:
                 try:
-                    validated_site = RestrictionSite.parse_obj(site)
-                    validated_sites.append(validated_site.dict())
+                    validated_site = RestrictionSite.model_validate(site)
+                    validated_sites.append(validated_site.model_dump())
                 except Exception as e:
-                    self.logger.error(f"Validation error in restriction site: {e}")
+                    self.logger.error(
+                        f"Validation error in restriction site: {e}")
                     raise e
             return validated_sites
 

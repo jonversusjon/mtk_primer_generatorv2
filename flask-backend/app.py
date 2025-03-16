@@ -23,12 +23,12 @@ def load_python_config(module_path, env="development"):
         if hasattr(module, "CONFIG"):
             config_data = module.CONFIG
             # Print full config
-            print(f"🔍 DEBUG: Full CONFIG dictionary: {config_data}")
+            # print(f"🔍 DEBUG: Full CONFIG dictionary: {config_data}")
 
             # If CONFIG contains multiple environments, extract the correct one
             if isinstance(config_data, dict) and env in config_data:
                 selected_config = config_data[env]
-                print(f"✅ DEBUG: Extracted '{env}' config: {selected_config}")
+                # print(f"✅ DEBUG: Extracted '{env}' config: {selected_config}")
                 return selected_config
             return config_data  # If it's not environment-based, return as is
         else:
@@ -51,7 +51,7 @@ args = parser.parse_args()
 CONFIG_MODULE = args.config
 ENVIRONMENT = args.env
 
-print(f"🔍 DEBUG: Loading {CONFIG_MODULE} with environment '{ENVIRONMENT}'")
+# print(f"🔍 DEBUG: Loading {CONFIG_MODULE} with environment '{ENVIRONMENT}'")
 
 app_config = load_python_config(CONFIG_MODULE, ENVIRONMENT)
 
@@ -71,8 +71,8 @@ def create_app():
 
     app = Flask(__name__)
     app.config["ACTIVE_CONFIG"] = app_config
-    logger.info(f"TESTING mode: {app.config['TESTING']}")
-    logger.info(f"🔍 DEBUG: Loaded config: {app.config['ACTIVE_CONFIG']}")
+    # logger.info(f"TESTING mode: {app.config['TESTING']}")
+    # logger.info(f"🔍 DEBUG: Loaded config: {app.config['ACTIVE_CONFIG']}")
 
     # Enable CORS for the entire app
     CORS(app, resources={

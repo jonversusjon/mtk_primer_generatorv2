@@ -4,9 +4,7 @@ from .utils import GoldenGateUtils
 from config.logging_config import logger
 from services.debug.debug_utils import MutationDebugger, visualize_matrix
 from services.debug.debug_mixin import DebugMixin
-
-# Import the Pydantic primer models instead of dataclasses.
-from models.mtk import Primer, MutationPrimer
+from models.primers import Primer, MutationPrimerPair, PrimerDesignResult
 
 
 class PrimerDesigner(DebugMixin):
@@ -157,7 +155,6 @@ class PrimerDesigner(DebugMixin):
         if all_primers:
             self.log_step(
                 "Debug Info", f"All mutation primers constructed: {all_primers}")
-            from models.mtk import PrimerDesignResult
             try:
                 validated_primers = PrimerDesignResult.model_validate(
                     all_primers)  # Pydantic v2
@@ -245,7 +242,7 @@ class PrimerDesigner(DebugMixin):
                 length=len(r_primer_seq)
             )
 
-            mutation_primer = MutationPrimer(
+            mutation_primer = MutationPrimerPair(
                 site=mut_obj["site"],
                 position=mut_obj["position"],
                 forward=f_primer,
@@ -288,23 +285,26 @@ class PrimerDesigner(DebugMixin):
         forward_primer = overhang_5p + f_binding
         reverse_primer = overhang_3p + r_binding
 
+        f_primer = Primer(
+            name=f"{primer_name}_F",
+            sequence=forward_primer,
+            binding_region=f_binding,
+            tm=self.utils.calculate_tm(f_binding),
+            gc_content=self.utils.gc_content(f_binding),
+            length=len(forward_primer)
+        )
+
+        r_primer = Primer(
+            name=f"{primer_name}_R",
+            sequence=reverse_primer,
+            binding_region=r_binding,
+            tm=self.utils.calculate_tm(r_binding),
+            gc_content=self.utils.gc_content(r_binding),
+            length=len(reverse_primer)
+        )
         primers = {
-            "forward_primer": {
-                "name": f"{primer_name}_F",
-                "sequence": forward_primer,
-                "binding_region": f_binding,
-                "tm": self.utils.calculate_tm(f_binding),
-                "gc_content": self.utils.gc_content(f_binding),
-                "length": len(forward_primer)
-            },
-            "reverse_primer": {
-                "name": f"{primer_name}_R",
-                "sequence": reverse_primer,
-                "binding_region": r_binding,
-                "tm": self.utils.calculate_tm(r_binding),
-                "gc_content": self.utils.gc_content(r_binding),
-                "length": len(reverse_primer)
-            },
+            "forward_primer": f_primer,
+            "reverse_primer": r_primer,
             "product_size": seq_length
         }
 

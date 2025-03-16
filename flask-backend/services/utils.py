@@ -100,13 +100,20 @@ class GoldenGateUtils(DebugMixin):
 
     def get_codons_for_amino_acid(self, amino_acid: str):
         """Returns a list of codons that encode the given amino acid."""
+        print(f"Getting codons for amino acid: {amino_acid}")
+
         amino_acid = amino_acid.upper()
         table = CodonTable.unambiguous_dna_by_id[1]
+        print(f"Using codon table: {table}")
 
         if amino_acid == '*':
             return table.stop_codons
 
-        return [codon for codon, aa in table.forward_table.items() if aa == amino_acid]
+        codons = [codon for codon, aa in table.forward_table.items()
+                  if aa == amino_acid]
+        print(f"Codons found: {codons}")
+
+        return codons
 
     def gc_content(self, seq: str) -> float:
         """Computes GC content of a DNA sequence."""
@@ -343,7 +350,7 @@ class GoldenGateUtils(DebugMixin):
         Recursively prints a text-based schema of an object.
         For dictionaries and objects (via __dict__), if multiple keys/attributes have the same
         structure, only one representative is printed along with a note of additional items.
-        
+
         Parameters:
         obj: The object to schematize.
         indent: Current indentation level.
@@ -363,10 +370,13 @@ class GoldenGateUtils(DebugMixin):
                 # Sort keys for consistency
                 items.sort(key=lambda x: str(x[0]))
                 rep_key, rep_val = items[0]
-                key_repr = f"['{rep_key}']" if isinstance(rep_key, str) else f"[{rep_key}]"
-                self.print_object_schema(rep_val, indent + 1, f"{name}{key_repr}")
+                key_repr = f"['{rep_key}']" if isinstance(
+                    rep_key, str) else f"[{rep_key}]"
+                self.print_object_schema(
+                    rep_val, indent + 1, f"{name}{key_repr}")
                 if len(items) > 1:
-                    print(f"{prefix}  ... ({len(items)-1} more keys with same schema)")
+                    print(
+                        f"{prefix}  ... ({len(items)-1} more keys with same schema)")
 
         elif isinstance(obj, list):
             print(f"{prefix}{name} (list) with {len(obj)} items:")
@@ -374,15 +384,18 @@ class GoldenGateUtils(DebugMixin):
                 return
             # Check if all list items share the same schema
             first_sig = self.get_structure(obj[0])
-            all_same = all(self.get_structure(item) == first_sig for item in obj)
+            all_same = all(self.get_structure(item) ==
+                           first_sig for item in obj)
             if all_same:
                 self.print_object_schema(obj[0], indent + 1, f"{name}[0]")
                 if len(obj) > 1:
-                    print(f"{prefix}  ... ({len(obj)-1} more items with same schema)")
+                    print(
+                        f"{prefix}  ... ({len(obj)-1} more items with same schema)")
             else:
                 # Otherwise, print the schema for each item
                 for idx, item in enumerate(obj):
-                    self.print_object_schema(item, indent + 1, f"{name}[{idx}]")
+                    self.print_object_schema(
+                        item, indent + 1, f"{name}[{idx}]")
 
         elif hasattr(obj, "__dict__") and obj.__dict__:
             print(f"{prefix}{name} (object):")
@@ -394,13 +407,16 @@ class GoldenGateUtils(DebugMixin):
             for sig, items in groups.items():
                 items.sort(key=lambda x: str(x[0]))
                 rep_attr, rep_val = items[0]
-                self.print_object_schema(rep_val, indent + 1, f"{name}.{rep_attr}")
+                self.print_object_schema(
+                    rep_val, indent + 1, f"{name}.{rep_attr}")
                 if len(items) > 1:
-                    print(f"{prefix}  ... ({len(items)-1} more attributes with same schema)")
+                    print(
+                        f"{prefix}  ... ({len(items)-1} more attributes with same schema)")
 
         elif hasattr(obj, "shape") and hasattr(obj, "dtype"):
             # For array-like objects (e.g., numpy arrays, pandas DataFrames)
-            print(f"{prefix}{name} (array-like): shape={obj.shape}, dtype={obj.dtype}")
+            print(
+                f"{prefix}{name} (array-like): shape={obj.shape}, dtype={obj.dtype}")
 
         else:
             # Primitive or other types
@@ -408,18 +424,18 @@ class GoldenGateUtils(DebugMixin):
             display_val = f"{val_str[:50]}{'...' if len(val_str) > 50 else ''}"
             print(f"{prefix}{name} ({type(obj).__name__}): {display_val}")
 
-
     def get_structure(self, obj):
         """
         Recursively computes a hashable signature representing the schema of `obj`.
         This signature can be used to compare whether two objects share the same structure.
-        
+
         Returns a tuple describing the structure.
         """
         if isinstance(obj, dict):
             # For dictionaries, use a sorted tuple of (key, schema) pairs.
             structure = tuple(sorted(
-                ((str(key), self.get_structure(value)) for key, value in obj.items())
+                ((str(key), self.get_structure(value))
+                 for key, value in obj.items())
             ))
             return ("dict", structure)
         elif isinstance(obj, list):
@@ -434,7 +450,8 @@ class GoldenGateUtils(DebugMixin):
                 return ("list", tuple(item_structs))
         elif hasattr(obj, "__dict__") and obj.__dict__:
             structure = tuple(sorted(
-                ((attr, self.get_structure(value)) for attr, value in obj.__dict__.items())
+                ((attr, self.get_structure(value))
+                 for attr, value in obj.__dict__.items())
             ))
             return ("object", structure)
         elif hasattr(obj, "shape") and hasattr(obj, "dtype"):

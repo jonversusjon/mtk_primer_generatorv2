@@ -34,6 +34,7 @@ def run_protocol_job(job_id, data):
 
         # Extract parameters from request data
         sequencesToDomesticate = data.get("sequencesToDomesticate", [])
+        print(f"Sequences to domesticate: {sequencesToDomesticate}")
         species = data.get("species", "")
         kozak = data.get("kozak", "MTK")
         max_mut_per_site = data.get("max_mut_per_site", 3)

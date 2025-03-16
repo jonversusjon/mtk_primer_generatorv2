@@ -2,7 +2,7 @@
 
 from typing import Dict
 from config.logging_config import logger
-from models.mtk import Primer
+from models.primers import Primer
 from services.debug.debug_mixin import DebugMixin
 
 

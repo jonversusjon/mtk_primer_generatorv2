@@ -1,6 +1,6 @@
 # services/protocol.py
 
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
 from .sequence_prep import SequencePreparator
 from .rs_detector import RestrictionSiteDetector
 from .mutation_analyzer import MutationAnalyzer
@@ -12,17 +12,27 @@ from config.logging_config import logger
 from .base import debug_context
 from services.debug.debug_utils import MutationDebugger, visualize_matrix
 from services.debug.debug_mixin import DebugMixin
+from models.sequences import SequenceToDomesticate
+from pydantic import validate_call
 
 
 class GoldenGateProtocol(DebugMixin):
     """
     Orchestrates the Golden Gate protocol by managing sequence preparation,
     primer design, mutation analysis, and optimization.
+    class SequenceToDomesticate(BaseModel):
+        sequence_index: int
+        primer_name: Optional[str] = None
+        sequence: str
+        mtk_part_left: str
+        mtk_part_right: str
+        restriction_sites: List[RestrictionSite]
     """
 
+    @validate_call
     def __init__(
         self,
-        sequencesToDomesticate: List[Dict[str, str]],
+        sequencesToDomesticate: List[SequenceToDomesticate],
         codon_usage_dict: Dict[str, Dict[str, float]],
         max_mutations: int,
         template_seq: Optional[str] = None,
@@ -50,10 +60,10 @@ class GoldenGateProtocol(DebugMixin):
             codon_usage_dict=codon_usage_dict,
             max_mutations=max_mutations,
             verbose=verbose,
-            debug=False,
+            debug=True,
         )
         self.mutation_optimizer = MutationOptimizer(
-            verbose=verbose, debug=False)
+            verbose=verbose, debug=True)
         self.primer_designer = PrimerDesigner(
             kozak=kozak, verbose=verbose, debug=True)
         self.reaction_organizer = ReactionOrganizer()
@@ -154,9 +164,7 @@ class GoldenGateProtocol(DebugMixin):
                     mutation_primers = self.primer_designer.design_mutation_primers(
                         mutation_sets=optimized_mutations,
                         comp_matrices=compatibility_matrices,
-                        primer_name=seq_object.get(
-                            "primerName", f"Sequence_{idx+1}",
-                        ),
+                        primer_name=primer_name,
                         max_results=self.max_results,
                     )
                     sequence_data["mutation_primers"] = mutation_primers
@@ -185,7 +193,7 @@ class GoldenGateProtocol(DebugMixin):
                 result_data, indent=0, name="result_data")
 
         # Pydantic v2 validation of result_data
-        from models.mtk import MTKDomesticationProtocol
+        from models.protocols import MTKDomesticationProtocol
         try:
             validated_protocol = MTKDomesticationProtocol.model_validate(
                 {"result_data": result_data})
@@ -196,11 +204,10 @@ class GoldenGateProtocol(DebugMixin):
 
 
 @DebugMixin.debug_wrapper
-def _getSequenceData(seq_object, i):
-    """Extracts sequence data from the provided dictionary."""
-    single_seq = seq_object.get("sequence", "")
-    mtk_part_left = seq_object.get("mtkPartLeft", "")
-    mtk_part_right = seq_object.get("mtkPartRight", "")
-    primer_name = seq_object.get("primerName", f"Sequence_{i}")
-
+def _getSequenceData(seq_object: SequenceToDomesticate, i: int) -> Tuple[str, str, str, str]:
+    """Extracts sequence data from the provided SequenceToDomesticate model."""
+    single_seq = seq_object.sequence
+    mtk_part_left = seq_object.mtk_part_left
+    mtk_part_right = seq_object.mtk_part_right
+    primer_name = seq_object.primer_name or f"Sequence_{i}"
     return single_seq, mtk_part_left, mtk_part_right, primer_name
