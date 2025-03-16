@@ -2,7 +2,7 @@ import numpy as np
 from Bio.Seq import Seq
 from .utils import GoldenGateUtils
 from config.logging_config import logger
-from debug import MutationDebugger, DebugMixin, visualize_matrix
+from services.debug import MutationDebugger, DebugMixin, visualize_matrix
 from models import Primer, MutationPrimerPair, EdgePrimerPair, PrimerDesignResult
 
 

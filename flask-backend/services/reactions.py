@@ -2,7 +2,7 @@
 
 from typing import Dict
 from models import Primer
-from debug import DebugMixin
+from services.debug import DebugMixin
 
 
 class ReactionOrganizer(DebugMixin):

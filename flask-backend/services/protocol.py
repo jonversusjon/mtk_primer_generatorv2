@@ -11,8 +11,8 @@ from services import (
     PrimerDesigner,
     ReactionOrganizer,
 )
-from utils import GoldenGateUtils
-from debug import MutationDebugger, DebugMixin, debug_context
+from .utils import GoldenGateUtils
+from services.debug import MutationDebugger, DebugMixin, debug_context
 from config.logging_config import logger
 
 class GoldenGateProtocol(DebugMixin):

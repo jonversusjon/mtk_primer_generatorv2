@@ -3,7 +3,7 @@ import re
 from typing import List
 from config.logging_config import logger
 from models import RestrictionSite, Codon
-from debug import MutationDebugger, DebugMixin, debug_context
+from services.debug import MutationDebugger, DebugMixin, debug_context
 from .utils import GoldenGateUtils
 
 class RestrictionSiteDetector:

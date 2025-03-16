@@ -13,7 +13,7 @@ from prettytable import PrettyTable
 
 from models import RestrictionSite
 from config.logging_config import logger
-from debug import DebugMixin, debug_context
+from services.debug import DebugMixin, debug_context
 
 
 class GoldenGateUtils(DebugMixin):

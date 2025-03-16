@@ -1,6 +1,9 @@
 from pydantic import BaseModel
 from typing import List, Dict, Optional, Any
-from models import Mutations, Primer, RestrictionSite, PCRReaction
+from .mutations import Mutations
+from .primers import Primer
+from .sequences import RestrictionSite
+from .pcr_reactions import PCRReaction
 
 
 class DomesticationResult(BaseModel):

@@ -2,9 +2,9 @@ import logging
 from typing import Dict, List, Optional
 
 from models import RestrictionSite
-from utils import GoldenGateUtils
+from .utils import GoldenGateUtils
 
-from debug import DebugMixin, MutationDebugger, debug_context
+from services.debug import DebugMixin, MutationDebugger, debug_context
 from config.logging_config import logger
 
 class MutationAnalyzer(DebugMixin):

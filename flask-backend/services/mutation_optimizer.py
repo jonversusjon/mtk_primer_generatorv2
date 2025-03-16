@@ -3,7 +3,7 @@ import numpy as np
 from itertools import product
 from tqdm import tqdm
 
-from debug import DebugMixin, MutationDebugger, debug_context
+from services.debug import DebugMixin, MutationDebugger, debug_context
 from config.logging_config import logger
 from .utils import GoldenGateUtils
 

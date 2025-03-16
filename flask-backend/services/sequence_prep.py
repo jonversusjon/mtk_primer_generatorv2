@@ -2,7 +2,7 @@
 from Bio.Seq import Seq
 from typing import Optional, Tuple
 from config.logging_config import logger
-from debug import DebugMixin, MutationDebugger, debug_context
+from services.debug import DebugMixin, MutationDebugger, debug_context
 
 
 class SequencePreparator:
