@@ -4,7 +4,6 @@ from .mutations import MutationOption
 
 # --- Primer and Reaction models ---
 
-
 class ReactionDetail(BaseModel):
     forward: str
     reverse: str
@@ -12,15 +11,12 @@ class ReactionDetail(BaseModel):
 
 
 class Primer(BaseModel):
-    name: str
-    sequence: str
+    name: str = ""
+    sequence: str = ""
     binding_region: Optional[str] = None
     tm: Optional[float] = None
     gc_content: Optional[float] = None
     length: Optional[int] = None
-
-
-# --- Models for mutation_primers ---
 
 
 class MutationPrimerPair(BaseModel):
@@ -29,14 +25,10 @@ class MutationPrimerPair(BaseModel):
     forward: Primer
     mutation_info: MutationOption
 
-# --- EdgePrimers model ---
 
-
-class EdgePrimers(BaseModel):
-    forward_primer: Primer
-    product_size: int
-    reverse_primer: Primer
-
+class EdgePrimerPair(BaseModel):
+    forward: Primer
+    reverse: Primer
 
 class PrimerDesignResult(RootModel[Dict[int, List[MutationPrimerPair]]]):
     pass

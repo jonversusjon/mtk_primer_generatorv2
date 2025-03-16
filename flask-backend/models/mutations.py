@@ -1,5 +1,5 @@
 from pydantic import BaseModel, RootModel, field_validator
-from typing import List, Optional, Tuple, Any
+from typing import List, Optional, Tuple
 from .sequences import Overhangs
 
 # --- Mutation option used in both mutations and mutation_primers ---
@@ -13,19 +13,10 @@ class AlternativeCodon(BaseModel):
 
 
 class CodonMutation(BaseModel):
-    original_codon_sequence: str
+    codon_sequence: str
     context_position: Optional[int]
     amino_acid: Optional[str]
     alternative_codons: List[AlternativeCodon]
-
-
-class MutationSite(BaseModel):
-    position: int
-    sequence: str
-    frame: int
-    strand: str
-    enzyme: str
-    codons: List[CodonMutation]
 
 
 class MutationOption(BaseModel):
@@ -35,8 +26,6 @@ class MutationOption(BaseModel):
     overhangs: Overhangs
     mutation_positions_in_context: List[int]
 
-    class Config:
-        extra = "allow"  # allow additional keys as per schema
 
 # --- Mutations container ---
 
@@ -57,9 +46,11 @@ class Mutations(BaseModel):
                 return all(check_nested(i) for i in item)
             return False
 
-        if not isinstance(value, list) or not all(check_nested(x) for x in value):
+        if not isinstance(value, list) or not all(check_nested(x)
+                                                  for x in value):
             raise ValueError(
-                "compatibility must be a nested list of integers (matrix shape 4^N)"
+                "compatibility must be a nested list of integers (matrix "
+                "shape 4^N)"
             )
         return value
 

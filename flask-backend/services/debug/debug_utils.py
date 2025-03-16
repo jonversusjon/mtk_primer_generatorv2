@@ -2,10 +2,25 @@ import logging
 import json
 import time
 import os
-from typing import Dict, List, Any, Callable, Optional
 import numpy as np
-from functools import wraps
-import inspect
+
+from config.logging_config import logger  # Use the centralized logger
+from contextlib import contextmanager
+import traceback
+
+@contextmanager
+def debug_context(operation: str):
+    """Context manager for debugging operations."""
+    start_time = time.time()
+    logger.debug(f"Starting: {operation}")
+    try:
+        yield
+    except Exception as e:
+        logger.error(f"Error in {operation}: {str(e)}\n{traceback.format_exc()}")
+        raise
+    finally:
+        elapsed_time = time.time() - start_time
+        logger.debug(f"Finished: {operation} (Time: {elapsed_time:.2f}s)")
 
 
 class MutationDebugger:
@@ -90,10 +105,9 @@ class MutationDebugger:
                 # Restore original handlers
                 for handler in self._existing_handlers:
                     self.logger.addHandler(handler)
-        except:
-            # Ignore any errors during cleanup
-            pass
-
+        except Exception as e:  # Changed 'catch' to 'except' and added 'Exception as'
+            print(f"Error during cleanup: {e}")
+            
     def start_timer(self, name):
         """Start a timer for performance tracking"""
         self.timers[name] = time.time()

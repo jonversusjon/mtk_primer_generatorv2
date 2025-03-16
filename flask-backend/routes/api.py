@@ -13,7 +13,6 @@ api = Blueprint("api", __name__, url_prefix="/api")
 CORS(api)  # Enable CORS for all routes
 
 utils = GoldenGateUtils()
-logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # Global dictionary to store job statuses.
@@ -56,14 +55,19 @@ def run_protocol_job(job_id, data):
 
         # Define a progress callback that updates the global job_status.
         def progress_callback(percentage, message, step):
-            # Optionally, you can merge this update with previous details if needed.
+            # Optionally, you can merge this update with previous details if
+            # needed.
             job_status[job_id] = {"percentage": percentage,
                                   "message": message, "step": step}
-            # For example, if you want to preserve per-sequence details, you could do so here.
-            # logger.debug(f"Progress update for job {job_id}: {percentage}% - {message} ({step})")
+            # For example, if you want to preserve per-sequence details, you
+            # could do so here.
+            # logger.debug(f"Progress update for job {job_id}: {percentage}% -
+            # {message} ({step})")
 
-        # Run the protocol generation; this function is expected to invoke progress_callback
-        # at each key processing step (e.g. after preprocessing, mutation analysis, primer design, etc.).
+        # Run the protocol generation; this function is expected to invoke
+        # progress_callback
+        # at each key processing step (e.g. after preprocessing, mutation
+        # analysis, primer design, etc.).
         result = protocol_maker.create_gg_protocol(
             progress_callback=progress_callback)
 
@@ -77,7 +81,8 @@ def run_protocol_job(job_id, data):
                 if primer_name and i < len(serializable_result):
                     serializable_result[i]["primerName"] = primer_name
         else:
-            # If the result is a single object, you can merge data in a different way.
+            # If the result is a single object, you can merge data in a
+            # different way.
             # For example, you could include the entire submitted sequences.
             serializable_result["submittedSequences"] = sequencesToDomesticate
 
@@ -149,7 +154,10 @@ def stream_status(job_id):
                 yield f"data: {json.dumps(status)}\n\n"
                 last_status = status
             # Break if job is complete (100%) or failed (-1)
-            if status and (status.get("percentage") == 100 or status.get("percentage") == -1):
+            if status and (
+                status.get("percentage") == 100 or
+                status.get("percentage") == -1
+            ):
                 break
             time.sleep(1)
     return Response(event_stream(), mimetype="text/event-stream")

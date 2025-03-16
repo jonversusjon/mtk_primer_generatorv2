@@ -1,31 +1,31 @@
 from pydantic import BaseModel
-from typing import List, Optional, Any
+from typing import List, Optional, Tuple
 
 
 def to_camel(string: str) -> str:
     parts = string.split('_')
     return parts[0] + ''.join(word.capitalize() for word in parts[1:])
 
-
 class Codon(BaseModel):
     amino_acid: str
     context_position: int
-    codon_sequence: Optional[str] = None
-
-    class Config:
-        extra = "allow"
+    codon_sequence: str
+    rs_overlap: Tuple[int, int, int]
 
 
 class RestrictionSite(BaseModel):
+    position: int
     frame: int
-    context_sequence: str
     codons: List[Codon]
-    context_recognition_site_indices: List[int]
-
-    class Config:
-        extra = "allow"
-
-
+    strand: str
+    context_seq: str
+    context_rs_indices: List[int]
+    context_first_base: int
+    context_last_base: int
+    recognition_seq: str
+    enzyme: str
+        
+    
 class SequenceToDomesticate(BaseModel):
     primer_name: Optional[str] = None
     sequence: str
@@ -35,7 +35,7 @@ class SequenceToDomesticate(BaseModel):
 
     class Config:
         alias_generator = to_camel
-        allow_population_by_field_name = True
+        populate_by_name = True
 
 
 class OverhangOption(BaseModel):

@@ -1,9 +1,8 @@
 # services/reactions.py
 
 from typing import Dict
-from config.logging_config import logger
-from models.primers import Primer
-from services.debug.debug_mixin import DebugMixin
+from models import Primer
+from debug import DebugMixin
 
 
 class ReactionOrganizer(DebugMixin):

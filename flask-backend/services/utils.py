@@ -1,15 +1,19 @@
 # services/utils.py
+import csv
 import json
 import os
-import csv
+from collections import defaultdict
 from functools import lru_cache
-from Bio.Seq import Seq
-from Bio.Data import CodonTable
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional
+
 import numpy as np
+from Bio.Data import CodonTable
+from Bio.Seq import Seq
+from prettytable import PrettyTable
+
+from models import RestrictionSite
 from config.logging_config import logger
-from .base import debug_context
-from services.debug.debug_mixin import DebugMixin
+from debug import DebugMixin, debug_context
 
 
 class GoldenGateUtils(DebugMixin):
@@ -132,30 +136,6 @@ class GoldenGateUtils(DebugMixin):
             index += NT_VALUES[nt] * (4 ** power)
 
         return index
-
-    def get_recognition_site_bases(self, frame, codon_index):
-        """
-        Returns a list of indices indicating which bases in the codon
-        are within the restriction enzyme recognition site.
-        """
-        if frame == 0:
-            return [0, 1, 2]
-        elif frame == 1:
-            if codon_index == 0:
-                return [1, 2]
-            elif codon_index == 1:
-                return [0, 1, 2]
-            elif codon_index == 2:
-                return [0]
-        elif frame == 2:
-            if codon_index == 0:
-                return [2]
-            elif codon_index == 1:
-                return [0, 1, 2]
-            elif codon_index == 2:
-                return [0, 1]
-        else:
-            return []
 
     def load_compatibility_table(self, path: str) -> np.ndarray:
         """Loads the binary compatibility table into a numpy array."""
@@ -458,3 +438,32 @@ class GoldenGateUtils(DebugMixin):
             return ("array", str(obj.shape), str(obj.dtype))
         else:
             return type(obj).__name__
+
+    def summarize_bsmbi_bsai_sites(self, sites_to_mutate: List[RestrictionSite]) -> None:
+        """
+        Creates a formatted summary of restriction sites.
+        """
+        with debug_context("summarize_restriction_sites"):
+            site_type_descriptions = {
+                'BsmBI': 'BsmBI Restriction Site',
+                'BsaI': 'BsaI Restriction Site',
+            }
+
+            # Group the sites by enzyme
+            grouped_sites = defaultdict(list)
+            for site in sites_to_mutate:
+                grouped_sites[site.enzyme].append(site)
+
+            table = PrettyTable()
+            table.field_names = ["Site Type", "Number of Instances", "Position(s)"]
+
+            for enzyme, sites in grouped_sites.items():
+                if not sites:
+                    continue
+
+                enzyme_desc = site_type_descriptions.get(enzyme, enzyme)
+                positions = ", ".join(str(site.position + 1) for site in sites)
+                table.add_row([enzyme_desc, len(sites), positions])
+
+            logger.info("\nRestriction Site Analysis Summary:")
+            logger.info(f"\n{table}")

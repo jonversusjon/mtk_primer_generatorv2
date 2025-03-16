@@ -1,27 +1,21 @@
 from pydantic import BaseModel
 from typing import List, Dict, Optional, Any
-from .mutations import Mutations
-from .primers import EdgePrimers, MutationPrimerPair
-from .sequences import RestrictionSite
-from .pcr_reactions import PCRReaction
-
-# --- Main ResultData item ---
+from models import Mutations, Primer, RestrictionSite, PCRReaction
 
 
-class ResultDataItem(BaseModel):
-    sequence_index: int
-    mtk_part_left: str
-    mtk_part_right: str
-    restriction_sites: List[RestrictionSite]
-    mutations: Mutations
-    PCR_reactions: List[PCRReaction]
-    messages: List[str]
+class DomesticationResult(BaseModel):
+    sequence_index: int = 0
+    processed_sequence: str = ""
+    mtk_part_left: str = ""
+    mtk_part_right: str = ""
+    restriction_sites: List[RestrictionSite] = []
+    mutation_options: List[Mutations] = []
+    edge_primers: List[Primer] = []
+    mutation_primers: List[Primer] = []
+    PCR_reactions: List[PCRReaction] = []
+    messages: List[str] = []
     errors: Optional[Any] = None
-    mutation_primers: Dict[int, List[MutationPrimerPair]]
-    edge_primers: EdgePrimers
-
-# --- Top-level model renamed to MTKDomesticationProtocol ---
 
 
 class MTKDomesticationProtocol(BaseModel):
-    result_data: Dict[int, ResultDataItem]
+    result_data: Dict[int, DomesticationResult]

@@ -2,9 +2,8 @@ import numpy as np
 from Bio.Seq import Seq
 from .utils import GoldenGateUtils
 from config.logging_config import logger
-from services.debug.debug_utils import MutationDebugger, visualize_matrix
-from services.debug.debug_mixin import DebugMixin
-from models.primers import Primer, MutationPrimerPair, PrimerDesignResult
+from debug import MutationDebugger, DebugMixin, visualize_matrix
+from models import Primer, MutationPrimerPair, EdgePrimerPair, PrimerDesignResult
 
 
 class PrimerDesigner(DebugMixin):
@@ -257,7 +256,7 @@ class PrimerDesigner(DebugMixin):
         return mutation_primers
 
     @DebugMixin.debug_wrapper
-    def generate_GG_edge_primers(self, idx, sequence, mtk_part_left, mtk_part_right, primer_name):
+    def generate_GG_edge_primers(self, idx, sequence, mtk_part_left, mtk_part_right, primer_name) -> EdgePrimerPair:
         self.log_step("Generate Edge Primers", f"Sequence {idx}",
                       {"length": len(sequence), "left_part": mtk_part_left, "right_part": mtk_part_right})
         seq_str = str(sequence)

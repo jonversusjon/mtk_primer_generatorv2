@@ -1,38 +1,29 @@
 # services/protocol.py
 
-from typing import List, Dict, Optional, Tuple
-from .sequence_prep import SequencePreparator
-from .rs_detector import RestrictionSiteDetector
-from .mutation_analyzer import MutationAnalyzer
-from .mutation_optimizer import MutationOptimizer
-from .primer_design import PrimerDesigner
-from .reactions import ReactionOrganizer
-from .utils import GoldenGateUtils
-from config.logging_config import logger
-from .base import debug_context
-from services.debug.debug_utils import MutationDebugger, visualize_matrix
-from services.debug.debug_mixin import DebugMixin
-from models.sequences import SequenceToDomesticate
-from pydantic import validate_call
+from typing import List, Dict, Optional
 
+from models import DomesticationResult, SequenceToDomesticate
+from services import (
+    SequencePreparator,
+    RestrictionSiteDetector,
+    MutationAnalyzer,
+    MutationOptimizer,
+    PrimerDesigner,
+    ReactionOrganizer,
+)
+from utils import GoldenGateUtils
+from debug import MutationDebugger, DebugMixin, debug_context
+from config.logging_config import logger
 
 class GoldenGateProtocol(DebugMixin):
     """
     Orchestrates the Golden Gate protocol by managing sequence preparation,
     primer design, mutation analysis, and optimization.
-    class SequenceToDomesticate(BaseModel):
-        sequence_index: int
-        primer_name: Optional[str] = None
-        sequence: str
-        mtk_part_left: str
-        mtk_part_right: str
-        restriction_sites: List[RestrictionSite]
     """
 
-    @validate_call
     def __init__(
         self,
-        sequencesToDomesticate: List[SequenceToDomesticate],
+        sequences_to_domesticate: List[SequenceToDomesticate],
         codon_usage_dict: Dict[str, Dict[str, float]],
         max_mutations: int,
         template_seq: Optional[str] = None,
@@ -72,7 +63,7 @@ class GoldenGateProtocol(DebugMixin):
         if verbose:
             self.logger.info("GoldenGateProtocol is running in verbose mode.")
 
-        self.sequencesToDomesticate = sequencesToDomesticate
+        self.sequences_to_domesticate = sequences_to_domesticate
         self.template_seq = template_seq
         self.kozak = kozak
         self.verbose = verbose
@@ -97,47 +88,39 @@ class GoldenGateProtocol(DebugMixin):
         Returns:
             dict: A dictionary containing protocol details.
         """
-        print(f"Starting Golden Gate protocol creation...")
+        print("Starting Golden Gate protocol creation...")
         logger.info("Starting Golden Gate protocol creation...")
 
         result_data = {}
 
-        for idx, seq_object in enumerate(self.sequencesToDomesticate):
-            single_seq, mtk_part_left, mtk_part_right, primer_name = _getSequenceData(
-                seq_object, idx+1)
+        for idx, seq_to_dom in enumerate(self.sequences_to_domesticate):
 
-            sequence_data = {
-                "sequence_index": idx,
-                "processed_sequence": None,
-                "mtk_part_left": mtk_part_left,
-                "mtk_part_right": mtk_part_right,
-                "restriction_sites": [],
-                "mutations": None,
-                "PCR_reactions": {},
-                "messages": [],
-                "errors": None
-            }
+            dom_result = DomesticationResult(
+                sequence_index=idx,
+                mtk_part_left = seq_to_dom.mtk_part_left,
+                mtk_part_right = seq_to_dom.mtk_part_right,
+            )
 
             print(
-                f"Processing sequence {idx+1}/{len(self.sequencesToDomesticate)}")
+                f"Processing sequence {idx+1}/{len(self.sequences_to_domesticate)}")
 
             # 1. Preprocess sequence (remove start/stop codons, etc.)
             with debug_context("Preprocessing sequence"):
                 processed_seq, message, _ = self.sequence_preparator.preprocess_sequence(
-                    single_seq, mtk_part_left)
+                    seq_to_dom.sequence, seq_to_dom.mtk_part_left)
 
                 if message:
-                    sequence_data["messages"].append(message)
+                    dom_result.messages.append(message)
 
-                sequence_data["processed_sequence"] = str(
-                    processed_seq) if processed_seq else str(single_seq)
+                dom_result.processed_sequence = str(
+                    processed_seq) if processed_seq else str(seq_to_dom.sequence)
 
             # 2. Find restriction sites
             with debug_context("Finding restriction sites"):
                 sites_to_mutate = self.rs_analyzer.find_sites_to_mutate(
                     processed_seq, idx)
 
-                sequence_data["restriction_sites"] = sites_to_mutate
+                dom_result.restriction_sites = sites_to_mutate
 
             # 3. Mutation analysis and mutation primer design
             mutation_primers = {}
@@ -153,61 +136,41 @@ class GoldenGateProtocol(DebugMixin):
                             mutation_options=mutation_options
                         )
 
-                        sequence_data["mutations"] = {
+                        dom_result.mutation_options = {
                             "all_mutation_options": optimized_mutations,
                             "compatibility": compatibility_matrices
                         }
 
                 with debug_context("Mutation primer design"):
-                    # TODO: add valid solution tracking to enable returning multiple solutions up to
-                    # max_results number of solutions to the user
                     mutation_primers = self.primer_designer.design_mutation_primers(
                         mutation_sets=optimized_mutations,
                         comp_matrices=compatibility_matrices,
-                        primer_name=primer_name,
+                        primer_name=seq_to_dom.primer_name,
                         max_results=self.max_results,
                     )
-                    sequence_data["mutation_primers"] = mutation_primers
+                    dom_result.mutation_primers = mutation_primers
 
-            print(f"Mutation primers designed: {mutation_primers}")
-            print(f"designing edge primers...")
+            self.log_step(f"Mutation primers designed: {mutation_primers}")
+            self.log_step("designing edge primers...")
+            
             # 4. Generate edge primers
-            edge_primers = self.primer_designer.generate_GG_edge_primers(
-                idx, processed_seq, mtk_part_left, mtk_part_right, primer_name
+            dom_result.edge_primers = self.primer_designer.generate_GG_edge_primers(
+                idx, processed_seq, seq_to_dom.mtk_part_left, seq_to_dom.mtk_part_right, seq_to_dom.primer_name
             )
-            sequence_data["edge_primers"] = edge_primers
-            self.log_step("Sequence Data",
+            
+            self.log_step("Sequence Data",  
                           "Edge primers generated.",
-                          {"edge_forward": edge_primers["forward_primer"],
-                           "edge_reverse": edge_primers["reverse_primer"]})
+                          f"edge_forward: {dom_result.edge_primers.forward}",
+                          f"edge_reverse: {dom_result.edge_primers.reverse}")
+            
             # 5. Group primers into PCR reactions
-            print(f"Grouping primers into PCR reactions...")
+            print("Grouping primers into PCR reactions...")
             self.log_step("Group PCR Reactions",
                           "sequence_data: {sequence_data}")
-            sequence_data["PCR_reactions"] = self.reaction_organizer.group_primers_into_pcr_reactions(
-                sequence_data)
-            print(f"Finished grouping primers into PCR reactions...")
-            # Store the processed sequence data for this sequence number
-            result_data[idx] = sequence_data
-            self.utils.print_object_schema(
-                result_data, indent=0, name="result_data")
-
-        # Pydantic v2 validation of result_data
-        from models.protocols import MTKDomesticationProtocol
-        try:
-            validated_protocol = MTKDomesticationProtocol.model_validate(
-                {"result_data": result_data})
-            return validated_protocol.model_dump()
-        except Exception as e:
-            self.logger.error(f"Validation error in protocol creation: {e}")
-            raise e
-
-
-@DebugMixin.debug_wrapper
-def _getSequenceData(seq_object: SequenceToDomesticate, i: int) -> Tuple[str, str, str, str]:
-    """Extracts sequence data from the provided SequenceToDomesticate model."""
-    single_seq = seq_object.sequence
-    mtk_part_left = seq_object.mtk_part_left
-    mtk_part_right = seq_object.mtk_part_right
-    primer_name = seq_object.primer_name or f"Sequence_{i}"
-    return single_seq, mtk_part_left, mtk_part_right, primer_name
+            dom_result.PCR_reactions = self.reaction_organizer.group_primers_into_pcr_reactions(
+                dom_result)
+            print("Finished grouping primers into PCR reactions...")
+            
+            result_data[idx] = dom_result
+            
+        return result_data

@@ -1,14 +1,8 @@
 # services/sequence_prep.py
-from Bio.Seq import Seq, CodonTable
-from prettytable import PrettyTable
-import re
-from typing import Dict, Optional, Union, List, Tuple
-from collections import defaultdict
+from Bio.Seq import Seq
+from typing import Optional, Tuple
 from config.logging_config import logger
-from .base import debug_context
-from models.sequences import SequenceToDomesticate
-from services.debug.debug_mixin import DebugMixin
-from services.debug.debug_utils import MutationDebugger
+from debug import DebugMixin, MutationDebugger, debug_context
 
 
 class SequencePreparator:
@@ -17,29 +11,7 @@ class SequencePreparator:
 
     This module handles preprocessing of DNA sequences for Golden Gate assembly,
     including the removal of start/stop codons, ensuring sequences are in the correct reading frame,
-    and identifying restriction enzyme recognition sites (specifically BsmBI and BsaI) that require mutation.
 
-    Input Parameters:
-        - sequence (str or Bio.Seq.Seq): The DNA sequence to be prepared.
-        - verbose (bool): Controls detailed logging during site identification.
-
-    Output Data Structures:
-        The methods provide structured outputs:
-        - preprocess_sequence: Returns a tuple (cleaned_sequence (str), message (str), in_frame (bool)).
-        - find_bsmbi_bsai_sites: Returns a sorted list of dictionaries, each containing:
-            • 'position' (int): Start position of the recognition site.
-            • 'sequence' (str): Recognition site sequence.
-            • 'enzyme' (str): Enzyme name ('BsmBI' or 'BsaI').
-            • 'frame' (int): Reading frame (0, 1, or 2).
-            • 'strand' (str): Strand orientation ('+' or '-').
-            • 'codons' (List[Dict]): Codons overlapping the recognition site with details:
-                - 'codon_seq' (str): Codon sequence.
-                - 'position' (int): Codon position within the sequence.
-                - 'amino_acid' (str): Amino acid encoded by the codon.
-            • 'context_sequence' (str): Sequence context surrounding the recognition site.
-            • 'context_recognition_site_indices' (List[int]): Positions of the mutated bases within the context.
-
-        - get_codons: Returns a list of codon dictionaries as described above.
     """
 
     def __init__(self, verbose: bool = False, debug: bool = False):
@@ -62,7 +34,11 @@ class SequencePreparator:
         }
 
     @DebugMixin.debug_wrapper
-    def preprocess_sequence(self, sequence: SequenceToDomesticate, matk_part_left: str) -> Tuple[Optional[Seq], str, bool]:
+    def preprocess_sequence(
+        self,
+        sequence: str,
+        matk_part_left: str
+            ) -> Tuple[Optional[Seq], str, bool]:
         """
         Processes a DNA sequence by removing start/stop codons and ensuring proper frame.
         """
