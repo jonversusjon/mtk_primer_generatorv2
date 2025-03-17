@@ -8,6 +8,7 @@ import json
 import logging
 import time
 from threading import Thread
+from models import SequenceToDomesticate
 
 api = Blueprint("api", __name__, url_prefix="/api")
 CORS(api)  # Enable CORS for all routes
@@ -32,8 +33,9 @@ def run_protocol_job(job_id, data):
                               "message": "Job started", "step": "init"}
 
         # Extract parameters from request data
-        sequencesToDomesticate = data.get("sequencesToDomesticate", [])
-        print(f"Sequences to domesticate: {sequencesToDomesticate}")
+        sequences_json = data.get("sequencesToDomesticate", [])
+        sequences_to_domesticate = [SequenceToDomesticate.model_validate(seq) for seq in sequences_json]
+        
         species = data.get("species", "")
         kozak = data.get("kozak", "MTK")
         max_mut_per_site = data.get("max_mut_per_site", 3)
@@ -43,7 +45,7 @@ def run_protocol_job(job_id, data):
 
         # Create the protocol maker instance with your parameters.
         protocol_maker = GoldenGateProtocol(
-            sequencesToDomesticate=sequencesToDomesticate,
+            sequences_to_domesticate=sequences_to_domesticate,
             codon_usage_dict=utils.get_codon_usage_dict(species),
             max_mutations=max_mut_per_site,
             template_seq=template_sequence,
@@ -76,7 +78,7 @@ def run_protocol_job(job_id, data):
 
         # Merge primer names from the submitted data into the results.
         if isinstance(serializable_result, list):
-            for i, seq in enumerate(sequencesToDomesticate):
+            for i, seq in enumerate(sequences_to_domesticate):
                 primer_name = seq.get("primerName")
                 if primer_name and i < len(serializable_result):
                     serializable_result[i]["primerName"] = primer_name
@@ -84,7 +86,7 @@ def run_protocol_job(job_id, data):
             # If the result is a single object, you can merge data in a
             # different way.
             # For example, you could include the entire submitted sequences.
-            serializable_result["submittedSequences"] = sequencesToDomesticate
+            serializable_result["submittedSequences"] = sequences_to_domesticate
 
         # Check for errors in the protocol generation
         if serializable_result.get("has_errors", False):
@@ -207,5 +209,5 @@ def get_species():
 def get_config():
     """Return the currently loaded configuration from app.py."""
     config = current_app.config.get("ACTIVE_CONFIG", {})
-    print(f"Current config: {config}")
+    # print(f"Current config: {config}")
     return jsonify(config)

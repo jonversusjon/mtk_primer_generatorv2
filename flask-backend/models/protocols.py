@@ -1,18 +1,16 @@
 from pydantic import BaseModel
 from typing import List, Dict, Optional, Any
-from .mutations import Mutations
-from .primers import Primer
-from .sequences import RestrictionSite
-from .pcr_reactions import PCRReaction
+from models import Mutation, Primer, RestrictionSite, PCRReaction
 
 
+# Protocol model
 class DomesticationResult(BaseModel):
     sequence_index: int = 0
     processed_sequence: str = ""
     mtk_part_left: str = ""
     mtk_part_right: str = ""
     restriction_sites: List[RestrictionSite] = []
-    mutation_options: List[Mutations] = []
+    mutation_options: List[Mutation] = []
     edge_primers: List[Primer] = []
     mutation_primers: List[Primer] = []
     PCR_reactions: List[PCRReaction] = []

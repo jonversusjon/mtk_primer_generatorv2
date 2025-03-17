@@ -4,11 +4,10 @@ import importlib.util
 import argparse
 from flask import Flask, send_from_directory, jsonify
 from flask_cors import CORS
-from config.logging_config import logger
 from routes.main import main
 from routes.api import api
 from config.settings import Config, TestConfig
-
+from log_utils import logger
 
 def load_python_config(module_path, env="development"):
     """Dynamically load a Python config module and return the correct environment settings."""
@@ -22,8 +21,6 @@ def load_python_config(module_path, env="development"):
 
         if hasattr(module, "CONFIG"):
             config_data = module.CONFIG
-            # Print full config
-            # print(f"🔍 DEBUG: Full CONFIG dictionary: {config_data}")
 
             # If CONFIG contains multiple environments, extract the correct one
             if isinstance(config_data, dict) and env in config_data:
@@ -56,24 +53,16 @@ ENVIRONMENT = args.env
 app_config = load_python_config(CONFIG_MODULE, ENVIRONMENT)
 
 
-def configure_werkzeug_logging():
-    """Configure Werkzeug to use our logging settings."""
-    werkzeug_logger = logger.getChild("werkzeug")
-    werkzeug_logger.setLevel(logger.level)
-
-
 def create_app():
     """Create and configure the Flask app."""
     testing_env = os.getenv('FLASK_TESTING', 'false').lower() == 'true'
-    logger.info(f"FLASK_TESTING environment variable: {testing_env}")
+    logger.log_step("", f"FLASK_TESTING environment variable: {testing_env}")
 
     config_class = TestConfig if testing_env else Config
 
     app = Flask(__name__)
     app.config["ACTIVE_CONFIG"] = app_config
-    # logger.info(f"TESTING mode: {app.config['TESTING']}")
-    # logger.info(f"🔍 DEBUG: Loaded config: {app.config['ACTIVE_CONFIG']}")
-
+    
     # Enable CORS for the entire app
     CORS(app, resources={
         r"/*": {
@@ -82,9 +71,7 @@ def create_app():
             "allow_headers": ["Content-Type"]
         }
     })
-    logger.info(f"Starting Flask app with config: {config_class.__name__}")
-
-    configure_werkzeug_logging()
+    logger.log_step("", f"Starting Flask app with config: {config_class.__name__}")
 
     # Register blueprints
     app.register_blueprint(main)

@@ -1,38 +1,27 @@
-from pydantic import BaseModel, RootModel, field_validator
-from typing import List, Optional, Tuple
-from .sequences import Overhangs
-
-# --- Mutation option used in both mutations and mutation_primers ---
+from pydantic import BaseModel, field_validator
+from typing import List, Optional
+from models import Codon
 
 
-class AlternativeCodon(BaseModel):
-    seq: str  # The alternative codon sequence.
-    mutations: Optional[Tuple[int, int, int]] = None
-    mutated_context: Optional[str] = None
-    sticky_ends: Optional[Overhangs] = None
-
-
-class CodonMutation(BaseModel):
-    codon_sequence: str
-    context_position: Optional[int]
-    amino_acid: Optional[str]
-    alternative_codons: List[AlternativeCodon]
-
-
-class MutationOption(BaseModel):
-    alternative_codon_sequence: str
-    mutated_base_index: int
-    codon_sequence: Optional[str] = None
-    overhangs: Overhangs
-    mutation_positions_in_context: List[int]
-
-
-# --- Mutations container ---
-
-
-class Mutations(BaseModel):
-    all_mutation_options: List[List[MutationOption]]
-    # We'll store the nested 4^N matrix as a generic list of unknown nesting
+# Mutation models
+class OverhangOption(BaseModel):
+    bottom_overhang: str
+    top_overhang: str
+    overhang_start_index: int
+    
+    
+class Mutation(BaseModel):
+    alt_codons: List[Codon] # List of alternative codons for this particular mutation option.
+    mut_indices_rs: Optional[List[int]] = None
+    mut_indices_codon: Optional[List[int]] = None
+    mut_context:str
+    first_mut_idx: int
+    last_mut_idx: int
+    overhang_options: List[OverhangOption]
+    
+    
+class MutationSet(BaseModel):
+    mutations: List[Mutation]
     compatibility: List
 
     @field_validator("compatibility")
@@ -53,18 +42,3 @@ class Mutations(BaseModel):
                 "shape 4^N)"
             )
         return value
-
-
-class MutationEntry(BaseModel):
-    site: str
-    position: int
-    seq: str
-    alternative_codon_sequence: str
-    mutated_base_index: Optional[int]
-    overhangs: Overhangs
-    mutated_context: str
-    mutation_positions_in_context: List[int]
-
-
-class MutationSet(RootModel[List[MutationEntry]]):
-    pass

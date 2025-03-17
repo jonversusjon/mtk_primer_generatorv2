@@ -1,40 +1,29 @@
-# Import models from each module
-from .mutations import (
-    MutationEntry,
-    AlternativeCodon,
-    CodonMutation,
-    MutationOption,
-    Mutations,
-)
+# models/__init__.py
+from .codon import Codon
+from .mutations import Mutation, MutationSet, OverhangOption
+from .restriction_sites import RestrictionSite
+from .sequences import SequenceToDomesticate
+from .primers import ReactionDetail, Primer, MutationPrimerPair, EdgePrimerPair, PrimerDesignResult
 from .pcr_reactions import PCRReaction
-from .primers import (
-    ReactionDetail,
-    Primer,
-    MutationPrimerPair,
-    EdgePrimerPair,
-    PrimerDesignResult,
-)
 from .protocols import DomesticationResult, MTKDomesticationProtocol
-from .sequences import (
-    Codon,
-    RestrictionSite,
-    SequenceToDomesticate,
-    OverhangOption,
-    Overhangs,
-)
+
 
 # Define what gets imported when using `from models import *`
 __all__ = [
+    # Codon
+    "Codon",
+
     # Mutations
-    "MutationEntry",
-    "AlternativeCodon",
-    "CodonMutation",
-    "MutationOption",
-    "Mutations",
+    "OverhangOption",
+    "Mutation",
+    "MutationSet",
     
-    # PCR Reactions
-    "PCRReaction",
+    # Restriction Sites
+    "RestrictionSite",
     
+    # Sequences
+    "SequenceToDomesticate",
+
     # Primers
     "ReactionDetail",
     "Primer",
@@ -42,14 +31,10 @@ __all__ = [
     "EdgePrimerPair",
     "PrimerDesignResult",
     
+    # PCR Reactions
+    "PCRReaction",
+
     # Protocols
     "DomesticationResult",
     "MTKDomesticationProtocol",
-    
-    # Sequences
-    "Codon",
-    "RestrictionSite",
-    "SequenceToDomesticate",
-    "OverhangOption",
-    "Overhangs",
 ]

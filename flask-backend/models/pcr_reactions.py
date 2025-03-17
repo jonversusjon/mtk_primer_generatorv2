@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from .primers import Primer
+from models import Primer
 
 
 class PCRReaction(BaseModel):

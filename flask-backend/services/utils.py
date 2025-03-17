@@ -12,14 +12,11 @@ from Bio.Seq import Seq
 from prettytable import PrettyTable
 
 from models import RestrictionSite
-from config.logging_config import logger
-from services.debug import DebugMixin, debug_context
+from log_utils import logger
 
-
-class GoldenGateUtils(DebugMixin):
+class GoldenGateUtils():
     def __init__(self, verbose: bool = False):
         self.verbose = verbose
-        self.logger = logger.getChild("GoldenGateUtils")
         self.data_dir = os.path.join(
             os.path.dirname(__file__), "../static/data")
         self.codon_tables_dir = os.path.join(
@@ -27,31 +24,29 @@ class GoldenGateUtils(DebugMixin):
 
     def load_json_file(self, filename: str) -> Optional[Dict]:
         """Loads a JSON file from the static/data directory."""
-        with debug_context("load_json_file"):
-            filepath = os.path.join(self.data_dir, filename)
+        filepath = os.path.join(self.data_dir, filename)
 
-            try:
-                with open(filepath, "r") as file:
-                    return json.load(file)
-            except FileNotFoundError:
-                logger.error(f"File not found: {filepath}")
-                return None
-            except json.JSONDecodeError:
-                logger.error(f"Invalid JSON format in: {filepath}")
-                return None
+        try:
+            with open(filepath, "r") as file:
+                return json.load(file)
+        except FileNotFoundError:
+            logger.error(f"File not found: {filepath}")
+            return None
+        except json.JSONDecodeError:
+            logger.error(f"Invalid JSON format in: {filepath}")
+            return None
 
     @lru_cache(maxsize=10)
     def get_codon_usage_dict(self, species: str) -> Optional[Dict]:
         """Loads a codon usage table for a species."""
-        with debug_context("get_codon_usage_dict"):
-            filename = os.path.join(self.codon_tables_dir, f"{species}.json")
-            try:
-                with open(filename, "r") as f:
-                    return json.load(f)
-            except FileNotFoundError:
-                logger.error(
-                    f"Codon usage table not found for species: {species}")
-                return None
+        filename = os.path.join(self.codon_tables_dir, f"{species}.json")
+        try:
+            with open(filename, "r") as f:
+                return json.load(f)
+        except FileNotFoundError:
+            logger.error(
+                f"Codon usage table not found for species: {species}")
+            return None
 
     @lru_cache(maxsize=1)
     def get_mtk_partend_sequences(self) -> Optional[Dict]:
@@ -87,12 +82,11 @@ class GoldenGateUtils(DebugMixin):
 
     def get_available_species(self) -> List[str]:
         """Gets list of available species from codon usage tables."""
-        with debug_context("get_available_species"):
-            if os.path.exists(self.codon_tables_dir):
-                return [f[:-5] for f in os.listdir(self.codon_tables_dir)
-                        if f.endswith('.json')]
-            logger.warning("Codon usage tables directory not found")
-            return []
+        if os.path.exists(self.codon_tables_dir):
+            return [f[:-5] for f in os.listdir(self.codon_tables_dir)
+                    if f.endswith('.json')]
+        logger.warning("Codon usage tables directory not found")
+        return []
 
     def reverse_complement(self, seq: str) -> str:
         """Returns the reverse complement of a DNA sequence."""
@@ -102,7 +96,7 @@ class GoldenGateUtils(DebugMixin):
         """Translates a codon to its amino acid."""
         return str(Seq(codon).translate())
 
-    def get_codons_for_amino_acid(self, amino_acid: str):
+    def get_codon_seqs_for_amino_acid(self, amino_acid: str) -> List[str]:
         """Returns a list of codons that encode the given amino acid."""
         print(f"Getting codons for amino acid: {amino_acid}")
 
@@ -115,6 +109,7 @@ class GoldenGateUtils(DebugMixin):
 
         codons = [codon for codon, aa in table.forward_table.items()
                   if aa == amino_acid]
+        
         print(f"Codons found: {codons}")
 
         return codons
@@ -148,11 +143,11 @@ class GoldenGateUtils(DebugMixin):
         compatibility_matrix = compatibility_bits.reshape(256, 256)
 
         if self.verbose:
-            logger.info(
+            logger.log_step("",
                 f"Loaded compatibility matrix with shape: {compatibility_matrix.shape}")
-            logger.info(
+            logger.log_step("",
                 f"Number of compatible pairs: {np.sum(compatibility_matrix)}")
-            logger.info(f"Matrix density: {np.mean(compatibility_matrix):.2%}")
+            logger.log_step("", f"Matrix density: {np.mean(compatibility_matrix):.2%}")
 
         return compatibility_matrix
 
@@ -272,40 +267,39 @@ class GoldenGateUtils(DebugMixin):
 
         Optionally, a custom header can be provided; otherwise, a default header is used.
         """
-        with debug_context("export_primers_to_tsv"):
-            # Define a default header if none is provided
-            if header is None:
-                header = ["Primer Name", "Sequence", "Amplicon"]
+        # Define a default header if none is provided
+        if header is None:
+            header = ["Primer Name", "Sequence", "Amplicon"]
 
-            try:
-                with open(output_tsv_path, mode="w", newline="") as tsv_file:
-                    writer = csv.writer(tsv_file, delimiter="\t")
-                    writer.writerow(header)
+        try:
+            with open(output_tsv_path, mode="w", newline="") as tsv_file:
+                writer = csv.writer(tsv_file, delimiter="\t")
+                writer.writerow(header)
 
-                    # If primer_data is provided, write it directly
-                    if primer_data is not None:
-                        if not primer_data:
-                            logger.warning("No primer data to save.")
-                            return
-                        for row in primer_data:
-                            writer.writerow(list(map(str, row)))
-                    # Otherwise, if forward and reverse primers are provided, merge them.
-                    elif forward_primers is not None and reverse_primers is not None:
-                        # Define the default message for assembly
-                        assembly_message = "Generated for Golden Gate Assembly"
-                        for name, sequence in forward_primers:
-                            writer.writerow([name, sequence, assembly_message])
-                        for name, sequence in reverse_primers:
-                            writer.writerow([name, sequence, assembly_message])
-                    else:
-                        logger.error("Insufficient primer data provided.")
-                        raise ValueError(
-                            "Either primer_data or both forward_primers and reverse_primers must be provided.")
+                # If primer_data is provided, write it directly
+                if primer_data is not None:
+                    if not primer_data:
+                        logger.warning("No primer data to save.")
+                        return
+                    for row in primer_data:
+                        writer.writerow(list(map(str, row)))
+                # Otherwise, if forward and reverse primers are provided, merge them.
+                elif forward_primers is not None and reverse_primers is not None:
+                    # Define the default message for assembly
+                    assembly_message = "Generated for Golden Gate Assembly"
+                    for name, sequence in forward_primers:
+                        writer.writerow([name, sequence, assembly_message])
+                    for name, sequence in reverse_primers:
+                        writer.writerow([name, sequence, assembly_message])
+                else:
+                    logger.error("Insufficient primer data provided.")
+                    raise ValueError(
+                        "Either primer_data or both forward_primers and reverse_primers must be provided.")
 
-                logger.info(f"Primers exported to {output_tsv_path}")
-            except IOError as e:
-                logger.error(f"Error writing to file {output_tsv_path}: {e}")
-                raise
+            logger.log_step("", f"Primers exported to {output_tsv_path}")
+        except IOError as e:
+            logger.error(f"Error writing to file {output_tsv_path}: {e}")
+            raise
 
     def get_nested_keys(self, item, prefix='', depth=0, max_depth=100):
         """Recursively collect keys from dictionaries and lists."""
@@ -443,27 +437,26 @@ class GoldenGateUtils(DebugMixin):
         """
         Creates a formatted summary of restriction sites.
         """
-        with debug_context("summarize_restriction_sites"):
-            site_type_descriptions = {
-                'BsmBI': 'BsmBI Restriction Site',
-                'BsaI': 'BsaI Restriction Site',
-            }
+        site_type_descriptions = {
+            'BsmBI': 'BsmBI Restriction Site',
+            'BsaI': 'BsaI Restriction Site',
+        }
 
-            # Group the sites by enzyme
-            grouped_sites = defaultdict(list)
-            for site in sites_to_mutate:
-                grouped_sites[site.enzyme].append(site)
+        # Group the sites by enzyme
+        grouped_sites = defaultdict(list)
+        for site in sites_to_mutate:
+            grouped_sites[site.enzyme].append(site)
 
-            table = PrettyTable()
-            table.field_names = ["Site Type", "Number of Instances", "Position(s)"]
+        table = PrettyTable()
+        table.field_names = ["Site Type", "Number of Instances", "Position(s)"]
 
-            for enzyme, sites in grouped_sites.items():
-                if not sites:
-                    continue
+        for enzyme, sites in grouped_sites.items():
+            if not sites:
+                continue
 
-                enzyme_desc = site_type_descriptions.get(enzyme, enzyme)
-                positions = ", ".join(str(site.position + 1) for site in sites)
-                table.add_row([enzyme_desc, len(sites), positions])
+            enzyme_desc = site_type_descriptions.get(enzyme, enzyme)
+            positions = ", ".join(str(site.position + 1) for site in sites)
+            table.add_row([enzyme_desc, len(sites), positions])
 
-            logger.info("\nRestriction Site Analysis Summary:")
-            logger.info(f"\n{table}")
+        logger.log_step("", "\nRestriction Site Analysis Summary:")
+        logger.log_step("", f"\n{table}")

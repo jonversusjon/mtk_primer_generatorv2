@@ -1,12 +1,12 @@
 from Bio.Seq import Seq, CodonTable
 import re
-from typing import List
-from config.logging_config import logger
+from typing import List, Dict
 from models import RestrictionSite, Codon
-from services.debug import MutationDebugger, DebugMixin, debug_context
+from log_utils import logger
 from .utils import GoldenGateUtils
+import logging
 
-class RestrictionSiteDetector:
+class RestrictionSiteDetector():
     """
     Restriction Site Detector Module
 
@@ -15,144 +15,144 @@ class RestrictionSiteDetector:
     and providing a summary of the sites found.
     """
 
-    def __init__(self, verbose: bool = False, debug: bool = False):
-        self.logger = logger.getChild("RestrictionSiteDetector")
+    def __init__(
+        self,
+        codon_dict: Dict,
+        verbose: bool = False, debug: bool = False):
         self.verbose = verbose
         self.debug = debug
-        self.debugger = None
-
-        if self.debug:
-            self.debugger = MutationDebugger(
-                parent_logger=logger, use_custom_format=True)
-            if hasattr(self.debugger.logger, 'propagate'):
-                self.debugger.logger.propagate = False
-            self.logger.info("Debug mode enabled for RestrictionSiteDetector")
+        logger.log_step("Initialization", f"Initializing RestrictionSiteDetector with verbose={verbose} and debug={debug}")
         self.utils = GoldenGateUtils()
+
+        self.codon_dict = codon_dict
         
-    @DebugMixin.debug_wrapper
+    @logger.log_function
     def find_sites_to_mutate(self, sequence: str, index: int) -> List[RestrictionSite]:
         """
         Finds both BsmBI and BsaI restriction enzyme recognition sites on both strands of a DNA sequence.
         """
+        logger.log_step("Input Conversion", "Converting input sequence to uppercase")
         seq_str = str(sequence).upper()
-        with debug_context("find_bsmbi_bsai_sites"):
-            recognition_sequences = {
-                'BsmBI': 'CGTCTC',
-                'BsaI': 'GGTCTC'
-            }
-            sites_to_mutate = []
+        logger.log_step("Input Conversion", f"Sequence length: {len(seq_str)}")
 
-            # For each enzyme, search for both forward and reverse complement matches
-            for enzyme, rec_seq in recognition_sequences.items():
-                patterns = [
-                    (rec_seq, '+', 'recognition_sequence'),
-                    (str(Seq(rec_seq).reverse_complement()), '-', 'sequence')
-                ]
-                for pattern, strand, pattern_key in patterns:
-                    for match in re.finditer(re.escape(pattern), seq_str):
-                        index = match.start()
-                        frame = index % 3
+        recognition_sequences = {
+            'BsmBI': 'CGTCTC',
+            'BsaI': 'GGTCTC'
+        }
+        sites_to_mutate = []
 
-                        # Extract context (30bp upstream and downstream)
-                        start_context = max(0, index - 30)
-                        end_context = min(
-                            len(seq_str), index + len(pattern) + 30)
-                        context_seq = seq_str[start_context:end_context]
+        # For each enzyme, search for both forward and reverse complement matches
+        for enzyme, rec_seq in recognition_sequences.items():
+            logger.log_step("Enzyme Processing", f"Processing enzyme {enzyme} with recognition sequence {rec_seq}")
+            patterns = [
+                (rec_seq, '+', 'recognition_sequence'),
+                (str(Seq(rec_seq).reverse_complement()), '-', 'sequence')
+            ]
+            for pattern, strand, pattern_key in patterns:
+                for match in re.finditer(re.escape(pattern), seq_str):
+                    found_index = match.start()
+                    frame = found_index % 3
+                    logger.log_step("Match Found", f"Found {enzyme} match at index {found_index} on strand {strand} with frame {frame}")
+                    
+                    # Extract context (30bp upstream and downstream)
+                    start_context = max(0, found_index - 30)
+                    end_context = min(len(seq_str), found_index + len(pattern) + 30)
+                    context_seq = seq_str[start_context:end_context]
+                    logger.log_step("Context Extraction", f"Extracted context from {start_context} to {end_context}")
 
-                        relative_index = index - start_context
+                    relative_index = found_index - start_context
+                    codons = self.get_codons(context_seq, relative_index, frame)
+                    context_recognition_site_indices = [i - start_context for i in range(found_index, found_index + len(pattern))]
 
-                        codons = self.get_codons(
-                            context_seq, relative_index, frame)
-                        context_recognition_site_indices = [
-                            i - start_context for i in range(index, index + len(pattern))]
+                    site_to_mutate = RestrictionSite(
+                        position=found_index,
+                        frame=frame,
+                        codons=codons,
+                        strand=strand,
+                        recognition_seq=pattern,
+                        context_seq=context_seq,
+                        context_rs_indices=context_recognition_site_indices,
+                        context_first_base=start_context,
+                        context_last_base=end_context,
+                        enzyme=enzyme
+                    )
+                    
+                    sites_to_mutate.append(site_to_mutate)
+                    logger.log_step("Site Added", f"Added site at position {found_index} for enzyme {enzyme}")
 
-                        site_to_mutate = RestrictionSite(
-                            position = index,
-                            frame = frame,
-                            codons = codons,
-                            strand = strand,
-                            context_seq = context_seq,
-                            context_rs_indices = context_recognition_site_indices,
-                            context_first_base = start_context,
-                            context_last_base = end_context,
-                            enzyme = enzyme
-                        )
-                        
-                        sites_to_mutate.append(site_to_mutate)
+        sites_to_mutate.sort(key=lambda site: site.position)
+        logger.log_step("Result", f"Total sites found: {len(sites_to_mutate)}")
+        return sites_to_mutate
 
-            sites_to_mutate.sort(key=lambda site: site.position)
-
-            self.log_step(
-                "Restriction sites found: \n"
-                f"{self.utils.summarize_restriction_sites(sites_to_mutate)}"
-            )
-            
-            return sites_to_mutate
-
-    @DebugMixin.debug_wrapper
+    @logger.log_function
     def get_codons(self, context_seq: str, recognition_start_index: int, frame: int) -> List[Codon]:
         """
         Extracts codons spanned by the recognition site from a context sequence and 
         immediately stores a tuple (of 0s and 1s) for each codon indicating which 
         bases are within the restriction enzyme recognition site.
         """
-        with debug_context("find_codons"):
-            codons = []
-            translation_table = CodonTable.unambiguous_dna_by_id[1]
+        logger.log_step("Codon Extraction", f"Extracting codons from context sequence with recognition_start_index={recognition_start_index} and frame={frame}")
+        codons = []
+        translation_table = CodonTable.unambiguous_dna_by_id[1]
 
-            # Define codon positions and the corresponding overlap tuples based on the reading frame.
-            if frame == 0:
-                codon_positions = [
-                    recognition_start_index,
-                    recognition_start_index + 3
-                ]
-                # Each tuple represents the overlap (three bases) for the respective codon.
-                codon_bases_in_rs = [
-                    (1, 1, 1),  # first codon: all bases are in the recognition site
-                    (1, 1, 1)   # second codon: all bases are in the recognition site
-                ]
-            elif frame == 1:
-                codon_positions = [
-                    recognition_start_index - 1,
-                    recognition_start_index + 2,
-                    recognition_start_index + 5
-                ]
-                codon_bases_in_rs = [
-                    (0, 1, 1),  # first codon: only positions 1 and 2 are in the site
-                    (1, 1, 1),  # second codon: all bases are in the site
-                    (1, 0, 0)   # third codon: only position 0 is in the site
-                ]
-            elif frame == 2:
-                codon_positions = [
-                    recognition_start_index - 2,
-                    recognition_start_index + 1,
-                    recognition_start_index + 4
-                ]
-                codon_bases_in_rs = [
-                    (0, 0, 1),  # first codon: only position 2 is in the site
-                    (1, 1, 1),  # second codon: all bases are in the site
-                    (1, 1, 0)   # third codon: only positions 0 and 1 are in the site
-                ]
+        # Define codon positions and the corresponding overlap tuples based on the reading frame.
+        if frame == 0:
+            codon_positions = [
+                recognition_start_index,
+                recognition_start_index + 3
+            ]
+            # Each tuple represents the overlap (three bases) for the respective codon.
+            codon_bases_in_rs = [
+                [0, 1, 2], # first codon: all bases are in the recognition site
+                [0, 1, 2]  # second codon: all bases are in the recognition site
+            ]
+
+        elif frame == 1:
+            codon_positions = [
+                recognition_start_index - 1,
+                recognition_start_index + 2,
+                recognition_start_index + 5
+            ]
+            codon_bases_in_rs = [
+                [1, 2],     # first codon: only positions 1 and 2 are in the site
+                [0, 1, 2],  # second codon: all bases are in the site
+                [0]         # third codon: only position 0 is in the site
+            ]
+        elif frame == 2:
+            codon_positions = [
+                recognition_start_index - 2,
+                recognition_start_index + 1,
+                recognition_start_index + 4
+            ]
+            codon_bases_in_rs = [
+                [0],        # first codon: only position 2 is in the site
+                [0, 1, 2],  # second codon: all bases are in the site
+                [0, 1]      # third codon: only positions 0 and 1 are in the site
+            ]
+        else:
+            logger.log_step("Codon Extraction", f"Invalid frame {frame} encountered, returning empty codon list", level=logging.WARNING)
+            return []
+
+        # Iterate through codon positions and create Codon objects with the appropriate overlap tuple.
+        for codon_index, pos in enumerate(codon_positions):
+            if 0 <= pos <= len(context_seq) - 3:
+                codon_seq = context_seq[pos: pos + 3]
+                # The overlap list is taken directly from our list.
+                overlap = codon_bases_in_rs[codon_index]
+                amino_acid = self.utils.get_amino_acid(codon_seq)
+                usage = self.utils.get_codon_usage(codon_seq, amino_acid, self.codon_dict)
+
+                codon = Codon(
+                    amino_acid=translation_table.forward_table.get(str(codon_seq), 'X'),
+                    context_position=pos,
+                    codon_sequence=str(codon_seq),
+                    rs_overlap=overlap,
+                    usage=usage,
+                )
+                codons.append(codon)
+                logger.log_step("Codon Processed", f"Processed codon {codon_seq} at position {pos} with overlap {overlap}")
             else:
-                return []
+                logger.log_step("Codon Skipped", f"Skipping codon at position {pos} due to insufficient length", level=logging.WARNING)
 
-            # Iterate through codon positions and create Codon objects with the appropriate overlap tuple.
-            for codon_index, pos in enumerate(codon_positions):
-                if 0 <= pos <= len(context_seq) - 3:
-                    codon_seq = context_seq[pos: pos + 3]
-                    # The overlap tuple is taken directly from our list.
-                    overlap = codon_bases_in_rs[codon_index]
-
-                    codon = Codon(
-                        amino_acid=translation_table.forward_table.get(str(codon_seq), 'X'),
-                        context_position=pos,
-                        codon_sequence=str(codon_seq),
-                        recognition_overlap=overlap  # Store the 3-dimensional tuple.
-                    )
-
-                    codons.append(codon)
-
-            return codons
-
-
-
+        logger.log_step("Codon Extraction", f"Extracted {len(codons)} codon(s) from context sequence")
+        return codons

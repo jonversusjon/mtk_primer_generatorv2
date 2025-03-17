@@ -1,9 +1,8 @@
 from typing import Dict, List, Optional
 from pydantic import BaseModel, RootModel
-from .mutations import MutationOption
+from models import Mutation
 
-# --- Primer and Reaction models ---
-
+# Primer model
 class ReactionDetail(BaseModel):
     forward: str
     reverse: str
@@ -23,7 +22,7 @@ class MutationPrimerPair(BaseModel):
     site: str
     position: int
     forward: Primer
-    mutation_info: MutationOption
+    mutation_info: Mutation
 
 
 class EdgePrimerPair(BaseModel):
