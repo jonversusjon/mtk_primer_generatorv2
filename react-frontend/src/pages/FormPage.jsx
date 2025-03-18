@@ -36,7 +36,7 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
     kozak: "MTK",
     maxMutationsPerSite: 1,
     maxResults: 1,
-    verboseMode:false,
+    verboseMode: false,
   });
   const [loading, setLoading] = useState(true);
   const [configLoaded, setConfigLoaded] = useState(false);
@@ -142,7 +142,7 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
           species:
             prev.species ||
             (speciesData.species.length > 0 ? speciesData.species[0] : ""),
-            kozak:
+          kozak:
             prev.kozak ||
             (speciesData.species.length > 0 ? speciesData.species[0] : ""),
           // For maxMutationsPerSite and max_results, default to 1 if not provided
@@ -171,7 +171,28 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
     fetchSpecies();
   }, []);
 
-  // Clean up event source when component unmounts
+  // Ensure species is set once both config and species have loaded.
+  useEffect(() => {
+    if (
+      speciesLoaded &&
+      configLoaded &&
+      formData.availableSpecies.length > 0 &&
+      !formData.species
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        species: prev.availableSpecies[0],
+      }));
+    }
+  }, [
+    speciesLoaded,
+    configLoaded,
+    formData.availableSpecies,
+    formData.species,
+    setFormData,
+  ]);
+
+  // Clean up event source on component unmount.
   useEffect(() => {
     return () => {
       if (eventSourceRef.current) {

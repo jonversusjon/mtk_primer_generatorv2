@@ -5,6 +5,7 @@ import json
 import os
 from contextlib import contextmanager
 from config.logging_config import logger as base_logger  # Centralized logger
+from pydantic import BaseModel
 
 class ModuleLoggerAdapter(logging.LoggerAdapter):
     def process(self, msg, kwargs):
@@ -30,7 +31,7 @@ class Logger:
                 self.logger.logger.removeHandler(handler)
             console_handler = logging.StreamHandler()
             console_formatter = logging.Formatter(
-                "%(asctime)s - %(levelname)s - %(name)s - %(module)s - %(message)s"
+                "%(asctime)s - %(levelname)s - %(module)s - %(message)s"
             )
             console_handler.setFormatter(console_formatter)
             self.logger.logger.addHandler(console_handler)
@@ -58,7 +59,7 @@ class Logger:
         try:
             yield
         except Exception as e:
-            self.logger.error(f"Error in {operation}: {str(e)}\n{traceback.format_exc()}")
+            self.error(f"Error in {operation}: {str(e)}\n{traceback.format_exc()}", exc_info=True)
             raise
         finally:
             elapsed_time = time.time() - start_time
@@ -89,9 +90,27 @@ class Logger:
         return None
 
     def log_step(self, step_name, message, data=None, level=logging.INFO):
-        """Log a step or milestone in the code."""
-        data_str = json.dumps(data, default=str, indent=2) if data else ""
-        self.logger.log(level, f"{step_name} - {message} {data_str}")
+        """Log a step or milestone in the code, ensuring JSON serialization of Pydantic models."""
+        try:
+            if isinstance(data, BaseModel):
+                data_str = data.model_dump_json(indent=2)
+            elif isinstance(data, list) and all(isinstance(i, BaseModel) for i in data):
+                data_str = json.dumps([i.model_dump() for i in data], indent=2)
+            elif isinstance(data, dict) and all(isinstance(v, BaseModel) for v in data.values()):
+                data_str = json.dumps({k: v.model_dump() for k, v in data.items()}, indent=2)
+            else:
+                data_str = json.dumps(data, default=str, indent=2) if data else ""
+        except (TypeError, ValueError) as e:
+            data_str = f"[Failed to serialize data: {e}]"
+
+        if data_str:
+            log_message = f"{step_name} - {message}\nData: {data_str}"
+        else:
+            log_message = f"{step_name} - {message}"
+
+        self.logger.log(level, log_message)
+
+
 
     def validate(self, condition, message, data=None):
         """Log a validation result."""
@@ -106,5 +125,10 @@ class Logger:
         data_str = json.dumps(data, default=str, indent=2) if data else ""
         self.logger.debug(f"{message} {data_str}")
 
+    # Added error method to allow logger.error calls
+    def error(self, message, data=None, exc_info=False):
+        data_str = json.dumps(data, default=str, indent=2) if data else ""
+        self.logger.error(f"{message} {data_str}", exc_info=exc_info)
+
 # Global instance for use throughout your app.
-logger = Logger(log_dir="logger/logs")
+logger = Logger(log_dir="log_utils/logs")

@@ -102,7 +102,6 @@ class GoldenGateUtils():
 
         amino_acid = amino_acid.upper()
         table = CodonTable.unambiguous_dna_by_id[1]
-        print(f"Using codon table: {table}")
 
         if amino_acid == '*':
             return table.stop_codons

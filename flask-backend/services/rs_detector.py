@@ -72,6 +72,7 @@ class RestrictionSiteDetector():
                         recognition_seq=pattern,
                         context_seq=context_seq,
                         context_rs_indices=context_recognition_site_indices,
+                        
                         context_first_base=start_context,
                         context_last_base=end_context,
                         enzyme=enzyme
@@ -135,6 +136,7 @@ class RestrictionSiteDetector():
 
         # Iterate through codon positions and create Codon objects with the appropriate overlap tuple.
         for codon_index, pos in enumerate(codon_positions):
+            print(f"Codon index: {codon_index}, Position: {pos}")
             if 0 <= pos <= len(context_seq) - 3:
                 codon_seq = context_seq[pos: pos + 3]
                 # The overlap list is taken directly from our list.

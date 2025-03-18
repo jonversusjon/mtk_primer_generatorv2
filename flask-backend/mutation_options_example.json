@@ -1,0 +1,560 @@
+{
+    "mutation_480": [
+      {
+        "alt_codons": [
+          {
+            "amino_acid": "E",
+            "context_position": 30,
+            "codon_sequence": "GAA",
+            "rs_overlap": [
+              0,
+              1,
+              2
+            ],
+            "usage": 29.0
+          }
+        ],
+        "mut_indices_rs": [
+          2
+        ],
+        "mut_indices_codon": [
+          2
+        ],
+        "mut_context": "GCCGAGCGCGCCGGGGTGCCCGCCTTCCTGGAAACCTCCGCGCCCCGCAACCTCCCCTTCTACGAG",
+        "first_mut_idx": 32,
+        "last_mut_idx": 32,
+        "overhang_options": [
+          {
+            "bottom_overhang": "TTCC",
+            "top_overhang": "GGAA",
+            "overhang_start_index": 29
+          },
+          {
+            "bottom_overhang": "TTTC",
+            "top_overhang": "GAAA",
+            "overhang_start_index": 30
+          },
+          {
+            "bottom_overhang": "GTTT",
+            "top_overhang": "AAAC",
+            "overhang_start_index": 31
+          },
+          {
+            "bottom_overhang": "GGTT",
+            "top_overhang": "AACC",
+            "overhang_start_index": 32
+          }
+        ]
+      },
+      {
+        "alt_codons": [
+          {
+            "amino_acid": "T",
+            "context_position": 33,
+            "codon_sequence": "ACT",
+            "rs_overlap": [
+              0,
+              1,
+              2
+            ],
+            "usage": 13.1
+          }
+        ],
+        "mut_indices_rs": [
+          2
+        ],
+        "mut_indices_codon": [
+          2
+        ],
+        "mut_context": "GCCGAGCGCGCCGGGGTGCCCGCCTTCCTGGAGACTTCCGCGCCCCGCAACCTCCCCTTCTACGAG",
+        "first_mut_idx": 35,
+        "last_mut_idx": 35,
+        "overhang_options": [
+          {
+            "bottom_overhang": "AGTC",
+            "top_overhang": "GACT",
+            "overhang_start_index": 32
+          },
+          {
+            "bottom_overhang": "AAGT",
+            "top_overhang": "ACTT",
+            "overhang_start_index": 33
+          },
+          {
+            "bottom_overhang": "GAAG",
+            "top_overhang": "CTTC",
+            "overhang_start_index": 34
+          },
+          {
+            "bottom_overhang": "GGAA",
+            "top_overhang": "TTCC",
+            "overhang_start_index": 35
+          }
+        ]
+      },
+      {
+        "alt_codons": [
+          {
+            "amino_acid": "T",
+            "context_position": 33,
+            "codon_sequence": "ACA",
+            "rs_overlap": [
+              0,
+              1,
+              2
+            ],
+            "usage": 15.1
+          }
+        ],
+        "mut_indices_rs": [
+          2
+        ],
+        "mut_indices_codon": [
+          2
+        ],
+        "mut_context": "GCCGAGCGCGCCGGGGTGCCCGCCTTCCTGGAGACATCCGCGCCCCGCAACCTCCCCTTCTACGAG",
+        "first_mut_idx": 35,
+        "last_mut_idx": 35,
+        "overhang_options": [
+          {
+            "bottom_overhang": "TGTC",
+            "top_overhang": "GACA",
+            "overhang_start_index": 32
+          },
+          {
+            "bottom_overhang": "ATGT",
+            "top_overhang": "ACAT",
+            "overhang_start_index": 33
+          },
+          {
+            "bottom_overhang": "GATG",
+            "top_overhang": "CATC",
+            "overhang_start_index": 34
+          },
+          {
+            "bottom_overhang": "GGAT",
+            "top_overhang": "ATCC",
+            "overhang_start_index": 35
+          }
+        ]
+      },
+      {
+        "alt_codons": [
+          {
+            "amino_acid": "T",
+            "context_position": 33,
+            "codon_sequence": "ACG",
+            "rs_overlap": [
+              0,
+              1,
+              2
+            ],
+            "usage": 6.1
+          }
+        ],
+        "mut_indices_rs": [
+          2
+        ],
+        "mut_indices_codon": [
+          2
+        ],
+        "mut_context": "GCCGAGCGCGCCGGGGTGCCCGCCTTCCTGGAGACGTCCGCGCCCCGCAACCTCCCCTTCTACGAG",
+        "first_mut_idx": 35,
+        "last_mut_idx": 35,
+        "overhang_options": [
+          {
+            "bottom_overhang": "CGTC",
+            "top_overhang": "GACG",
+            "overhang_start_index": 32
+          },
+          {
+            "bottom_overhang": "ACGT",
+            "top_overhang": "ACGT",
+            "overhang_start_index": 33
+          },
+          {
+            "bottom_overhang": "GACG",
+            "top_overhang": "CGTC",
+            "overhang_start_index": 34
+          },
+          {
+            "bottom_overhang": "GGAC",
+            "top_overhang": "GTCC",
+            "overhang_start_index": 35
+          }
+        ]
+      }
+    ],
+    "mutation_1206": [
+      {
+        "alt_codons": [
+          {
+            "amino_acid": "E",
+            "context_position": 30,
+            "codon_sequence": "GAA",
+            "rs_overlap": [
+              0,
+              1,
+              2
+            ],
+            "usage": 29.0
+          }
+        ],
+        "mut_indices_rs": [
+          2
+        ],
+        "mut_indices_codon": [
+          2
+        ],
+        "mut_context": "AAGAAAACACTCGGCTGGGAGGCCTTCACCGAAACGCTGTACCCCGCTGACGGCGGCCTGGAAGGC",
+        "first_mut_idx": 32,
+        "last_mut_idx": 32,
+        "overhang_options": [
+          {
+            "bottom_overhang": "TTCG",
+            "top_overhang": "CGAA",
+            "overhang_start_index": 29
+          },
+          {
+            "bottom_overhang": "TTTC",
+            "top_overhang": "GAAA",
+            "overhang_start_index": 30
+          },
+          {
+            "bottom_overhang": "GTTT",
+            "top_overhang": "AAAC",
+            "overhang_start_index": 31
+          },
+          {
+            "bottom_overhang": "CGTT",
+            "top_overhang": "AACG",
+            "overhang_start_index": 32
+          }
+        ]
+      },
+      {
+        "alt_codons": [
+          {
+            "amino_acid": "T",
+            "context_position": 33,
+            "codon_sequence": "ACT",
+            "rs_overlap": [
+              0,
+              1,
+              2
+            ],
+            "usage": 13.1
+          }
+        ],
+        "mut_indices_rs": [
+          2
+        ],
+        "mut_indices_codon": [
+          2
+        ],
+        "mut_context": "AAGAAAACACTCGGCTGGGAGGCCTTCACCGAGACTCTGTACCCCGCTGACGGCGGCCTGGAAGGC",
+        "first_mut_idx": 35,
+        "last_mut_idx": 35,
+        "overhang_options": [
+          {
+            "bottom_overhang": "AGTC",
+            "top_overhang": "GACT",
+            "overhang_start_index": 32
+          },
+          {
+            "bottom_overhang": "GAGT",
+            "top_overhang": "ACTC",
+            "overhang_start_index": 33
+          },
+          {
+            "bottom_overhang": "AGAG",
+            "top_overhang": "CTCT",
+            "overhang_start_index": 34
+          },
+          {
+            "bottom_overhang": "CAGA",
+            "top_overhang": "TCTG",
+            "overhang_start_index": 35
+          }
+        ]
+      },
+      {
+        "alt_codons": [
+          {
+            "amino_acid": "T",
+            "context_position": 33,
+            "codon_sequence": "ACC",
+            "rs_overlap": [
+              0,
+              1,
+              2
+            ],
+            "usage": 18.9
+          }
+        ],
+        "mut_indices_rs": [
+          2
+        ],
+        "mut_indices_codon": [
+          2
+        ],
+        "mut_context": "AAGAAAACACTCGGCTGGGAGGCCTTCACCGAGACCCTGTACCCCGCTGACGGCGGCCTGGAAGGC",
+        "first_mut_idx": 35,
+        "last_mut_idx": 35,
+        "overhang_options": [
+          {
+            "bottom_overhang": "GGTC",
+            "top_overhang": "GACC",
+            "overhang_start_index": 32
+          },
+          {
+            "bottom_overhang": "GGGT",
+            "top_overhang": "ACCC",
+            "overhang_start_index": 33
+          },
+          {
+            "bottom_overhang": "AGGG",
+            "top_overhang": "CCCT",
+            "overhang_start_index": 34
+          },
+          {
+            "bottom_overhang": "CAGG",
+            "top_overhang": "CCTG",
+            "overhang_start_index": 35
+          }
+        ]
+      },
+      {
+        "alt_codons": [
+          {
+            "amino_acid": "T",
+            "context_position": 33,
+            "codon_sequence": "ACA",
+            "rs_overlap": [
+              0,
+              1,
+              2
+            ],
+            "usage": 15.1
+          }
+        ],
+        "mut_indices_rs": [
+          2
+        ],
+        "mut_indices_codon": [
+          2
+        ],
+        "mut_context": "AAGAAAACACTCGGCTGGGAGGCCTTCACCGAGACACTGTACCCCGCTGACGGCGGCCTGGAAGGC",
+        "first_mut_idx": 35,
+        "last_mut_idx": 35,
+        "overhang_options": [
+          {
+            "bottom_overhang": "TGTC",
+            "top_overhang": "GACA",
+            "overhang_start_index": 32
+          },
+          {
+            "bottom_overhang": "GTGT",
+            "top_overhang": "ACAC",
+            "overhang_start_index": 33
+          },
+          {
+            "bottom_overhang": "AGTG",
+            "top_overhang": "CACT",
+            "overhang_start_index": 34
+          },
+          {
+            "bottom_overhang": "CAGT",
+            "top_overhang": "ACTG",
+            "overhang_start_index": 35
+          }
+        ]
+      }
+    ],
+    "mutation_1395": [
+      {
+        "alt_codons": [
+          {
+            "amino_acid": "E",
+            "context_position": 30,
+            "codon_sequence": "GAA",
+            "rs_overlap": [
+              0,
+              1,
+              2
+            ],
+            "usage": 29.0
+          }
+        ],
+        "mut_indices_rs": [
+          2
+        ],
+        "mut_indices_codon": [
+          2
+        ],
+        "mut_context": "AGACTGGAAAGAATCAAGGAGGCCAACAACGAAACCTACGTCGAGCAGCACGAGGTGGCAGTGGCC",
+        "first_mut_idx": 32,
+        "last_mut_idx": 32,
+        "overhang_options": [
+          {
+            "bottom_overhang": "TTCG",
+            "top_overhang": "CGAA",
+            "overhang_start_index": 29
+          },
+          {
+            "bottom_overhang": "TTTC",
+            "top_overhang": "GAAA",
+            "overhang_start_index": 30
+          },
+          {
+            "bottom_overhang": "GTTT",
+            "top_overhang": "AAAC",
+            "overhang_start_index": 31
+          },
+          {
+            "bottom_overhang": "GGTT",
+            "top_overhang": "AACC",
+            "overhang_start_index": 32
+          }
+        ]
+      },
+      {
+        "alt_codons": [
+          {
+            "amino_acid": "T",
+            "context_position": 33,
+            "codon_sequence": "ACT",
+            "rs_overlap": [
+              0,
+              1,
+              2
+            ],
+            "usage": 13.1
+          }
+        ],
+        "mut_indices_rs": [
+          2
+        ],
+        "mut_indices_codon": [
+          2
+        ],
+        "mut_context": "AGACTGGAAAGAATCAAGGAGGCCAACAACGAGACTTACGTCGAGCAGCACGAGGTGGCAGTGGCC",
+        "first_mut_idx": 35,
+        "last_mut_idx": 35,
+        "overhang_options": [
+          {
+            "bottom_overhang": "AGTC",
+            "top_overhang": "GACT",
+            "overhang_start_index": 32
+          },
+          {
+            "bottom_overhang": "AAGT",
+            "top_overhang": "ACTT",
+            "overhang_start_index": 33
+          },
+          {
+            "bottom_overhang": "TAAG",
+            "top_overhang": "CTTA",
+            "overhang_start_index": 34
+          },
+          {
+            "bottom_overhang": "GTAA",
+            "top_overhang": "TTAC",
+            "overhang_start_index": 35
+          }
+        ]
+      },
+      {
+        "alt_codons": [
+          {
+            "amino_acid": "T",
+            "context_position": 33,
+            "codon_sequence": "ACA",
+            "rs_overlap": [
+              0,
+              1,
+              2
+            ],
+            "usage": 15.1
+          }
+        ],
+        "mut_indices_rs": [
+          2
+        ],
+        "mut_indices_codon": [
+          2
+        ],
+        "mut_context": "AGACTGGAAAGAATCAAGGAGGCCAACAACGAGACATACGTCGAGCAGCACGAGGTGGCAGTGGCC",
+        "first_mut_idx": 35,
+        "last_mut_idx": 35,
+        "overhang_options": [
+          {
+            "bottom_overhang": "TGTC",
+            "top_overhang": "GACA",
+            "overhang_start_index": 32
+          },
+          {
+            "bottom_overhang": "ATGT",
+            "top_overhang": "ACAT",
+            "overhang_start_index": 33
+          },
+          {
+            "bottom_overhang": "TATG",
+            "top_overhang": "CATA",
+            "overhang_start_index": 34
+          },
+          {
+            "bottom_overhang": "GTAT",
+            "top_overhang": "ATAC",
+            "overhang_start_index": 35
+          }
+        ]
+      },
+      {
+        "alt_codons": [
+          {
+            "amino_acid": "T",
+            "context_position": 33,
+            "codon_sequence": "ACG",
+            "rs_overlap": [
+              0,
+              1,
+              2
+            ],
+            "usage": 6.1
+          }
+        ],
+        "mut_indices_rs": [
+          2
+        ],
+        "mut_indices_codon": [
+          2
+        ],
+        "mut_context": "AGACTGGAAAGAATCAAGGAGGCCAACAACGAGACGTACGTCGAGCAGCACGAGGTGGCAGTGGCC",
+        "first_mut_idx": 35,
+        "last_mut_idx": 35,
+        "overhang_options": [
+          {
+            "bottom_overhang": "CGTC",
+            "top_overhang": "GACG",
+            "overhang_start_index": 32
+          },
+          {
+            "bottom_overhang": "ACGT",
+            "top_overhang": "ACGT",
+            "overhang_start_index": 33
+          },
+          {
+            "bottom_overhang": "TACG",
+            "top_overhang": "CGTA",
+            "overhang_start_index": 34
+          },
+          {
+            "bottom_overhang": "GTAC",
+            "top_overhang": "GTAC",
+            "overhang_start_index": 35
+          }
+        ]
+      }
+    ]
+  }

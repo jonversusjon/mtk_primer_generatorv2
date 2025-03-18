@@ -6,5 +6,5 @@ venv/
 .flaskenv
 *.so
 .Python
-logger/logs
+log_utils/logs
 /.vscode
