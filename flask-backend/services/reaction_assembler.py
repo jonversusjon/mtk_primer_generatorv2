@@ -3,14 +3,14 @@
 from typing import Dict
 from models import Primer
 from log_utils import logger
-
+from models import DomesticationResult
 
 class ReactionOrganizer():
     """
 
     """
     
-    def group_primers_into_pcr_reactions(self, sequence_data: Dict) -> Dict:
+    def group_primers_into_pcr_reactions(self, domestication_result: DomesticationResult) -> Dict:
         """
         Groups primers into PCR reactions using chaining logic for each mutation solution.
 
@@ -46,27 +46,28 @@ class ReactionOrganizer():
         logger.log_step("Group PCR Reactions", "Starting grouping of primers into PCR reactions.")
 
         # Retrieve edge primers.
-        edge_fw: Primer = sequence_data["edge_primers"]["forward_primer"]
-        edge_rv: Primer = sequence_data["edge_primers"]["reverse_primer"]
+        edge_fw: Primer = domestication_result.edge_primers.forward
+        edge_rv: Primer = domestication_result.edge_primers.reverse
         logger.log_step("Edge Primers Retrieved", "Edge primers obtained.",
-                        {"edge_forward": edge_fw["sequence"], "edge_reverse": edge_rv["sequence"]})
+                        {"edge_forward": edge_fw.sequence, "edge_reverse": edge_rv.sequence})
 
         # Retrieve mutation primers data.
-        mutation_primers_data = sequence_data.get("mutation_primers", {})
-
+        mut_primers_list = domestication_result.mut_primers
+        logger.log_step("Mutation Primers Retrieved", "Mutation primers data obtained.",
+                        {" ****** mutation_set ****** ": len(mut_primers_list)})
+        logger.log_step("Mutation Primers Data", "Mutation primers data details.",
+                        {"mutation_primers": mut_primers_list[0]})
         # No mutation primers: create default edge-only reaction.
-        if not mutation_primers_data:
+        if not mut_primers_list:
             default_reaction = {"Reaction_1": {"forward": edge_fw["sequence"], "reverse": edge_rv["sequence"]}}
             reactions_all["default"] = default_reaction
             logger.log_step("No Mutation Primers", "No mutation primers found; created edge-only reaction.", default_reaction)
             return reactions_all
 
+        print(f"Mutation primers list: {mut_primers_list}")
         # Process each mutation set.
-        for set_key, solutions in mutation_primers_data.items():
-            # Check if the solutions are already nested (a list of solutions) or a flat list.
-            if solutions and not isinstance(solutions[0], list):
-                logger.log_step("Normalize Solutions", f"Mutation set {set_key} received as flat list; normalizing.")
-                solutions = [solutions]
+        for set_key, solutions in mut_primers_list:
+
             reactions_all[set_key] = {}
             logger.log_step("Process Mutation Set", f"Processing mutation set {set_key}", {"solution_count": len(solutions)})
 

@@ -6,6 +6,7 @@ import os
 from contextlib import contextmanager
 from config.logging_config import logger as base_logger  # Centralized logger
 from pydantic import BaseModel
+import numpy as np
 
 class ModuleLoggerAdapter(logging.LoggerAdapter):
     def process(self, msg, kwargs):
@@ -31,7 +32,7 @@ class Logger:
                 self.logger.logger.removeHandler(handler)
             console_handler = logging.StreamHandler()
             console_formatter = logging.Formatter(
-                "%(asctime)s - %(levelname)s - %(module)s - %(message)s"
+                "%(asctime)s - %(levelname)s - %(message)s"
             )
             console_handler.setFormatter(console_formatter)
             self.logger.logger.addHandler(console_handler)
@@ -45,7 +46,7 @@ class Logger:
             )
             file_handler.setLevel(logging.DEBUG)
             file_formatter = logging.Formatter(
-                "%(asctime)s | %(levelname)-8s | %(name)s | %(module)s | %(message)s",
+                "%(asctime)s | %(levelname)-8s | %(message)s",
                 datefmt="%Y-%m-%d %H:%M:%S"
             )
             file_handler.setFormatter(file_formatter)
@@ -110,6 +111,26 @@ class Logger:
 
         self.logger.log(level, log_message)
 
+    @staticmethod
+    def visualize_matrix(matrix, threshold=0):
+        """
+        Visualize a numpy matrix in ASCII format
+        """
+        if matrix.ndim <= 2:
+            # 1D or 2D matrices
+            if matrix.ndim == 1:
+                matrix = matrix.reshape(1, -1)
+
+            rows = []
+            for row in matrix:
+                row_str = " ".join(
+                    ["#" if val > threshold else "." for val in row])
+                rows.append(row_str)
+
+            return "\n".join(rows)
+        else:
+            # For higher dimensions, show summary
+            return f"Matrix shape: {matrix.shape}, non-zero: {np.count_nonzero(matrix)}"
 
 
     def validate(self, condition, message, data=None):

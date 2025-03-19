@@ -1,9 +1,9 @@
 # models/__init__.py
 from .codon import Codon
-from .mutations import Mutation, MutationSet, OverhangOption
+from .mutations import Mutation, MutationSet, MutationSetCollection, OverhangOption, MutationCodon
 from .restriction_sites import RestrictionSite
 from .sequences import SequenceToDomesticate
-from .primers import ReactionDetail, Primer, MutationPrimerPair, EdgePrimerPair, PrimerDesignResult
+from .primers import  Primer, MutationPrimerPair, MutationPrimerSet, EdgePrimerPair
 from .pcr_reactions import PCRReaction
 from .protocols import DomesticationResult, MTKDomesticationProtocol
 
@@ -17,6 +17,8 @@ __all__ = [
     "OverhangOption",
     "Mutation",
     "MutationSet",
+    "MutationSetCollection",
+    "MutationCodon",
     
     # Restriction Sites
     "RestrictionSite",
@@ -28,8 +30,8 @@ __all__ = [
     "ReactionDetail",
     "Primer",
     "MutationPrimerPair",
+    "MutationPrimerSet",
     "EdgePrimerPair",
-    "PrimerDesignResult",
     
     # PCR Reactions
     "PCRReaction",

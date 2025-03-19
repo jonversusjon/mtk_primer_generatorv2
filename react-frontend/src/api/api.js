@@ -4,7 +4,6 @@ import { API_BASE_URL } from "../config/config.js";
  * Fetch available species for the dropdown.
  * @returns {Promise<Array>} Array of available species.
  */
-// TODO:species hardcoded default is still not recognized on session load
 export const fetchAvailableSpecies = async () => {
   try {
     const response = await fetchWithErrorHandling("/api/species");

@@ -1,44 +1,90 @@
-from pydantic import BaseModel, field_validator
-from typing import List, Optional
+import math
+import numpy as np
+from pydantic import BaseModel, BeforeValidator, PlainSerializer, WithJsonSchema
+from typing import Annotated, List, Optional, Any
 from models import Codon
 
+def validate_numpy_array(v: Any) -> np.ndarray:
+    """
+    Convert lists to a NumPy array (with dtype=int) and validate that the total number of elements 
+    equals 4^N for some positive integer N.
+    """
+    if isinstance(v, np.ndarray):
+        arr = v
+    elif isinstance(v, list):
+        arr = np.array(v, dtype=int)
+    else:
+        raise TypeError("compatibility must be a numpy ndarray or nested list of integers.")
+    
+    if arr.size == 0:
+        raise ValueError("Array must not be empty.")
+    
+    num_elements = arr.size
+    exponent = math.log(num_elements, 4)
+    if not exponent.is_integer():
+        raise ValueError("The total number of elements must be 4^N for some positive integer N.")
+    return arr
 
-# Mutation models
-class OverhangOption(BaseModel):
+def serialize_numpy_array(x: np.ndarray) -> dict:
+    """
+    Serializes the array into metadata:
+      - snippet: first few entries from the flattened array,
+      - shape: the shape of the array,
+      - ones_percentage: percentage of elements equal to 1.
+    """
+    snippet_length = 5  # adjust the snippet length as desired
+    flattened = x.flatten()
+    snippet = flattened[:snippet_length].tolist()
+    shape = list(x.shape)
+    ones_count = int((x == 1).sum())
+    total_count = x.size
+    ones_percentage = (ones_count / total_count) * 100
+    return {"snippet": snippet, "shape": shape, "ones_percentage": ones_percentage}
+
+# Create a custom Annotated type that uses our validator and serializer.
+NumpyArray = Annotated[
+    np.ndarray,
+    BeforeValidator(validate_numpy_array),
+    PlainSerializer(serialize_numpy_array, return_type=dict),
+    WithJsonSchema({
+        "type": "object",
+        "properties": {
+            "snippet": {"type": "array", "items": {"type": "integer"}},
+            "shape": {"type": "array", "items": {"type": "integer"}},
+            "ones_percentage": {"type": "number"}
+        },
+        "required": ["snippet", "shape", "ones_percentage"]
+    })
+]
+
+# Define a custom BaseModel that allows arbitrary types
+class ConfiguredBaseModel(BaseModel):
+    model_config = {"arbitrary_types_allowed": True}
+
+# Mutation models using the custom base model
+class OverhangOption(ConfiguredBaseModel):
     bottom_overhang: str
     top_overhang: str
     overhang_start_index: int
-    
-    
-class Mutation(BaseModel):
-    alt_codons: List[Codon] # List of alternative codons for this particular mutation option.
+
+class MutationCodon(ConfiguredBaseModel):
+    codon: Codon
+    nth_codon_in_rs: int
+
+class Mutation(ConfiguredBaseModel):
+    mut_codons: List[MutationCodon]
     mut_indices_rs: Optional[List[int]] = None
     mut_indices_codon: Optional[List[int]] = None
-    mut_context:str
+    mut_context: str
     first_mut_idx: int
     last_mut_idx: int
     overhang_options: List[OverhangOption]
-    
-    
-class MutationSet(BaseModel):
+
+class MutationSet(ConfiguredBaseModel):
     mutations: List[Mutation]
-    compatibility: List
+    compatibility: NumpyArray
 
-    @field_validator("compatibility")
-    def validate_compatibility(cls, value):
-        def check_nested(item):
-            # If item is an int, it's a valid leaf
-            if isinstance(item, int):
-                return True
-            # If it's a list, recursively check all items
-            if isinstance(item, list):
-                return all(check_nested(i) for i in item)
-            return False
-
-        if not isinstance(value, list) or not all(check_nested(x)
-                                                  for x in value):
-            raise ValueError(
-                "compatibility must be a nested list of integers (matrix "
-                "shape 4^N)"
-            )
-        return value
+class MutationSetCollection(ConfiguredBaseModel):
+    sites_to_mutate: List[str]
+    sets: List[MutationSet]
+    

@@ -1,12 +1,6 @@
-from typing import Dict, List, Optional
-from pydantic import BaseModel, RootModel
+from typing import List, Optional
+from pydantic import BaseModel
 from models import Mutation
-
-# Primer model
-class ReactionDetail(BaseModel):
-    forward: str
-    reverse: str
-    amplicon_size: Optional[int] = None
 
 
 class Primer(BaseModel):
@@ -19,15 +13,19 @@ class Primer(BaseModel):
 
 
 class MutationPrimerPair(BaseModel):
+    # forward / reverse for a single restriction site
     site: str
     position: int
     forward: Primer
-    mutation_info: Mutation
+    reverse: Primer
+    mutation: Mutation
 
+
+class MutationPrimerSet(BaseModel):
+    # forward / reverse for all restriction sites
+    mut_primer_pairs: List[MutationPrimerPair]
+    
 
 class EdgePrimerPair(BaseModel):
     forward: Primer
     reverse: Primer
-
-class PrimerDesignResult(RootModel[Dict[int, List[MutationPrimerPair]]]):
-    pass

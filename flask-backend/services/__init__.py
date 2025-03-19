@@ -16,17 +16,17 @@ from .sequence_prep import SequencePreparator
 from .rs_detector import RestrictionSiteDetector
 
 # Mutation analysis and optimization
-from .mutation_analyzer import MutationAnalyzer
-from .mutation_optimizer import MutationOptimizer
+from .mut_analyzer import MutationAnalyzer
+from .mut_optimizer import MutationOptimizer
 
 # Primer design and selection
-from .primer_design import PrimerDesigner
+from .primer_designer import PrimerDesigner
 
 # Reaction organization
-from .reactions import ReactionOrganizer
+from .reaction_assembler import ReactionOrganizer
 
 # Protocol generation
-from .protocol import GoldenGateProtocol
+from .protocol_maker import GoldenGateProtocol
 
 # Utilities
 from .utils import GoldenGateUtils

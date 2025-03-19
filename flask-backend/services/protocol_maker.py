@@ -2,7 +2,7 @@
 
 from typing import List, Dict, Optional
 
-from models import DomesticationResult, SequenceToDomesticate
+from models import DomesticationResult, SequenceToDomesticate, MutationSetCollection
 from services import (
     SequencePreparator,
     RestrictionSiteDetector,
@@ -108,24 +108,20 @@ class GoldenGateProtocol():
             if sites_to_mutate:
                 logger.log_step("Mutation Analysis", f"Analyzing mutations for sequence index {idx}")
                 mutation_options = self.mutation_analyzer.get_all_mutations(sites_to_mutate)
-                optimized_mutations, compatibility_matrices = None, None
+                optimized_mutations: MutationSetCollection = None
                 if mutation_options:
                     logger.log_step("Mutation Optimization", f"Optimizing mutations for sequence index {idx}")
-                    optimized_mutations, compatibility_matrices = self.mutation_optimizer.optimize_mutations(
+                    optimized_mutations = self.mutation_optimizer.optimize_mutations(
                         mutation_options=mutation_options
                     )
-                    dom_result.mutation_options = {
-                        "all_mutation_options": optimized_mutations,
-                        "compatibility": compatibility_matrices
-                    }
+
                     logger.log_step("Primer Design", f"Designing mutation primers for sequence index {idx}")
                     mutation_primers = self.primer_designer.design_mutation_primers(
                         mutation_sets=optimized_mutations,
-                        comp_matrices=compatibility_matrices,
                         primer_name=seq_to_dom.primer_name,
                         max_results=self.max_results,
                     )
-                    dom_result.mutation_primers = mutation_primers
+                    dom_result.mut_primers = mutation_primers
                 logger.log_step("Mutation Primers", f"Mutation primers designed: {mutation_primers}")
 
             # 4. Generate edge primers

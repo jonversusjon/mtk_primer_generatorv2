@@ -114,11 +114,12 @@ class GoldenGateUtils():
         return codons
 
     def gc_content(self, seq: str) -> float:
-        """Computes GC content of a DNA sequence."""
+        """Computes GC content of a DNA sequence, rounded to 3 decimal places."""
         if not seq:
-            return 0
+            return 0.0
         gc_count = sum(1 for nt in seq.upper() if nt in "GC")
-        return gc_count / len(seq)
+        return round(gc_count / len(seq), 3)
+
 
     def seq_to_index(self, seq: str) -> int:
         """Converts a 4-nucleotide sequence to its corresponding matrix index."""
@@ -200,7 +201,7 @@ class GoldenGateUtils():
         return "Unknown reason (should not happen)."
 
     def calculate_optimal_primer_length(self, sequence: str, position: int, direction='forward') -> int:
-        self.log_step("Calculate Primer Length", f"Optimal {direction} primer from pos {position}",
+        logger.log_step("Calculate Primer Length", f"Optimal {direction} primer from pos {position}",
                       {"sequence_length": len(sequence)})
         min_length, max_length, target_tm = 18, 30, 60
         optimal_length = min_length
@@ -209,7 +210,7 @@ class GoldenGateUtils():
             for length in range(min_length, min(max_length + 1, len(sequence) - position)):
                 primer_seq = sequence[position:position + length]
                 tm = self.calculate_tm(primer_seq)
-                self.log_step("Length Iteration", f"Length {length}", {
+                logger.log_step("Length Iteration", f"Length {length}", {
                               "tm": tm, "target": target_tm})
                 if tm >= target_tm:
                     optimal_length = length
@@ -220,13 +221,13 @@ class GoldenGateUtils():
                     break
                 primer_seq = sequence[position - length:position]
                 tm = self.calculate_tm(primer_seq)
-                self.log_step("Length Iteration", f"Length {length}", {
+                logger.log_step("Length Iteration", f"Length {length}", {
                               "tm": tm, "target": target_tm})
                 if tm >= target_tm:
                     optimal_length = length
                     break
 
-        self.validate(
+        logger.validate(
             optimal_length >= min_length,
             f"Calculated optimal primer length: {optimal_length}",
             {"direction": direction, "min_length": min_length, "max_length": max_length}

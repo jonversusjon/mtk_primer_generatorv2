@@ -2,7 +2,7 @@
 from flask import Blueprint, request, jsonify, current_app, Response
 from config.logging_config import logger
 from services.utils import GoldenGateUtils
-from services.protocol import GoldenGateProtocol
+from services.protocol_maker import GoldenGateProtocol
 from flask_cors import CORS
 import json
 import logging
