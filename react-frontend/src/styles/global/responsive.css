@@ -132,8 +132,6 @@ body {
     .results-container {
         max-width: 100%;
         height: auto;
-        max-height: 80vh;
-        /* Limit height on mobile */
     }
 }
 
