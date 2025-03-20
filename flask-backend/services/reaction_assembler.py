@@ -66,6 +66,8 @@ class ReactionOrganizer():
 
         print(f"Mutation primers list: {mut_primers_list}")
         # Process each mutation set.
+        # TODO: update this to use new data structure
+        
         for set_key, solutions in mut_primers_list:
 
             reactions_all[set_key] = {}

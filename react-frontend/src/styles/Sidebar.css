@@ -1,13 +1,13 @@
 .sidebar {
   position: sticky;
   left: 0;
-  top: 0;
+  top: 115px; /* Adjusted to account for header height */
   width: 250px;
   height: 100vh;
   background: var(--background-color);
   border-right: 1px solid var(--border-color);
   padding: 10px;
-  max-height: calc(100vh - 60px); /* Prevents sidebar from overflowing the viewport */
+  max-height: calc(100vh - 115px); /* Prevents sidebar from overflowing the viewport */
   overflow-y: auto;}
 
 .sidebar h3 {
