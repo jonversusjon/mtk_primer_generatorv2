@@ -9,6 +9,8 @@ import logging
 import time
 from threading import Thread
 from models import SequenceToDomesticate
+from pydantic import BaseModel
+
 
 api = Blueprint("api", __name__, url_prefix="/api")
 CORS(api)  # Enable CORS for all routes
@@ -19,6 +21,106 @@ logger.setLevel(logging.DEBUG)
 # Global dictionary to store job statuses.
 job_status = {}
 
+def convert_pydantic_to_dict(obj):
+    """Recursively convert Pydantic models to dictionaries."""
+    if isinstance(obj, BaseModel):  # Check if it's any Pydantic model
+        # Use model_dump() for Pydantic v2 or dict() for v1
+        return obj.model_dump() if hasattr(obj, 'model_dump') else obj.dict()
+    elif isinstance(obj, dict):
+        return {k: convert_pydantic_to_dict(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_pydantic_to_dict(item) for item in obj]
+    elif isinstance(obj, tuple):
+        return tuple(convert_pydantic_to_dict(item) for item in obj)
+    else:
+        return obj
+
+def parse_request_data(data):
+    """
+    Parse and validate incoming request data for the protocol job.
+
+    :param data: dict of request data.
+    :return: tuple of:
+        - sequences_to_domesticate (List[SequenceToDomesticate])
+        - species (str)
+        - kozak (str)
+        - max_mut_per_site (int)
+        - verbose_mode (bool)
+        - template_sequence (str)
+        - max_results (int)
+    """
+    sequences_json = data.get("sequencesToDomesticate", [])
+    sequences_to_domesticate = [SequenceToDomesticate.model_validate(seq) for seq in sequences_json]
+
+    species = data.get("species", "")
+    kozak = data.get("kozak", "MTK")
+    max_mut_per_site = data.get("max_mut_per_site", 3)
+    verbose_mode = data.get("verbose_mode", True)
+    template_sequence = data.get("templateSequence", "")
+    max_results = data.get("max_results", 1)
+
+    return (
+        sequences_to_domesticate,
+        species,
+        kozak,
+        max_mut_per_site,
+        verbose_mode,
+        template_sequence,
+        max_results,
+    )
+
+def merge_primer_names(serializable_result, sequences_to_domesticate):
+    """
+    Merge user-submitted primer names into the final result.
+
+    :param serializable_result: The result object (list or dict).
+    :param sequences_to_domesticate: List of SequenceToDomesticate objects.
+    """
+    # If the result is a list, we assume one entry per sequence.
+    if isinstance(serializable_result, list):
+        for i, seq in enumerate(sequences_to_domesticate):
+            primer_name = seq.get("primerName")
+            if primer_name and i < len(serializable_result):
+                serializable_result[i]["primerName"] = primer_name
+    else:
+        # If it's a single object, store them in another way:
+        serializable_result["submittedSequences"] = sequences_to_domesticate
+
+def update_job_status(job_status, job_id, percentage, message, step, result=None):
+    """
+    Update the global job_status dictionary for a given job_id.
+
+    :param job_status: Global dict storing job statuses.
+    :param job_id: Unique job identifier.
+    :param percentage: Numeric progress percentage.
+    :param message: Human-readable status message.
+    :param step: The current step of processing.
+    :param result: Optional final result data.
+    """
+    status_update = {
+        "percentage": percentage,
+        "message": message,
+        "step": step
+    }
+    if result is not None:
+        status_update["result"] = result
+
+    job_status[job_id] = status_update
+
+def make_progress_callback(job_status, job_id):
+    """
+    Create a progress_callback function scoped to a specific job_id.
+
+    :param job_status: Global dict storing job statuses.
+    :param job_id: Unique job identifier.
+    :return: progress_callback function.
+    """
+    def progress_callback(percentage, message, step):
+        update_job_status(job_status, job_id, percentage, message, step)
+        # Optionally, add logging or other logic here:
+        # logger.debug(f"[Job {job_id}] {percentage}% - {message} ({step})")
+
+    return progress_callback
 
 def run_protocol_job(job_id, data):
     """
@@ -26,24 +128,26 @@ def run_protocol_job(job_id, data):
     the job_status dictionary by passing a progress_callback into the
     protocol maker. The protocol maker is expected to call progress_callback
     at key steps in its process.
+
+    :param job_id: Unique job identifier.
+    :param data: dict containing request data.
     """
     try:
         # Initial status update
-        job_status[job_id] = {"percentage": 0,
-                              "message": "Job started", "step": "init"}
+        update_job_status(job_status, job_id, 0, "Job started", "init")
 
-        # Extract parameters from request data
-        sequences_json = data.get("sequencesToDomesticate", [])
-        sequences_to_domesticate = [SequenceToDomesticate.model_validate(seq) for seq in sequences_json]
-        
-        species = data.get("species", "")
-        kozak = data.get("kozak", "MTK")
-        max_mut_per_site = data.get("max_mut_per_site", 3)
-        verbose_mode = data.get("verbose_mode", True)
-        template_sequence = data.get("templateSequence", "")
-        max_results = data.get("max_results", 1)
+        # Parse request data
+        (
+            sequences_to_domesticate,
+            species,
+            kozak,
+            max_mut_per_site,
+            verbose_mode,
+            template_sequence,
+            max_results,
+        ) = parse_request_data(data)
 
-        # Create the protocol maker instance with your parameters.
+        # Create protocol maker
         protocol_maker = GoldenGateProtocol(
             sequences_to_domesticate=sequences_to_domesticate,
             codon_usage_dict=utils.get_codon_usage_dict(species),
@@ -55,61 +159,35 @@ def run_protocol_job(job_id, data):
             debug=False,
         )
 
-        # Define a progress callback that updates the global job_status.
-        def progress_callback(percentage, message, step):
-            # Optionally, you can merge this update with previous details if
-            # needed.
-            job_status[job_id] = {"percentage": percentage,
-                                  "message": message, "step": step}
-            # For example, if you want to preserve per-sequence details, you
-            # could do so here.
-            # logger.debug(f"Progress update for job {job_id}: {percentage}% -
-            # {message} ({step})")
+        # Define progress callback
+        progress_callback = make_progress_callback(job_status, job_id)
 
-        # Run the protocol generation; this function is expected to invoke
-        # progress_callback
-        # at each key processing step (e.g. after preprocessing, mutation
-        # analysis, primer design, etc.).
-        result = protocol_maker.create_gg_protocol(
-            progress_callback=progress_callback)
+        # Run protocol generation
+        result = protocol_maker.create_gg_protocol(progress_callback=progress_callback)
 
-        # Convert the result to a serializable format.
+        # Convert to a serializable format
         serializable_result = utils.convert_non_serializable(result)
 
-        # Merge primer names from the submitted data into the results.
-        if isinstance(serializable_result, list):
-            for i, seq in enumerate(sequences_to_domesticate):
-                primer_name = seq.get("primerName")
-                if primer_name and i < len(serializable_result):
-                    serializable_result[i]["primerName"] = primer_name
-        else:
-            # If the result is a single object, you can merge data in a
-            # different way.
-            # For example, you could include the entire submitted sequences.
-            serializable_result["submittedSequences"] = sequences_to_domesticate
+        # Merge primer names
+        merge_primer_names(serializable_result, sequences_to_domesticate)
 
-        # Check for errors in the protocol generation
+        # Check for errors
         if serializable_result.get("has_errors", False):
-            job_status[job_id] = {
-                "percentage": -1,
-                "message": "Error in protocol generation",
-                "step": "error"
-            }
+            update_job_status(job_status, job_id, -1, "Error in protocol generation", "error")
         else:
-            # Final update: set status to complete and attach the result.
-            job_status[job_id] = {
-                "percentage": 100,
-                "message": "Job complete",
-                "step": "done",
-                "result": serializable_result
-            }
+            update_job_status(
+                job_status,
+                job_id,
+                100,
+                "Job complete",
+                "done",
+                result=serializable_result
+            )
+
     except Exception as e:
-        logger.error(f"Error in protocol job: {str(e)}", exc_info=True)
-        job_status[job_id] = {
-            "percentage": -1,
-            "message": "Error: " + str(e),
-            "step": "error"
-        }
+        logger.error(f"Error in protocol job [{job_id}]: {str(e)}", exc_info=True)
+        update_job_status(job_status, job_id, -1, f"Error: {str(e)}", "error")
+
 
 
 @api.route("/generate_protocol", methods=["POST"])
@@ -148,12 +226,12 @@ def stream_status(job_id):
     """
     def event_stream():
         last_status = None
-        # Continue streaming until the job is complete or an error occurs.
         while True:
             status = job_status.get(job_id)
             if status and status != last_status:
-                # Format message as SSE: data: <json>\n\n
-                yield f"data: {json.dumps(status)}\n\n"
+                # Convert any nested Pydantic models to dictionaries
+                serializable_status = convert_pydantic_to_dict(status)
+                yield f"data: {json.dumps(serializable_status)}\n\n"
                 last_status = status
             # Break if job is complete (100%) or failed (-1)
             if status and (

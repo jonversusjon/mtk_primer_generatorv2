@@ -7,6 +7,3 @@ class PCRReaction(BaseModel):
     forward_primer: Primer
     reverse_primer: Primer
     amplicon_size: int
-    product_size: int
-    melting_temp: float
-    gc_content: float

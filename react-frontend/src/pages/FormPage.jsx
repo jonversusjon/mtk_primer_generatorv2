@@ -1,4 +1,6 @@
 // FormPage.jsx
+import { API_BASE_URL } from "../config/config.js";
+
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Form from "../components/Form/Form";
@@ -55,6 +57,7 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
   const navigate = useNavigate();
   const eventSourceRef = useRef(null);
 
+  // Log formData changes
   useEffect(() => {
     console.log("FormPage formData:", formData);
   }, [formData]);
@@ -79,7 +82,7 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
           }
           setFormData((prev) => ({ ...prev, ...parsedData }));
         } else {
-          const response = await fetch("http://localhost:5000/api/config");
+          const response = await fetch(`${API_BASE_URL}/config`);
           const data = await response.json();
           console.log("Fetched formData from API:", data);
           let newData;
@@ -97,8 +100,6 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
                       : seq.sequence,
                   }))
                 : [defaultSequence],
-              // If config supplies these values, they’ll be merged;
-              // otherwise they remain undefined or null.
               species: data.species || "",
               kozak: data.kozak || "",
               maxMutationsPerSite:
@@ -132,20 +133,18 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
   useEffect(() => {
     const fetchSpecies = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/species");
+        const response = await fetch(`${API_BASE_URL}/species`);
         const speciesData = await response.json();
         console.log("Fetched species from API:", speciesData);
         setFormData((prev) => ({
           ...prev,
           availableSpecies: speciesData.species,
-          // For species and kozak, use the value from session/config if present, else default to species[0]
           species:
             prev.species ||
             (speciesData.species.length > 0 ? speciesData.species[0] : ""),
           kozak:
             prev.kozak ||
             (speciesData.species.length > 0 ? speciesData.species[0] : ""),
-          // For maxMutationsPerSite and max_results, default to 1 if not provided
           maxMutationsPerSite:
             prev.maxMutationsPerSite !== null &&
             prev.maxMutationsPerSite !== undefined
@@ -155,7 +154,6 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
             prev.max_results !== null && prev.max_results !== undefined
               ? prev.max_results
               : 1,
-          // For verboseMode, default to false if not provided
           verboseMode:
             prev.verboseMode !== null && prev.verboseMode !== undefined
               ? prev.verboseMode
@@ -189,17 +187,87 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
     configLoaded,
     formData.availableSpecies,
     formData.species,
-    setFormData,
   ]);
 
   // Clean up event source on component unmount.
   useEffect(() => {
     return () => {
       if (eventSourceRef.current) {
+        console.log("Closing event source on unmount");
         eventSourceRef.current.close();
       }
     };
   }, []);
+
+  // Manual implementation of protocol generation for better logging
+  const manualGenerateProtocol = async (data) => {
+    console.log("Starting manual protocol generation with data:", data);
+
+    try {
+      // Step 1: Call generate_protocol endpoint
+      const response = await fetch(`${API_BASE_URL}/generate_protocol`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error response from generate_protocol:", errorText);
+        throw new Error(`API error: ${response.status} ${errorText}`);
+      }
+
+      const initialData = await response.json();
+      console.log("Initial protocol response:", initialData);
+
+      const jobId = initialData.jobId;
+
+      // Step 2: Set up SSE connection for status updates
+      const eventSource = new EventSource(`${API_BASE_URL}/status/${jobId}`);
+      eventSourceRef.current = eventSource;
+
+      return new Promise((resolve, reject) => {
+        eventSource.onmessage = (event) => {
+          try {
+            const status = JSON.parse(event.data);
+            console.log("SSE status update:", status);
+
+            // Update progress in UI
+            setProgressStatus(status);
+
+            // Check if job is complete
+            if (status.percentage === 100) {
+              console.log("Job complete! Results:", status.result);
+              eventSource.close();
+              resolve(status.result);
+            }
+
+            // Check if job failed
+            if (status.percentage === -1) {
+              const errorMsg = status.message || "Job failed";
+              console.error("Job failed:", errorMsg);
+              eventSource.close();
+              reject(new Error(errorMsg));
+            }
+          } catch (err) {
+            console.error("Error parsing SSE message:", err, event.data);
+            reject(err);
+          }
+        };
+
+        eventSource.onerror = (err) => {
+          console.error("SSE connection error:", err);
+          eventSource.close();
+          reject(new Error("Connection to status stream failed"));
+        };
+      });
+    } catch (err) {
+      console.error("Error in manual protocol generation:", err);
+      throw err;
+    }
+  };
 
   // Wait for the form to be initialized before running validations
   const { errors, isValid } = useValidateForm(formData, defaultsLoaded);
@@ -209,6 +277,7 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
   );
 
   const handleFormSubmit = async (data) => {
+    console.log("Form submitted with data:", data);
     setProcessing(true);
     setError(null);
     setProgressStatus({
@@ -218,32 +287,45 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
     });
 
     try {
+      // Store the entire form data in sessionStorage.
       sessionStorage.setItem("formData", JSON.stringify(data));
-      const jobId = Date.now().toString();
 
-      // Pass an onStatusUpdate callback that logs the status update.
-      const initialResult = await generateProtocol(
-        { ...data, jobId },
-        (status) => {
-          console.log("SSE status update:", status);
+      // Generate a jobId if not already provided.
+      const jobId = data.jobId || Date.now().toString();
+      // Add jobId to the form data.
+      const dataWithJobId = { ...data, jobId };
+
+      // Store the jobId in sessionStorage for later use on the Results page.
+      sessionStorage.setItem("jobId", jobId);
+
+      // Use the existing generateProtocol function (with fallback to manualGenerateProtocol)
+      let result;
+      try {
+        console.log("Using generateProtocol API helper");
+        result = await generateProtocol(dataWithJobId, (status) => {
+          console.log("Status update from API helper:", status);
           setProgressStatus(status);
-        }
-      );
-
-      console.log("Initial protocol response:", initialResult);
-
-      if (initialResult.eventSource) {
-        eventSourceRef.current = initialResult.eventSource;
+        });
+      } catch (apiError) {
+        console.warn(
+          "generateProtocol API helper failed, falling back to manual implementation:",
+          apiError
+        );
+        result = await manualGenerateProtocol(dataWithJobId);
       }
 
-      sessionStorage.setItem("results", JSON.stringify(initialResult));
-      setResults(initialResult);
+      console.log("Protocol generation successful, final result:", result);
+
+      // Save protocol results in sessionStorage.
+      sessionStorage.setItem("results", JSON.stringify(result));
+      setResults(result);
+      // Navigate to the /results page after job has started.
       navigate("/results");
     } catch (err) {
-      setError(
-        err.message || "An error occurred while generating the protocol"
-      );
-      console.error("Error generating protocol:", err);
+      const errorMessage =
+        err.message || "An error occurred while generating the protocol";
+      console.error("Error in handleFormSubmit:", errorMessage, err);
+      setError(errorMessage);
     } finally {
       setProcessing(false);
     }

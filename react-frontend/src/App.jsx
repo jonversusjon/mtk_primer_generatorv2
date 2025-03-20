@@ -17,6 +17,8 @@ function App() {
   // We'll store 'results' at the top-level so both pages can share it
   const [results, setResults] = useState(null);
 
+  console.log("Current results:", results);
+
   return (
     <Router>
       <div className={`app ${darkMode ? "dark-mode" : ""}`}>
@@ -34,7 +36,10 @@ function App() {
                 <FormPage
                   showSettings={showSettings}
                   setShowSettings={setShowSettings}
-                  setResults={setResults}
+                  setResults={(newResults) => {
+                    console.log("Setting new results:", newResults);
+                    setResults(newResults);
+                  }}
                 />
               }
             />
@@ -45,7 +50,14 @@ function App() {
             */}
             <Route
               path="/results"
-              element={<ResultsPage results={results} />}
+              element={
+                <ResultsPage
+                  results={results}
+                  onMount={() =>
+                    console.log("ResultsPage mounted with:", results)
+                  }
+                />
+              }
             />
           </Routes>
         </div>

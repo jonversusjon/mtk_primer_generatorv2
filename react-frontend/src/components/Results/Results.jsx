@@ -1,43 +1,45 @@
-// src/components/Results/Results.jsx
+import React from "react";
 import ResultTabs from "./ResultTabs";
 import "../../styles/Results.css";
 
-function Results({ data, progress }) {
+/*
+  This component receives `data` and `progress` props.
+  - If `data` is an array (placeholders from sessionStorage) or an object (final data), we map it
+    into a consistent results array.
+  - For each sequence, we attach any progress info from SSE using the sequence's key.
+*/
+const Results = ({ data, progress }) => {
+  // Check for empty data (array or object)
+  if (
+    !data ||
+    (Array.isArray(data) && data.length === 0) ||
+    (!Array.isArray(data) && Object.keys(data).length === 0)
+  )
+    return null;
 
-  if (!data || Object.keys(data).length === 0) return null;
-
-  // Convert the data object to an array and attach progress info (if any)
-  const resultsArray = Object.entries(data).map(
-    ([sequenceKey, sequenceData]) => ({
+  let resultsArray;
+  if (Array.isArray(data)) {
+    // Data is already an array (placeholders)
+    resultsArray = data.map((item, index) => ({
+      sequenceKey: item.id || index,
+      ...item,
+      progress: progress ? progress[item.id || index] : null,
+    }));
+  } else {
+    // Data is an object (final data keyed by sequence)
+    resultsArray = Object.entries(data).map(([sequenceKey, sequenceData]) => ({
       sequenceKey,
       ...sequenceData,
       progress: progress ? progress[sequenceKey] : null,
-    })
-  );
+    }));
+  }
 
   return (
     <div className="protocol-results">
       <h2>Golden Gate Protocol Results</h2>
-
-      {/* Toggle Primer Anatomy View
-      <div className="result-actions">
-        <button
-          className="btn btn-secondary"
-          onClick={() => setShowPrimerAnatomy(!showPrimerAnatomy)}
-        >
-          {showPrimerAnatomy ? "Hide" : "Show"} Primer Anatomy
-        </button>
-      </div> */}
-
       <ResultTabs results={resultsArray} />
-
-      {/* {showPrimerAnatomy && (
-        <div className="primer-anatomy-container">
-          <PrimerAnatomy />
-        </div>
-      )} */}
     </div>
   );
-}
+};
 
 export default Results;

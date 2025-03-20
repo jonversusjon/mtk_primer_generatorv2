@@ -1,23 +1,44 @@
 # services/reactions.py
 
-from typing import Dict, List
-from models import Primer
+from typing import List
 from log_utils import logger
-from models import DomesticationResult, MutationPrimerSet
+from models import DomesticationResult, Primer, MutationPrimerSet, PCRReaction
 
 class ReactionOrganizer():
     """
     Organizes mutation primer sets into PCR reactions.
     """
 
-    def group_primers_into_pcr_reactions(self, domestication_result: DomesticationResult) -> Dict:
+    def calculate_amplicon_size(self, forward_primer: Primer, reverse_primer: Primer) -> int:
+        """
+        Calculate the amplicon size based on primer positions.
+        This is a placeholder - replace with actual implementation.
+        """
+        # In a real implementation, you would calculate this based on 
+        # the positions of the primers on the template
+        return 500  # Placeholder value
+
+    def create_pcr_reaction(self, name: str, forward_primer: Primer, reverse_primer: Primer) -> PCRReaction:
+        """
+        Create a PCRReaction object with all required fields.
+        """
+        amplicon_size = self.calculate_amplicon_size(forward_primer, reverse_primer)
+        
+        return PCRReaction(
+            name=name,
+            forward_primer=forward_primer,
+            reverse_primer=reverse_primer,
+            amplicon_size=amplicon_size
+        )
+
+    def group_primers_into_pcr_reactions(self, domestication_result: DomesticationResult) -> List[PCRReaction]:
         """
         Groups primers into PCR reactions using chaining logic for each mutation solution.
         
         Expects domestication_result to have:
           - edge_primers: an object with properties "forward" and "reverse" (both Primer objects)
-          - mut_primers: a dict mapping mutation set indices to lists of solutions,
-                         where each solution is a list of MutationPrimer objects.
+          - mut_primers: a list of MutationPrimerSet objects,
+                         each containing mut_primer_pairs (list of MutationPrimerPair objects).
         
         For each mutation set and solution:
          - If no mutation primers exist, creates a single reaction:
@@ -28,20 +49,9 @@ class ReactionOrganizer():
                 Final Reaction: last mutation's forward primer + edge reverse
         
         Returns:
-            A nested dictionary in the form:
-            {
-                mutation_set_index: {
-                    solution_index: {
-                        "Reaction_1": {"forward": <seq>, "reverse": <seq>},
-                        "Reaction_2": { ... },
-                        ...
-                    },
-                    ...
-                },
-                ...
-            }
+            A list of PCRReaction objects representing all reactions across all mutation sets.
         """
-        reactions_all = {}
+        all_reactions = []
         logger.log_step("Group PCR Reactions", "Starting grouping of primers into PCR reactions.")
 
         # Retrieve edge primers.
@@ -59,14 +69,18 @@ class ReactionOrganizer():
         
         # No mutation primers: create default edge-only reaction.
         if not mut_primers_collection:
-            default_reaction = {"Reaction_1": {"forward": edge_fw.sequence, "reverse": edge_rv.sequence}}
-            reactions_all["default"] = default_reaction
-            logger.log_step("No Mutation Primers", "No mutation primers found; created edge-only reaction.", default_reaction)
-            return reactions_all
+            reaction_name = "Reaction_1"
+            pcr_reaction = self.create_pcr_reaction(
+                name=reaction_name,
+                forward_primer=edge_fw,
+                reverse_primer=edge_rv
+            )
+            all_reactions.append(pcr_reaction)
+            logger.log_step("No Mutation Primers", "No mutation primers found; created edge-only reaction.", pcr_reaction)
+            return all_reactions
         
         # Process each mutation set.
         for idx, mut_primer_set in enumerate(mut_primers_collection):
-            reactions_all[idx] = {}
             logger.log_step("Process Mutation Set", f"Processing mutation set {idx}/{len(mut_primers_collection)}", "")
             logger.log_step("Mutation Primer Set", "Mutation primer set details.",
                             {"mutation_primer_set": mut_primer_set})
@@ -76,13 +90,17 @@ class ReactionOrganizer():
             
             # Process this solution
             mut_primer_idx = 0  # Single solution per mutation set
-            reaction_dict = {}
             reaction_num = 1
 
             # If no mutation primers exist for this solution, create a single edge-only reaction.
             if not mut_primer_pairs:
-                reaction_label = f"Reaction_{reaction_num}"
-                reaction_dict[reaction_label] = {"forward": edge_fw.sequence, "reverse": edge_rv.sequence}
+                reaction_label = f"Set{idx}_Sol{mut_primer_idx}_Reaction_{reaction_num}"
+                pcr_reaction = self.create_pcr_reaction(
+                    name=reaction_label,
+                    forward_primer=edge_fw,
+                    reverse_primer=edge_rv
+                )
+                all_reactions.append(pcr_reaction)
                 logger.log_step("PCR Reaction Created",
                             f"{reaction_label} (edge-only) created for set {idx}, solution {mut_primer_idx}",
                             {"forward": edge_fw.sequence, "reverse": edge_rv.sequence})
@@ -93,47 +111,60 @@ class ReactionOrganizer():
                 ordered_mut_primer_pairs = sorted(mut_primer_pairs, key=lambda k: k.position)
                 
                 # Reaction 1: edge forward with the first mutation's reverse primer.
-                reaction_label = f"Reaction_{reaction_num}"
-                reaction_dict[reaction_label] = {"forward": edge_fw.sequence, "reverse": ordered_mut_primer_pairs[0].reverse.sequence}
+                reaction_label = f"Set{idx}_Sol{mut_primer_idx}_Reaction_{reaction_num}"
+                first_rev_primer = ordered_mut_primer_pairs[0].reverse
+                pcr_reaction = self.create_pcr_reaction(
+                    name=reaction_label,
+                    forward_primer=edge_fw,
+                    reverse_primer=first_rev_primer
+                )
+                all_reactions.append(pcr_reaction)
                 logger.log_step("PCR Reaction Created",
                             f"{reaction_label} created for set {idx}, solution {mut_primer_idx}",
                             {"forward": edge_fw.sequence,
-                                "reverse": ordered_mut_primer_pairs[0].reverse.sequence,
+                                "reverse": first_rev_primer.sequence,
                                 "mutation_reverse_position": ordered_mut_primer_pairs[0].position})
                 reaction_num += 1
 
                 # Chain intermediate mutation primers.
                 for i in range(1, len(ordered_mut_primer_pairs)):
-                    reaction_label = f"Reaction_{reaction_num}"
-                    forward_seq = ordered_mut_primer_pairs[i - 1].forward.sequence
-                    reverse_seq = ordered_mut_primer_pairs[i].reverse.sequence
-                    reaction_dict[reaction_label] = {"forward": forward_seq, "reverse": reverse_seq}
+                    reaction_label = f"Set{idx}_Sol{mut_primer_idx}_Reaction_{reaction_num}"
+                    forward_primer = ordered_mut_primer_pairs[i - 1].forward
+                    reverse_primer = ordered_mut_primer_pairs[i].reverse
+                    pcr_reaction = self.create_pcr_reaction(
+                        name=reaction_label,
+                        forward_primer=forward_primer,
+                        reverse_primer=reverse_primer
+                    )
+                    all_reactions.append(pcr_reaction)
                     logger.log_step("PCR Reaction Created",
                                     f"{reaction_label} created for set {idx}, solution {mut_primer_idx}",
-                                    {"forward": forward_seq,
-                                    "reverse": reverse_seq,
+                                    {"forward": forward_primer.sequence,
+                                    "reverse": reverse_primer.sequence,
                                     "from_mutation_position": ordered_mut_primer_pairs[i - 1].position,
                                     "to_mutation_position": ordered_mut_primer_pairs[i].position})
                     reaction_num += 1
 
                 # Final Reaction: last mutation's forward with edge reverse.
-                reaction_label = f"Reaction_{reaction_num}"
-                final_forward = ordered_mut_primer_pairs[-1].forward.sequence
-                reaction_dict[reaction_label] = {"forward": final_forward, "reverse": edge_rv.sequence}
+                reaction_label = f"Set{idx}_Sol{mut_primer_idx}_Reaction_{reaction_num}"
+                last_forward_primer = ordered_mut_primer_pairs[-1].forward
+                pcr_reaction = self.create_pcr_reaction(
+                    name=reaction_label,
+                    forward_primer=last_forward_primer,
+                    reverse_primer=edge_rv
+                )
+                all_reactions.append(pcr_reaction)
                 logger.log_step("PCR Reaction Created",
                                 f"{reaction_label} created for set {idx}, solution {mut_primer_idx}",
-                                {"forward": final_forward,
+                                {"forward": last_forward_primer.sequence,
                                 "reverse": edge_rv.sequence,
                                 "from_mutation_position": ordered_mut_primer_pairs[-1].position})
 
-            # Save the PCR reaction grouping for this solution.
-            reactions_all[idx][mut_primer_idx] = reaction_dict
             logger.log_step("Mutation Set Processed",
                             f"Completed grouping for set {idx}, solution {mut_primer_idx}",
                             {"total_reactions": reaction_num})
 
         logger.log_step("Group PCR Reactions Complete", "Completed grouping of all PCR reactions.",
-                        {"total_mutation_sets": len(reactions_all)})
+                        {"total_reactions": len(all_reactions)})
         
-        return reactions_all
-
+        return all_reactions

@@ -1,107 +1,72 @@
-// src/components/Results/ResultTab.jsx
-import React from "react";
+import React, { useCallback, useState } from "react";
 import RestrictionSiteSummary from "./RestrictionSiteSummary";
 
-function formatPrimerSequence(primer) {
+/*
+  ResultTab displays the detailed information for a single sequence.
+  - It renders a progress bar if the sequence is still processing.
+  - It shows a placeholder message if the sequence is marked as a placeholder and has no final data.
+  - It displays final results (e.g., PCR reactions, MTK parts, messages) when available.
+*/
+
+// Helper to format primer sequences consistently.
+const formatPrimerSequence = (primer) => {
   if (!primer) return "None";
   if (typeof primer === "string") return primer;
   if (Array.isArray(primer)) return primer.join(", ");
   if (primer.sequence) return primer.sequence;
   return "None";
-}
+};
 
-function ResultTab({ result, index }) {
-  const [copied, setCopied] = React.useState(false);
+const ResultTab = ({ result }) => {
+  const [copied, setCopied] = useState(false);
+  const { mtk_part_left = "N/A", mtk_part_right = "N/A" } = result || {};
 
-  const mtkPartLeft = result?.mtk_part_left || "N/A";
-  const mtkPartRight = result?.mtk_part_right || "N/A";
+  // Copy PCR primer data (tab-separated) to the clipboard.
+  const copyPrimersToClipboard = useCallback(() => {
+    if (!result?.PCR_reactions) return;
 
-  console.log("MTK Part Left:", mtkPartLeft);
-  console.log("MTK Part Right:", mtkPartRight);
-
-  // Copy all primer data (tab-separated) to the clipboard
-  const copyPrimersToClipboard = React.useCallback(() => {
-    if (!result || !result.PCR_reactions) {
-      return;
-    }
-
-    const rows = [];
-    // Iterate over each PCR reaction
-    for (const [reactionName, primers] of Object.entries(
-      result.PCR_reactions
-    )) {
-      // Forward primer
+    // Build rows for each PCR reaction.
+    const rows = Object.entries(result.PCR_reactions).flatMap(([reactionName, primers]) => {
       const forwardSeq = formatPrimerSequence(primers.forward);
-      rows.push(`${reactionName}_FWD\t${forwardSeq}\t`);
-      // Reverse primer
       const reverseSeq = formatPrimerSequence(primers.reverse);
-      rows.push(`${reactionName}_REV\t${reverseSeq}\t`);
-    }
-
+      return [`${reactionName}_FWD\t${forwardSeq}`, `${reactionName}_REV\t${reverseSeq}`];
+    });
     const finalText = rows.join("\n");
 
     navigator.clipboard
       .writeText(finalText)
       .then(() => {
         setCopied(true);
-        // Reset the button after 2 seconds
-        setTimeout(() => {
-          setCopied(false);
-        }, 2000);
+        setTimeout(() => setCopied(false), 2000);
       })
-      .catch((err) => {
-        console.error("Failed to copy primers:", err);
-      });
+      .catch((err) => console.error("Failed to copy primers:", err));
   }, [result]);
 
-  function formatPrimers(primer) {
-    let seq = formatPrimerSequence(primer);
-    return <span className="primer-sequence">{seq}</span>;
-  }
-
-return (
-    <div className="sequence-results">
-      {/* Show a progress bar if processing is not yet complete */}
-      {result.progress && result.progress.percentage < 100 && (
+  // Render progress bar if the sequence is still processing.
+  const renderProgress = () => {
+    if (result.progress && result.progress.percentage < 100) {
+      return (
         <div className="progress-container">
-          <div
-            className="progress-bar"
-            style={{ width: `${result.progress.percentage}%` }}
-          ></div>
+          <div className="progress-bar" style={{ width: `${result.progress.percentage}%` }}></div>
           <div className="progress-message">{result.progress.message}</div>
         </div>
-      )}
+      );
+    }
+    return null;
+  };
 
-      {/* Display messages if present */}
-      {result.messages && result.messages.length > 0 && (
-        <div className="messages">
-          {result.messages.map((msg, idx) => (
-            <div key={idx}>{msg}</div>
-          ))}
-        </div>
-      )}
+  // Render a placeholder message for sequences still processing and with no final data.
+  const renderPlaceholderMessage = () => {
+    if (result.placeholder && (!result.PCR_reactions && (!result.progress || result.progress.percentage < 100))) {
+      return <div className="placeholder-message">This sequence is still processing...</div>;
+    }
+    return null;
+  };
 
-      {/* MTK Part Numbers */}
-      <div className="mtk-part-info">
-        {mtkPartLeft === mtkPartRight ? (
-          <p>
-            <strong>MTK Part Number:</strong> {mtkPartLeft}
-          </p>
-        ) : (
-          <p>
-            <strong>MTK Part Number Left:</strong> {mtkPartLeft} <br />
-            <strong>MTK Part Number Right:</strong> {mtkPartRight}
-          </p>
-        )}
-      </div>
-
-      {/* Restriction Sites */}
-      {result.restriction_sites && result.restriction_sites.length > 0 && (
-        <RestrictionSiteSummary sites={result.restriction_sites} />
-      )}
-
-      {/* PCR Reactions */}
-      {result.PCR_reactions && Object.keys(result.PCR_reactions).length > 0 && (
+  // Render PCR reactions table if available.
+  const renderPCRReactions = () => {
+    if (result.PCR_reactions && Object.keys(result.PCR_reactions).length > 0) {
+      return (
         <div className="pcr-summary section-container">
           <div className="section-header">
             <h3>PCR Reactions</h3>
@@ -119,26 +84,49 @@ return (
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(result.PCR_reactions).map(
-                  ([reaction, primers], idx) => (
+                {Object.entries(result.PCR_reactions).map(([reaction, primers], idx) => (
                   <tr key={idx}>
                     <td>{reaction}</td>
-                    <td className="primer-cell">
-                      {formatPrimers(primers.forward)}
-                      </td>
-                    <td className="primer-cell">
-                      {formatPrimers(primers.reverse)}
-                      </td>
+                    <td className="primer-cell">{formatPrimerSequence(primers.forward)}</td>
+                    <td className="primer-cell">{formatPrimerSequence(primers.reverse)}</td>
                   </tr>
-                )
-                )}
+                ))}
               </tbody>
             </table>
           </div>
         </div>
-      )}
+      );
+    }
+    return null;
+  };
 
-      {/* Display Errors */}
+  return (
+    <div className="sequence-results">
+      {renderProgress()}
+      {renderPlaceholderMessage()}
+      {result.messages && result.messages.length > 0 && (
+        <div className="messages">
+          {result.messages.map((msg, idx) => (
+            <div key={idx}>{msg}</div>
+          ))}
+        </div>
+      )}
+      <div className="mtk-part-info">
+        {mtk_part_left === mtk_part_right ? (
+          <p>
+            <strong>MTK Part Number:</strong> {mtk_part_left}
+          </p>
+        ) : (
+          <p>
+            <strong>MTK Part Number Left:</strong> {mtk_part_left} <br />
+            <strong>MTK Part Number Right:</strong> {mtk_part_right}
+          </p>
+        )}
+      </div>
+      {result.restriction_sites && result.restriction_sites.length > 0 && (
+        <RestrictionSiteSummary sites={result.restriction_sites} />
+      )}
+      {renderPCRReactions()}
       {result.errors && (
         <div className="error-message">
           <strong>Error:</strong> {result.errors}
@@ -146,6 +134,6 @@ return (
       )}
     </div>
   );
-}
+};
 
 export default ResultTab;
