@@ -2,7 +2,7 @@ import numpy as np
 from Bio.Seq import Seq
 from .utils import GoldenGateUtils
 from log_utils import logger
-from models import Primer, MutationPrimerPair, EdgePrimerPair, MutationSet, MutationSetCollection, OverhangOption
+from models import Primer, MutationPrimerPair, MutationPrimerSet, EdgePrimerPair, MutationSet, MutationSetCollection, OverhangOption
 import logging
 from typing import List
 
@@ -47,9 +47,9 @@ class PrimerDesigner():
                                 primer_name: str = None, max_results: int = 1):
         """
         Designs mutation primers for the provided mutation sets using compatibility matrices.
-        Returns a dict mapping each mutation set index to a list of MutationPrimer objects.
+        Returns a list of MutationPrimerSet objects.
         """
-        all_primers = {}
+        all_primers: List[MutationPrimerSet] = []
         mut_site_keys = mutation_sets.sites_to_mutate
         
         for idx, mut_set in enumerate(mutation_sets.sets):
@@ -80,18 +80,12 @@ class PrimerDesigner():
                 logger.log_step("Random Coordinate Selection",
                                 f"Randomly selected {sample_size} coordinate combination(s): {coords_to_process}")
 
-            mut_set_primer_sets = []
+            mut_set_primer_pairs = []
             for coords in coords_to_process:
-                # each set of coords represent a valid set of mut_primer pairs
-                logger.log_step("Coordinate Processing", f"Processing coordinate combination: {coords}")
-                # Ensure the length of the coordinate combination matches the number of mutation sites.
-                if len(coords) != len(mut_set.mutations):
-                    raise ValueError(
-                        f"Coordinate length {len(coords)} does not match number of mutation sites {len(mut_set)}"
-                    )
-
-                # Construct MutationPrimer objects for the current combination.
-                mut_set_primer_set: List[MutationPrimerPair] = self._construct_mutation_primer_set(
+                # [existing code for processing coordinates]
+                
+                # Construct MutationPrimer objects for the current combination
+                primer_pairs: List[MutationPrimerPair] = self._construct_mutation_primer_set(
                     mut_site_keys=mut_site_keys,
                     mutation_set=mut_set,
                     selected_coords=coords,
@@ -99,20 +93,26 @@ class PrimerDesigner():
                 )
                 
                 logger.validate(
-                    mut_set_primer_set is not None,
+                    primer_pairs is not None,
                     "Successfully constructed mutation primers",
-                    {"primer_count": len(mut_set_primer_set) if mut_set_primer_set else 0}
+                    {"primer_count": len(primer_pairs) if primer_pairs else 0}
                 )
                 
-                if mut_set_primer_set:
+                if primer_pairs:
                     logger.log_step("Constructed Primers",
-                                    f"Constructed mutation primer pairs for combination {coords}: {mut_set_primer_set}")
-                    mut_set_primer_sets.extend(mut_set_primer_set)
+                                    f"Constructed mutation primer pairs for combination {coords}: {primer_pairs}")
+                    mut_set_primer_pairs.extend(primer_pairs)
 
             logger.log_step("Set Summary",
-                            f"Total primer pairs constructed for mutation set {idx+1}: {len(mut_set_primer_set)}")
-            all_primers[idx] = mut_set_primer_set
-
+                            f"Total primer pairs constructed for mutation set {idx+1}: {len(mut_set_primer_pairs)}")
+            
+            # Create a MutationPrimerSet object for this mutation set
+            if mut_set_primer_pairs:
+                # This is the key change - wrap the list of MutationPrimerPair objects
+                # in a MutationPrimerSet object before appending to all_primers
+                primer_set = MutationPrimerSet(mut_primer_pairs=mut_set_primer_pairs)
+                all_primers.append(primer_set)
+            
         if not all_primers:
             if self.debug:
                 logger.log_step("Design Failure", "Failed to design primers for any mutation set", level=logging.WARNING)
@@ -135,7 +135,6 @@ class PrimerDesigner():
         """
         logger.log_step("Construct Primers", f"Binding length: {min_binding_length}", {"selected_coords": selected_coords})
         mutation_primers = []
-        # TODO: Make sure that mutation_sets is made up of pydantic objects
         for i, mutation in enumerate(mutation_set.mutations):
             selected_overhang = selected_coords[i]
             # Access overhang_options as a list of OverhangOption objects.
@@ -215,7 +214,14 @@ class PrimerDesigner():
             logger.log_step("Primer Pair Constructed",
                             f"Designed primer pair for site {site_val} at position {position_val}")
             mutation_primers.append(mutation_primer_pair)
-
+            
+            # Validation: Enforce that all primer sets are in order of restriction site position (low to high)
+            sites = [mp.site for mp in mutation_primers]
+            sorted_sites = sorted(sites, key=lambda k: int(k.split('_')[1]))
+            logger.validate(
+                sorted_sites == sites,
+                f"Mutation primer positions are not in increasing order: {sites}"
+            )
         return mutation_primers
 
 
