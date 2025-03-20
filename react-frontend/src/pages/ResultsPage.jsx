@@ -27,6 +27,7 @@ function ResultsPage({ results }) {
   // This creates one placeholder per sequence submitted.
   const placeholders = useMemo(() => {
     const savedFormData = sessionStorage.getItem("formData");
+    console.log("Saved form data:", savedFormData);
     if (savedFormData) {
       const parsedFormData = JSON.parse(savedFormData);
       if (parsedFormData.sequencesToDomesticate) {
@@ -58,7 +59,8 @@ function ResultsPage({ results }) {
   // Status update callback from SSE events.
   const onStatusUpdate = useCallback((statusData) => {
     // Update progress state based on a key, which might be sequence-specific or global.
-    const key = statusData.sequenceId !== undefined ? statusData.sequenceId : "global";
+    const key =
+      statusData.sequenceId !== undefined ? statusData.sequenceId : "global";
     setProgress((prev) => ({ ...prev, [key]: statusData }));
 
     // If final data arrives (100% progress), store it in local state.
@@ -78,7 +80,8 @@ function ResultsPage({ results }) {
       {progress.global && (
         <div className="global-progress">
           <p>
-            Global Progress: {progress.global.percentage}% — {progress.global.message}
+            Global Progress: {progress.global.percentage}% —{" "}
+            {progress.global.message}
           </p>
         </div>
       )}

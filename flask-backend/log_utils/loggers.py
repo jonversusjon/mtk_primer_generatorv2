@@ -14,7 +14,7 @@ class ModuleLoggerAdapter(logging.LoggerAdapter):
         return msg, kwargs
 
 class Logger:
-    def __init__(self, name="GoldenGateApp", extra=None, enable_file_logging=True, log_dir="logs", custom_format=True):
+    def __init__(self, name="MTKAdvanced", extra=None, enable_file_logging=True, log_dir="logs", custom_format=True):
         # Allow extra context info (e.g., {"module": __name__})
         self.extra = extra or {}
         # Create a child logger and wrap it with a LoggerAdapter for extra context.

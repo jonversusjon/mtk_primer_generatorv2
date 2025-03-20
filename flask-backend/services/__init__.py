@@ -7,10 +7,10 @@ optimization, primer design, and protocol generation.
 """
 
 # Import version information
-__version__ = "1.0.0"
+__version__ = "0.1.0"
 
 # Sequence preparation
-from .sequence_prep import SequencePreparator
+from .sequence_preparator import SequencePreparator
 
 # Restriction site detection
 from .rs_detector import RestrictionSiteDetector
@@ -23,10 +23,10 @@ from .mut_optimizer import MutationOptimizer
 from .primer_designer import PrimerDesigner
 
 # Reaction organization
-from .reaction_assembler import ReactionOrganizer
+from .reaction_organizer import ReactionOrganizer
 
 # Protocol generation
-from .protocol_maker import GoldenGateProtocol
+from .protocol_maker import ProtocolMaker
 
 # Utilities
 from .utils import GoldenGateUtils
@@ -40,6 +40,6 @@ __all__ = [
     'PrimerDesigner',
     'PrimerSelector',
     'ReactionOrganizer',
-    'GoldenGateProtocol',
+    'ProtocolMaker',
     'GoldenGateUtils',
 ]

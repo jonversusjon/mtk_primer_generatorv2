@@ -2,7 +2,7 @@
 from flask import Blueprint, request, jsonify, current_app, Response
 from config.logging_config import logger
 from services.utils import GoldenGateUtils
-from services.protocol_maker import GoldenGateProtocol
+from services.protocol_maker import ProtocolMaker
 from flask_cors import CORS
 import json
 import logging
@@ -148,7 +148,7 @@ def run_protocol_job(job_id, data):
         ) = parse_request_data(data)
 
         # Create protocol maker
-        protocol_maker = GoldenGateProtocol(
+        protocol_maker = ProtocolMaker(
             sequences_to_domesticate=sequences_to_domesticate,
             codon_usage_dict=utils.get_codon_usage_dict(species),
             max_mutations=max_mut_per_site,

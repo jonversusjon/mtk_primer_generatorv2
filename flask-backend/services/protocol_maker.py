@@ -14,7 +14,7 @@ from services import (
 from .utils import GoldenGateUtils
 from log_utils import logger
 
-class GoldenGateProtocol():
+class ProtocolMaker():
     """
     Orchestrates the Golden Gate protocol by managing sequence preparation,
     primer design, mutation analysis, and optimization.
@@ -48,9 +48,9 @@ class GoldenGateProtocol():
         self.primer_designer = PrimerDesigner(
             kozak=kozak, verbose=verbose, debug=True)
         self.reaction_organizer = ReactionOrganizer()
-        logger.debug(f"GoldenGateProtocol initialized with codon_usage_dict: {codon_usage_dict}")
+        logger.debug(f"Protocol maker initialized with codon_usage_dict: {codon_usage_dict}")
         if verbose:
-            logger.log_step("Verbose Mode", "GoldenGateProtocol is running in verbose mode.")
+            logger.log_step("Verbose Mode", "Protocol maker is running in verbose mode.")
 
         self.sequences_to_domesticate: List[SequenceToDomesticate] = sequences_to_domesticate
         self.template_seq = template_seq
