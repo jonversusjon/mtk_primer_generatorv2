@@ -5,7 +5,7 @@ import SequenceTabs from "./SequenceTabs";
 const Form = ({
   onSubmit,
   formData,
-  setFormData,
+  updateFields,
   errors,
   isValid,
   initialized,
@@ -32,7 +32,7 @@ const Form = ({
       console.log(
         `updateSequence - index: ${index}, field: ${field}, value: ${value}`
       );
-      setFormData((prev) => {
+      updateFields((prev) => {
         const updatedSequences = [...prev.sequencesToDomesticate];
         if (updatedSequences[index]?.[field] === value) return prev;
         updatedSequences[index] = {
@@ -46,32 +46,32 @@ const Form = ({
         return { ...prev, sequencesToDomesticate: updatedSequences };
       });
     },
-    [setFormData]
+    [updateFields]
   );
 
   const addSequence = useCallback(() => {
-    setFormData((prev) => ({
+    updateFields((prev) => ({
       ...prev,
       sequencesToDomesticate: [
         ...prev.sequencesToDomesticate,
         { sequence: "", primerName: "", mtkPartLeft: "", mtkPartRight: "" },
       ],
     }));
-  }, [setFormData]);
+  }, [updateFields]);
 
   const removeSequence = useCallback(() => {
-    setFormData((prev) => {
+    updateFields((prev) => {
       if (prev.sequencesToDomesticate.length <= 1) return prev;
       return {
         ...prev,
         sequencesToDomesticate: prev.sequencesToDomesticate.slice(0, -1),
       };
     });
-  }, [setFormData]);
+  }, [updateFields]);
 
   const resetForm = useCallback(() => {
-    setFormData((prev) => ({ ...prev, templateSequence: "", species: "" }));
-  }, [setFormData]);
+    updateFields((prev) => ({ ...prev, templateSequence: "", species: "" }));
+  }, [updateFields]);
 
   return (
     <form id="primer-form" onSubmit={handleSubmit}>
@@ -82,7 +82,7 @@ const Form = ({
       <TemplateSequence
         value={formData.templateSequence}
         onChange={(value) =>
-          setFormData((prev) => ({ ...prev, templateSequence: value }))
+          updateFields((prev) => ({ ...prev, templateSequence: value }))
         }
       />
 

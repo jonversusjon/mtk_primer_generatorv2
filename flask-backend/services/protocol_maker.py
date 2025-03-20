@@ -119,7 +119,7 @@ class ProtocolMaker():
                     mutation_primers = self.primer_designer.design_mutation_primers(
                         mutation_sets=optimized_mutations,
                         primer_name=seq_to_dom.primer_name,
-                        max_results=self.max_results,
+                        max_results_str=self.max_results,
                     )
                     dom_result.mut_primers = mutation_primers
                 logger.log_step("Mutation Primers", f"Mutation primers designed: {mutation_primers}")

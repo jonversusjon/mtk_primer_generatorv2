@@ -7,6 +7,8 @@ import Form from "../components/Form/Form";
 import Sidebar from "../components/Form/Sidebar";
 import { generateProtocol } from "../api/api";
 import useValidateForm from "../hooks/useValidateForm";
+import { useFormUpdater } from "../hooks/useFormUpdater";
+
 import "../styles/Form.css";
 
 const getErrorsBySequence = (errors, count) => {
@@ -39,7 +41,11 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
     maxMutationsPerSite: 1,
     maxResults: 1,
     verboseMode: false,
+    results_limit: "one",
   });
+
+  console.log("setFormData type:", typeof setFormData);
+
   const [loading, setLoading] = useState(true);
   const [configLoaded, setConfigLoaded] = useState(false);
   const [speciesLoaded, setSpeciesLoaded] = useState(false);
@@ -56,6 +62,8 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const navigate = useNavigate();
   const eventSourceRef = useRef(null);
+
+  const { updateSettings, updateFormInput } = useFormUpdater(setFormData);
 
   // Log formData changes
   useEffect(() => {
@@ -351,8 +359,8 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
           settingsToggleRef={settingsToggleRef}
           setShowSettings={setShowSettings}
           showSettings={showSettings}
+          updateSettings={updateSettings}
           formData={formData}
-          setFormData={setFormData}
         />
         <div
           className="form-container"
@@ -382,7 +390,7 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
           <Form
             onSubmit={handleFormSubmit}
             formData={formData}
-            setFormData={setFormData}
+            updateFields={updateFormInput}
             showSettings={showSettings}
             setShowSettings={setShowSettings}
             settingsToggleRef={settingsToggleRef}

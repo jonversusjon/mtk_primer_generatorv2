@@ -56,7 +56,7 @@ const Sidebar = ({
   setShowSettings,
   showSettings,
   formData,
-  setFormData,
+  updateSettings,
 }) => (
   <div className="sidebar">
     {/* Settings Component */}
@@ -64,7 +64,7 @@ const Sidebar = ({
       show={showSettings}
       onClose={() => setShowSettings(false)}
       formData={formData}
-      updateFormData={setFormData}
+      updateField={updateSettings}
       availableSpecies={formData.availableSpecies || []}
       settingsToggleRef={settingsToggleRef}
     />
