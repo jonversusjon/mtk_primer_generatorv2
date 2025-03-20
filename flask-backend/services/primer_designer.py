@@ -6,6 +6,14 @@ from models import Primer, MutationPrimerPair, MutationPrimerSet, EdgePrimerPair
 import logging
 from typing import List
 
+RESULT_MAPPING = {
+    "one":   lambda num_sites, total_coords: 1,
+    "a few": lambda num_sites, total_coords: 2 * num_sites,
+    "many":  lambda num_sites, total_coords: 4 * num_sites,
+    "most":  lambda num_sites, total_coords: int(0.75 * total_coords),
+    "all":   lambda num_sites, total_coords: total_coords,
+}
+
 class PrimerDesigner():
     """
     Handles primer design for Golden Gate assembly.
@@ -44,11 +52,23 @@ class PrimerDesigner():
         )
 
     def design_mutation_primers(self, mutation_sets: MutationSetCollection,
-                                primer_name: str = None, max_results: int = 1):
+                                primer_name: str = None, max_results_str: str = "one"):
         """
         Designs mutation primers for the provided mutation sets using compatibility matrices.
         Returns a list of MutationPrimerSet objects.
         """
+        logger.log_step("Design Mutation Primers",
+                        "Starting primer design process",
+                        {"mutation_sets": mutation_sets, "primer_name": primer_name, "max_results": max_results_str})
+        
+        # Calculate number of restriction sites.
+        num_restriction_sites = len(mutation_sets.sites_to_mutate)
+    
+        # Precompute total valid coordinates across all mutation sets.
+        total_valid_coords = sum(np.argwhere(mut_set.compatibility == 1).shape[0] for mut_set in mutation_sets.sets)
+        
+        max_results = RESULT_MAPPING.get(max_results_str, lambda num_sites, total_coords: 1)(num_restriction_sites, total_valid_coords)
+        
         all_primers: List[MutationPrimerSet] = []
         mut_site_keys = mutation_sets.sites_to_mutate
         
@@ -111,6 +131,7 @@ class PrimerDesigner():
                 # This is the key change - wrap the list of MutationPrimerPair objects
                 # in a MutationPrimerSet object before appending to all_primers
                 primer_set = MutationPrimerSet(mut_primer_pairs=mut_set_primer_pairs)
+                mut_set.mut_primer_sets = mut_set_primer_pairs
                 all_primers.append(primer_set)
             
         if not all_primers:

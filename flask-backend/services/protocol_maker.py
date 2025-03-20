@@ -28,7 +28,7 @@ class ProtocolMaker():
         template_seq: Optional[str] = None,
         kozak: str = "MTK",
         output_tsv_path: str = "designed_primers.tsv",
-        max_results: int = 1,
+        max_results: str = "one",
         verbose: bool = False,
         debug: bool = False,
     ):

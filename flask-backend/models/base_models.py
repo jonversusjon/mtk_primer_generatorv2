@@ -1,8 +1,16 @@
-import math
-import numpy as np
 from pydantic import BaseModel, BeforeValidator, PlainSerializer, WithJsonSchema
-from typing import Annotated, List, Optional, Any
-from models import Codon
+from typing import List, Any, Annotated, Optional
+import numpy as np
+import math
+
+
+
+
+def to_camel(string: str) -> str:
+    parts = string.split('_')
+
+    return parts[0] + ''.join(word.capitalize() for word in parts[1:])
+    
 
 def validate_numpy_array(v: Any) -> np.ndarray:
     """
@@ -24,6 +32,7 @@ def validate_numpy_array(v: Any) -> np.ndarray:
     if not exponent.is_integer():
         raise ValueError("The total number of elements must be 4^N for some positive integer N.")
     return arr
+
 
 def serialize_numpy_array(x: np.ndarray) -> dict:
     """
@@ -57,19 +66,37 @@ NumpyArray = Annotated[
     })
 ]
 
-# Define a custom BaseModel that allows arbitrary types
 class ConfiguredBaseModel(BaseModel):
     model_config = {"arbitrary_types_allowed": True}
+    
 
-# Mutation models using the custom base model
+class Codon(BaseModel):
+    amino_acid: str
+    context_position: int
+    codon_sequence: str
+    rs_overlap: List[int]
+    usage: float
+    
+
+class MutationCodon(ConfiguredBaseModel):
+    codon: Codon
+    nth_codon_in_rs: int
+    
+    
 class OverhangOption(ConfiguredBaseModel):
     bottom_overhang: str
     top_overhang: str
     overhang_start_index: int
 
-class MutationCodon(ConfiguredBaseModel):
-    codon: Codon
-    nth_codon_in_rs: int
+
+class Primer(BaseModel):
+    name: str = ""
+    sequence: str = ""
+    binding_region: Optional[str] = None
+    tm: Optional[float] = None
+    gc_content: Optional[float] = None
+    length: Optional[int] = None
+
 
 class Mutation(ConfiguredBaseModel):
     mut_codons: List[MutationCodon]
@@ -79,12 +106,17 @@ class Mutation(ConfiguredBaseModel):
     first_mut_idx: int
     last_mut_idx: int
     overhang_options: List[OverhangOption]
-
-class MutationSet(ConfiguredBaseModel):
-    mutations: List[Mutation]
-    compatibility: NumpyArray
-
-class MutationSetCollection(ConfiguredBaseModel):
-    sites_to_mutate: List[str]
-    sets: List[MutationSet]
     
+
+class RestrictionSite(BaseModel):
+    position: int
+    frame: int
+    codons: List[Codon]
+    strand: str
+    context_seq: str
+    context_rs_indices: List[int]
+    context_first_base: int
+    context_last_base: int
+    recognition_seq: str
+    enzyme: str
+    mutations: Optional[Mutation] = None

@@ -1,6 +1,8 @@
 import React, { useRef } from "react";
 import "../styles/Settings.css";
 
+const sliderValues = ["one", "a few", "many", "most", "all"];
+
 // TODO: Add PCR reaction settings
 /*
 tm_threshold: 55.0
@@ -116,23 +118,25 @@ function Settings({
           </select>
         </div>
 
-        {/* Results Limit Setting */}
+        {/* Results Limit Setting (Replaced Select with Slider) */}
         <div className="form-group">
-          <label htmlFor="results-select">Number of Results:</label>
-          <select
-            id="results-select"
+          <label htmlFor="results-slider">Number of Results:</label>
+          <input
+            type="range"
+            id="results-slider"
             className="form-control"
-            value={formData.results_limit}
+            min="0"
+            max="4"
+            step="1"
+            value={sliderValues.indexOf(formData.results_limit)}
             onChange={(e) =>
               updateFormData(
                 "results_limit",
-                e.target.value === "all" ? "all" : parseInt(e.target.value)
+                sliderValues[parseInt(e.target.value)]
               )
             }
-          >
-            <option value={1}>1</option>
-            <option value="all">All</option>
-          </select>
+          />
+          <span style={{ marginLeft: "10px" }}>{formData.results_limit}</span>
         </div>
 
         {/* Verbose Mode Toggle */}

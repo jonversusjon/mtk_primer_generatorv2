@@ -1,6 +1,29 @@
 from pydantic import BaseModel
 from typing import List, Dict, Optional, Any
-from models import Mutation, Primer, RestrictionSite, PCRReaction, EdgePrimerPair, MutationPrimerSet
+from models import Mutation, Primer, RestrictionSite, MutationPrimerSet, ConfiguredBaseModel, NumpyArray
+
+
+### Results ###
+class MutationSet(ConfiguredBaseModel):
+    mutations: List[Mutation]
+    compatibility: NumpyArray
+    mut_primer_sets: List[MutationPrimerSet] = []
+
+
+class MutationSetCollection(ConfiguredBaseModel):
+    sites_to_mutate: List[str]
+    sets: List[MutationSet]
+    
+
+class PCRReaction(BaseModel):
+    name: str
+    forward_primer: Primer
+    reverse_primer: Primer
+    amplicon_size: int
+
+class EdgePrimerPair(BaseModel):
+    forward: Primer
+    reverse: Primer
 
 
 # Protocol model
@@ -21,3 +44,8 @@ class DomesticationResult(BaseModel):
 
 class MTKDomesticationProtocol(BaseModel):
     result_data: Dict[int, DomesticationResult]
+
+    
+
+
+    

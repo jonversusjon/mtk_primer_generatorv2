@@ -1,42 +1,37 @@
 # models/__init__.py
-from .codon import Codon
-from .mutations import Mutation, MutationSet, MutationSetCollection, OverhangOption, MutationCodon
-from .restriction_sites import RestrictionSite
-from .sequences import SequenceToDomesticate
-from .primers import  Primer, MutationPrimerPair, MutationPrimerSet, EdgePrimerPair
-from .pcr_reactions import PCRReaction
-from .protocols import DomesticationResult, MTKDomesticationProtocol
+from .base_models import to_camel, validate_numpy_array, serialize_numpy_array, NumpyArray, ConfiguredBaseModel, Codon, MutationCodon, OverhangOption, Primer, Mutation, RestrictionSite
+from .process_models import SequenceToDomesticate, MutationPrimerPair, MutationPrimerSet
+from .results_models import MutationSet, MutationSetCollection, PCRReaction, EdgePrimerPair, DomesticationResult, MTKDomesticationProtocol
 
 
 # Define what gets imported when using `from models import *`
 __all__ = [
-    # Codon
+    # Base Models
+    "to_camel",
+    "validate_numpy_array",
+    "serialize_numpy_array",
+    "NumpyArray",
+    "ConfiguredBaseModel",
     "Codon",
-
-    # Mutations
-    "OverhangOption",
-    "Mutation",
-    "MutationSet",
-    "MutationSetCollection",
     "MutationCodon",
-    
-    # Restriction Sites
-    "RestrictionSite",
-    
-    # Sequences
-    "SequenceToDomesticate",
-
-    # Primers
-    "ReactionDetail",
+    "OverhangOption",
     "Primer",
+    "Mutation",
+    "RestrictionSite",
+
+
+    # Process Models
+    "SequenceToDomesticate",
     "MutationPrimerPair",
     "MutationPrimerSet",
-    "EdgePrimerPair",
     
-    # PCR Reactions
+    
+    # Results Models
+    "MutationSet",
+    "MutationSetCollection",
     "PCRReaction",
-
-    # Protocols
+    "EdgePrimerPair",
     "DomesticationResult",
     "MTKDomesticationProtocol",
+
 ]
