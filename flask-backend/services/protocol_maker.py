@@ -84,7 +84,8 @@ class ProtocolMaker():
         
         progress_callback(
             step="Protocol Start",
-            message=f"Starting Golden Gate protocol creation for sequence {self.request_idx+1}..."
+            message=f"Starting Golden Gate protocol creation for sequence {self.request_idx+1}...",
+            progress=12.5
         )
         
         logger.log_step("Protocol Start", "Starting Golden Gate protocol creation...")
@@ -99,7 +100,8 @@ class ProtocolMaker():
         # 1. Preprocess sequence (remove start/stop codons, etc.)
         progress_callback(
             step="Preprocessing",
-            message=f"Preprocessing sequence at index {self.request_idx+1}..."
+            message=f"Preprocessing sequence at index {self.request_idx+1}...",
+            progress=25.0,
         )
         logger.log_step("Preprocessing",
                         f"Preprocessing sequence at index {self.request_idx+1}")
@@ -112,7 +114,8 @@ class ProtocolMaker():
         dom_result.processed_sequence = str(processed_seq) if processed_seq else str(self.seq_to_dom.sequence)
         progress_callback(
             step="Preprocessing",
-            message=f"Finished preprocessing sequence at index {self.request_idx+1}... {message}"
+            message=f"Finished preprocessing sequence at index {self.request_idx+1}... {message}",
+            progress=50.0
         )
         
         # 2. Find restriction sites

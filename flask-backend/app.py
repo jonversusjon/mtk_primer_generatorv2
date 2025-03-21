@@ -1,8 +1,10 @@
 import os
 import importlib.util
-
+from flask import Flask, send_from_directory, jsonify, request, stream_with_context, Response
+from celery_worker import celery
+import time
+import json
 import argparse
-from flask import Flask, send_from_directory, jsonify
 from flask_cors import CORS
 from routes.main import main
 from routes.api import api
@@ -116,9 +118,35 @@ def create_app():
         """Handle 500 errors with JSON response."""
         return jsonify({'error': 'Internal server error'}), 500
 
-    return app
+    @app.route("/api/start-task", methods=["POST"])
+    def start_task():
+        """Enqueue a Celery task; payload determines which function to call."""
+        payload = request.get_json()
+        task = celery.send_task(payload["task_name"], args=payload.get("args", []), kwargs=payload.get("kwargs", {}))
+        return jsonify({"task_id": task.id}), 202
 
+    @app.route("/api/task-status/<task_id>")
+    def task_status(task_id):
+        def event_stream():
+            while True:
+                res = celery.AsyncResult(task_id)
+                status = res.status
+                data = {"task_id": task_id, "status": status}
+                if res.status == "SUCCESS":
+                    data["result"] = res.result
+                    yield f"data: {json.dumps(data)}\n\n"
+                    break
+                elif res.status == "FAILURE":
+                    data["error"] = str(res.result)
+                    yield f"data: {json.dumps(data)}\n\n"
+                    break
+                else:
+                    yield f"data: {json.dumps(data)}\n\n"
+                time.sleep(1)
+        return Response(stream_with_context(event_stream()), mimetype="text/event-stream")
+
+    return app
 
 if __name__ == "__main__":
     app = create_app()
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0", port=5000)
