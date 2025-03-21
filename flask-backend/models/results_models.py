@@ -29,7 +29,7 @@ class EdgePrimerPair(BaseModel):
 # Protocol model
 class DomesticationResult(BaseModel):
     sequence_index: int = -1
-    max_results: int = 1
+    max_results: str = "one"
     processed_sequence: str = ""
     mtk_part_left: str = ""
     mtk_part_right: str = ""

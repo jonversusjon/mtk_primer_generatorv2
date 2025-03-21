@@ -4,8 +4,6 @@ import numpy as np
 import math
 
 
-
-
 def to_camel(string: str) -> str:
     parts = string.split('_')
 

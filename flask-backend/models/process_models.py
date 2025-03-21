@@ -15,7 +15,22 @@ class SequenceToDomesticate(BaseModel):
         populate_by_alias=True
     )
     
-    
+
+class ProtocolRequest(BaseModel):
+    sequences_to_domesticate: List[SequenceToDomesticate]
+    species: str = ""
+    kozak: str = "MTK"
+    max_mut_per_site: int = 3
+    verbose_mode: bool = True
+    template_sequence: str = ""
+    max_results: str = "err"
+    job_id: Optional[str] = None
+
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+        
+        
 class MutationPrimerPair(BaseModel):
     # forward / reverse for a single restriction site
     site: str

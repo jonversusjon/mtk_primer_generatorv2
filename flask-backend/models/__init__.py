@@ -1,8 +1,31 @@
 # models/__init__.py
-from .base_models import to_camel, validate_numpy_array, serialize_numpy_array, NumpyArray, ConfiguredBaseModel, Codon, MutationCodon, OverhangOption, Primer, Mutation, RestrictionSite
-from .process_models import SequenceToDomesticate, MutationPrimerPair, MutationPrimerSet
-from .results_models import MutationSet, MutationSetCollection, PCRReaction, EdgePrimerPair, DomesticationResult, MTKDomesticationProtocol
-
+from .base_models import (
+    to_camel,
+    validate_numpy_array,
+    serialize_numpy_array,
+    NumpyArray,
+    ConfiguredBaseModel,
+    Codon,
+    MutationCodon,
+    OverhangOption,
+    Primer,
+    Mutation,
+    RestrictionSite,
+)
+from .process_models import (
+    SequenceToDomesticate,
+    MutationPrimerPair,
+    MutationPrimerSet,
+    ProtocolRequest,
+)
+from .results_models import (
+    MutationSet,
+    MutationSetCollection,
+    PCRReaction,
+    EdgePrimerPair,
+    DomesticationResult,
+    MTKDomesticationProtocol,
+)
 
 # Define what gets imported when using `from models import *`
 __all__ = [
@@ -24,6 +47,7 @@ __all__ = [
     "SequenceToDomesticate",
     "MutationPrimerPair",
     "MutationPrimerSet",
+    "ProtocolRequest",
     
     
     # Results Models

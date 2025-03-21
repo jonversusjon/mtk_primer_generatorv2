@@ -1,15 +1,20 @@
 # services/api.py
 from flask import Blueprint, request, jsonify, current_app, Response
-from models import ProtocolRequest
-from services import ProtocolMaker, GoldenGateUtils
+from services.utils import GoldenGateUtils
+from services.protocol_maker import ProtocolMaker
 from flask_cors import CORS
 import json
 import time
 import threading
+from concurrent.futures import ThreadPoolExecutor
+from models import SequenceToDomesticate
 from pydantic import BaseModel
 from log_utils import logger
 
-# Cleanup timeout in seconds (e.g. one hour)
+# Maximum number of worker threads in the pool
+MAX_WORKERS = 10
+
+# Timeout for cleaning up completed jobs (in seconds)
 JOB_CLEANUP_TIMEOUT = 3600
 
 api = Blueprint("api", __name__, url_prefix="/api")
@@ -17,17 +22,21 @@ CORS(api)  # Enable CORS for all routes
 
 utils = GoldenGateUtils()
 
-# Global dictionaries for job status and job creation timestamps.
+# Thread pool for running background jobs
+thread_pool = ThreadPoolExecutor(max_workers=MAX_WORKERS)
+
+# Global dictionary to store job statuses with thread-safe access
 job_status = {}
-job_timestamps = {}
 job_status_lock = threading.Lock()
+
+# Dictionary to track job creation times for cleanup
+job_timestamps = {}
 
 
 def convert_to_serializable(obj):
-    """
-    Recursively convert Pydantic models and other non-serializable objects to dictionaries.
-    """
+    """Convert Pydantic models and other non-serializable objects to dictionaries."""
     if isinstance(obj, BaseModel):
+        # Use model_dump() for Pydantic v2 or dict() for v1
         return obj.model_dump() if hasattr(obj, 'model_dump') else obj.dict()
     elif isinstance(obj, dict):
         return {k: convert_to_serializable(v) for k, v in obj.items()}
@@ -39,44 +48,70 @@ def convert_to_serializable(obj):
         return obj
 
 
+def parse_request_data(data):
+    """
+    Parse and validate incoming request data for the protocol job.
+    
+    Args:
+        data: Dict containing request data
+        
+    Returns:
+        Tuple of parsed parameters
+    """
+    sequences_json = data.get("sequencesToDomesticate", [])
+    sequences_to_domesticate = [SequenceToDomesticate.model_validate(seq) for seq in sequences_json]
+
+    return (
+        sequences_to_domesticate,
+        data.get("species", ""),
+        data.get("kozak", "MTK"),
+        data.get("max_mut_per_site", 3),
+        data.get("verbose_mode", True),
+        data.get("templateSequence", ""),
+        data.get("maxResults", "err"),
+    )
+
+
 def update_job_status(job_id, update_data):
     """
-    Thread-safe update to the global job_status dictionary.
+    Thread-safe update to the job status dictionary.
     
-    Uses a deep-update to merge nested dictionaries.
+    Args:
+        job_id: Unique job identifier
+        update_data: Dictionary with data to update or add
     """
     with job_status_lock:
         if job_id not in job_status:
             job_status[job_id] = {}
-        # Deep update helper:
+        
+        # Deep update that merges nested dictionaries
         def deep_update(d, u):
             for k, v in u.items():
                 if isinstance(v, dict) and k in d and isinstance(d[k], dict):
                     deep_update(d[k], v)
                 else:
                     d[k] = v
+                    
         deep_update(job_status[job_id], update_data)
 
 
 def process_sequence(job_id, seq, species, kozak, max_mut_per_site, verbose_mode, template_sequence, max_results):
     """
-    Process a single sequence, updating its own status as well as overall job counts.
+    Process a single sequence and update its status in the job_status dictionary.
+    
+    Args:
+        job_id: Unique job identifier
+        seq: SequenceToDomesticate object
+        species: Species for codon optimization
+        kozak: Kozak sequence
+        max_mut_per_site: Maximum mutations per site
+        verbose_mode: Enable verbose logging
+        template_sequence: Template sequence
+        max_results: Maximum results to return
     """
-    seq_name = getattr(seq, "primerName", None) or f"seq_{id(seq)}"
+    seq_name = seq.primerName if hasattr(seq, 'primerName') and seq.primerName else f"seq_{id(seq)}"
     
-    # Set initial per-sequence status.
-    update_job_status(job_id, {
-        "sequences": {
-            seq_name: {
-                "status": "running",
-                "percentage": 0,
-                "message": f"Started processing {seq_name}",
-                "step": "initialization"
-            }
-        }
-    })
-    
-    # Define a progress callback that updates the per-sequence status.
+    # Create a progress callback for this sequence
     def progress_callback(percentage, message, step):
         update_job_status(job_id, {
             "sequences": {
@@ -90,10 +125,21 @@ def process_sequence(job_id, seq, species, kozak, max_mut_per_site, verbose_mode
         logger.debug(f"[Job {job_id}] [{seq_name}] {percentage}% - {message} ({step})")
     
     try:
-        # Instantiate and run the ProtocolMaker for this sequence.
+        # Update initial status
+        update_job_status(job_id, {
+            "sequences": {
+                seq_name: {
+                    "status": "running",
+                    "percentage": 0,
+                    "message": f"Started processing {seq_name}",
+                    "step": "initialization"
+                }
+            }
+        })
+        
+        # Create and run protocol maker
         protocol_maker = ProtocolMaker(
-            request_idx=0,
-            sequence_to_domesticate=seq,
+            sequences_to_domesticate=[seq],
             codon_usage_dict=utils.get_codon_usage_dict(species),
             max_mutations=max_mut_per_site,
             template_seq=template_sequence,
@@ -101,19 +147,19 @@ def process_sequence(job_id, seq, species, kozak, max_mut_per_site, verbose_mode
             max_results=max_results,
             verbose=verbose_mode,
             debug=False,
-            job_id=job_id
         )
+        
         result = protocol_maker.create_gg_protocol(progress_callback=progress_callback)
         serializable_result = utils.convert_non_serializable(result)
         
-        # Merge primer name if provided.
+        # Add primer name if available
         if hasattr(seq, 'primerName') and seq.primerName:
             if isinstance(serializable_result, list) and serializable_result:
                 serializable_result[0]["primerName"] = seq.primerName
             elif isinstance(serializable_result, dict):
                 serializable_result["primerName"] = seq.primerName
         
-        # Update per-sequence final status.
+        # Update final status
         update_job_status(job_id, {
             "sequences": {
                 seq_name: {
@@ -125,6 +171,7 @@ def process_sequence(job_id, seq, species, kozak, max_mut_per_site, verbose_mode
                 }
             }
         })
+        
     except Exception as e:
         logger.error(f"Error processing sequence [{seq_name}] in job [{job_id}]: {str(e)}", exc_info=True)
         update_job_status(job_id, {
@@ -139,73 +186,64 @@ def process_sequence(job_id, seq, species, kozak, max_mut_per_site, verbose_mode
             }
         })
     finally:
-        # Update overall job progress.
+        # Update completion counter
         with job_status_lock:
             job_status[job_id]["completed_count"] = job_status[job_id].get("completed_count", 0) + 1
-            total = job_status[job_id].get("total_count", 1)
-            if job_status[job_id]["completed_count"] >= total:
+            # Check if all sequences are done
+            if job_status[job_id]["completed_count"] >= job_status[job_id]["total_count"]:
                 job_status[job_id]["status"] = "completed"
                 job_status[job_id]["end_time"] = time.time()
 
 
-def cleanup_old_jobs():
+def start_job(job_id, data):
     """
-    Remove completed or errored jobs older than JOB_CLEANUP_TIMEOUT from memory.
-    """
-    current_time = time.time()
-    with job_status_lock:
-        jobs_to_remove = []
-        for job_id, timestamp in job_timestamps.items():
-            if current_time - timestamp > JOB_CLEANUP_TIMEOUT:
-                if job_status.get(job_id, {}).get("status") in ["completed", "error"]:
-                    jobs_to_remove.append(job_id)
-        for job_id in jobs_to_remove:
-            del job_status[job_id]
-            del job_timestamps[job_id]
-            logger.debug(f"Cleaned up job {job_id} (older than {JOB_CLEANUP_TIMEOUT}s)")
-
-
-def start_job(job_id: str, req: ProtocolRequest):
-    """
-    Initialize a new job using data from a ProtocolRequest model, store initial status,
-    and spawn a thread for each sequence.
+    Initialize a new job and start processing sequences in parallel.
+    
+    Args:
+        job_id: Unique job identifier
+        data: Request data dictionary
+    
+    Returns:
+        Dict with job status information
     """
     try:
-        # Record job creation time for cleanup.
-        job_timestamp = time.time()
-        with job_status_lock:
-            job_timestamps[job_id] = job_timestamp
-            job_status[job_id] = {
-                "status": "running",
-                "start_time": job_timestamp,
-                "total_count": len(req.sequences_to_domesticate),
-                "completed_count": 0,
-                "sequences": {}
-            }
+        # Parse request data
+        sequences_to_domesticate, species, kozak, max_mut_per_site, verbose_mode, template_sequence, max_results = parse_request_data(data)
         
-        # Spawn a thread for each sequence.
-        for seq in req.sequences_to_domesticate:
-            threading.Thread(
-                target=process_sequence,
-                args=(
-                    job_id,
-                    seq,
-                    req.species,
-                    req.kozak,
-                    req.max_mut_per_site,
-                    req.verbose_mode,
-                    req.template_sequence,
-                    req.max_results
-                ),
-                daemon=True
-            ).start()
+        # Initialize job status
+        job_timestamp = time.time()
+        job_timestamps[job_id] = job_timestamp
+        
+        # Create initial job status
+        update_job_status(job_id, {
+            "status": "running",
+            "start_time": job_timestamp,
+            "total_count": len(sequences_to_domesticate),
+            "completed_count": 0,
+            "sequences": {}
+        })
+        
+        # Submit each sequence for processing
+        for seq in sequences_to_domesticate:
+            thread_pool.submit(
+                process_sequence,
+                job_id,
+                seq,
+                species,
+                kozak,
+                max_mut_per_site,
+                verbose_mode,
+                template_sequence,
+                max_results
+            )
         
         return {
             "jobId": job_id,
             "status": "started",
-            "message": f"Job started with {len(req.sequences_to_domesticate)} sequences",
-            "total_sequences": len(req.sequences_to_domesticate)
+            "message": f"Job started with {len(sequences_to_domesticate)} sequences",
+            "total_sequences": len(sequences_to_domesticate)
         }
+        
     except Exception as e:
         logger.error(f"Error starting job {job_id}: {str(e)}", exc_info=True)
         update_job_status(job_id, {
@@ -220,25 +258,44 @@ def start_job(job_id: str, req: ProtocolRequest):
         }
 
 
+def cleanup_old_jobs():
+    """Remove completed jobs older than JOB_CLEANUP_TIMEOUT from memory."""
+    current_time = time.time()
+    with job_status_lock:
+        jobs_to_remove = []
+        for job_id, timestamp in job_timestamps.items():
+            if current_time - timestamp > JOB_CLEANUP_TIMEOUT:
+                # Only clean up completed or errored jobs
+                if job_id in job_status and job_status[job_id].get("status") in ["completed", "error"]:
+                    jobs_to_remove.append(job_id)
+        
+        for job_id in jobs_to_remove:
+            del job_status[job_id]
+            del job_timestamps[job_id]
+            logger.debug(f"Cleaned up job {job_id} (older than {JOB_CLEANUP_TIMEOUT}s)")
+
+
 @api.route("/generate_protocol", methods=["POST"])
 def generate_protocol():
     """
-    Start a protocol generation job in the background using a Pydantic model to
-    parse incoming request data. Immediately return a jobId and the submitted data.
+    Start a protocol generation job in the background and immediately
+    return a jobId and the submitted data for the frontend to use.
     """
     try:
-        # Use Pydantic to parse and validate the incoming JSON, converting camelCase to snake_case.
-        req_data = ProtocolRequest.parse_obj(request.json)
-        # Use provided jobId or generate one based on the current time.
-        job_id = req_data.job_id or str(int(time.time() * 1000))
-        req_data.job_id = job_id  # set the job_id back in the model
+        data = request.json
         
-        result = start_job(job_id, req_data)
+        # Use jobId from data or generate one
+        job_id = data.get("jobId", str(int(time.time() * 1000)))
+        data["jobId"] = job_id
         
-        # Launch a cleanup thread.
+        # Start the job processing
+        result = start_job(job_id, data)
+        
+        # Clean up old jobs in the background
         threading.Thread(target=cleanup_old_jobs, daemon=True).start()
         
         return jsonify(result), 202
+        
     except Exception as e:
         logger.error(f"Error in generate_protocol endpoint: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 500
@@ -247,12 +304,13 @@ def generate_protocol():
 @api.route("/status/<job_id>", methods=["GET"])
 def stream_status(job_id):
     """
-    Stream job status updates as Server-Sent Events (SSE).
+    Stream job status updates as SSE (Server-Sent Events) so the frontend
+    can receive real-time updates.
     """
     def event_stream():
         last_status = None
         retry_count = 0
-        max_retries = 5  # If job not found after several retries, stop streaming.
+        max_retries = 5  # Stop streaming if job not found after retries
         
         while True:
             current_status = None
@@ -263,14 +321,17 @@ def stream_status(job_id):
                 else:
                     retry_count += 1
             
+            # If job not found after retries, stop streaming
             if retry_count >= max_retries:
                 yield f"data: {json.dumps({'error': 'Job not found'})}\n\n"
                 break
-            
+                
+            # If status changed, send update
             if current_status and current_status != last_status:
                 yield f"data: {json.dumps(current_status)}\n\n"
                 last_status = current_status
                 
+                # Break if job completed or errored
                 if current_status.get("status") in ["completed", "error"]:
                     break
                     
@@ -281,9 +342,7 @@ def stream_status(job_id):
 
 @api.route("/export", methods=["POST"])
 def export_protocol():
-    """
-    Export protocol results as a TSV file.
-    """
+    """Export protocol results as a TSV file."""
     try:
         data = request.get_json()
         primers = data.get("primers", [])
@@ -291,16 +350,20 @@ def export_protocol():
         if not primers:
             return jsonify({"error": "No primers to export"}), 400
 
+        # Generate a unique filename
         filename = f"primers_{utils.generate_unique_id()}.tsv"
         filepath = f"static/exports/{filename}"
 
+        # Export primers to TSV
         with open(filepath, "w") as f:
             f.write("Primer Name\tSequence\tAmplicon\n")
             for primer in primers:
                 f.write(f"{primer[0]}\t{primer[1]}\t{primer[2]}\n")
 
+        # Return the download URL
         download_url = f"/static/exports/{filename}"
         return jsonify({"download_url": download_url})
+
     except Exception as e:
         logger.error(f"Error exporting protocol: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 500
@@ -308,9 +371,7 @@ def export_protocol():
 
 @api.route("/species", methods=["GET"])
 def get_species():
-    """
-    Return available species as JSON.
-    """
+    """Return available species as JSON."""
     try:
         species = utils.get_available_species()
         return jsonify({"species": species})
@@ -321,8 +382,6 @@ def get_species():
 
 @api.route('/config', methods=['GET'])
 def get_config():
-    """
-    Return the currently loaded configuration from app.py.
-    """
+    """Return the currently loaded configuration from app.py."""
     config = current_app.config.get("ACTIVE_CONFIG", {})
     return jsonify(config)

@@ -68,7 +68,7 @@ function Settings({
   if (!show) return null;
 
   // Results limit slider values
-  const currentIndex = sliderValues.indexOf(formData.results_limit);
+  const currentIndex = sliderValues.indexOf(formData.maxResults);
   const safeIndex = currentIndex !== -1 ? currentIndex : 0;
 
   return (
@@ -135,11 +135,11 @@ function Settings({
             value={safeIndex}
             onChange={(e) => {
               const newIndex = parseInt(e.target.value);
-              updateField("results_limit", sliderValues[newIndex]);
+              updateField("maxResults", sliderValues[newIndex]);
             }}
 
           />
-          <span style={{ marginLeft: "10px" }}>{formData.results_limit}</span>
+          <span style={{ marginLeft: "10px" }}>{formData.maxResults}</span>
         </div>
 
         {/* Verbose Mode Toggle */}

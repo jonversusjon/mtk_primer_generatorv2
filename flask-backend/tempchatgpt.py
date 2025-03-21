@@ -1,11 +1,12 @@
 # services/api.py
 from flask import Blueprint, request, jsonify, current_app, Response
-from models import ProtocolRequest
-from services import ProtocolMaker, GoldenGateUtils
+from services.utils import GoldenGateUtils
+from services.protocol_maker import ProtocolMaker
 from flask_cors import CORS
 import json
 import time
 import threading
+from models import ProtocolRequest
 from pydantic import BaseModel
 from log_utils import logger
 
@@ -92,8 +93,7 @@ def process_sequence(job_id, seq, species, kozak, max_mut_per_site, verbose_mode
     try:
         # Instantiate and run the ProtocolMaker for this sequence.
         protocol_maker = ProtocolMaker(
-            request_idx=0,
-            sequence_to_domesticate=seq,
+            sequences_to_domesticate=[seq],
             codon_usage_dict=utils.get_codon_usage_dict(species),
             max_mutations=max_mut_per_site,
             template_seq=template_sequence,
@@ -101,7 +101,6 @@ def process_sequence(job_id, seq, species, kozak, max_mut_per_site, verbose_mode
             max_results=max_results,
             verbose=verbose_mode,
             debug=False,
-            job_id=job_id
         )
         result = protocol_maker.create_gg_protocol(progress_callback=progress_callback)
         serializable_result = utils.convert_non_serializable(result)
@@ -184,10 +183,11 @@ def start_job(job_id: str, req: ProtocolRequest):
             }
         
         # Spawn a thread for each sequence.
-        for seq in req.sequences_to_domesticate:
+        for request_idx, seq in enumerate(req.sequences_to_domesticate):
             threading.Thread(
                 target=process_sequence,
                 args=(
+                    request_idx,
                     job_id,
                     seq,
                     req.species,

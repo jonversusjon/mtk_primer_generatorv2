@@ -39,9 +39,8 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
     species: "",
     kozak: "MTK",
     maxMutationsPerSite: 1,
-    maxResults: 1,
     verboseMode: false,
-    results_limit: "one",
+    maxResults: "one",
   });
 
   console.log("setFormData type:", typeof setFormData);
@@ -114,8 +113,8 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
                 data.maxMutationsPerSite !== undefined
                   ? data.maxMutationsPerSite
                   : null,
-              max_results:
-                data.max_results !== undefined ? data.max_results : null,
+              maxResults:
+                data.maxResults !== undefined ? data.maxResults : null,
               verboseMode:
                 data.verboseMode !== undefined ? data.verboseMode : null,
             };
@@ -158,10 +157,10 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
             prev.maxMutationsPerSite !== undefined
               ? prev.maxMutationsPerSite
               : 1,
-          max_results:
-            prev.max_results !== null && prev.max_results !== undefined
-              ? prev.max_results
-              : 1,
+          maxResults:
+            prev.maxResults !== null && prev.maxResults !== undefined
+              ? prev.maxResults
+              : "one",
           verboseMode:
             prev.verboseMode !== null && prev.verboseMode !== undefined
               ? prev.verboseMode
@@ -300,8 +299,7 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
 
       // Generate a jobId if not already provided.
       const jobId = data.jobId || Date.now().toString();
-      // Add jobId to the form data.
-      const dataWithJobId = { ...data, jobId };
+      const dataWithJobId = { ...formData, jobId };
 
       // Store the jobId in sessionStorage for later use on the Results page.
       sessionStorage.setItem("jobId", jobId);

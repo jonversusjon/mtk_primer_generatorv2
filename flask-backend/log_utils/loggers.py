@@ -142,14 +142,30 @@ class Logger:
         self.logger.log(level, f"VALIDATION {status}: {message} {data_str}")
         return result
 
-    def debug(self, message, data=None):
-        data_str = json.dumps(data, default=str, indent=2) if data else ""
-        self.logger.debug(f"{message} {data_str}")
+    def debug(self, message, *args, data=None):
+        if data is not None:
+            data_str = json.dumps(data, default=str, indent=2)
+            message = f"{message}\nData: {data_str}"
+        self.logger.debug(message, *args)
 
-    # Added error method to allow logger.error calls
-    def error(self, message, data=None, exc_info=False):
-        data_str = json.dumps(data, default=str, indent=2) if data else ""
-        self.logger.error(f"{message} {data_str}", exc_info=exc_info)
+    def error(self, message, *args, data=None, exc_info=False):
+        if data is not None:
+            data_str = json.dumps(data, default=str, indent=2)
+            message = f"{message}\nData: {data_str}"
+        self.logger.error(message, *args, exc_info=exc_info)
+
+    def info(self, message, *args, data=None):
+        if data is not None:
+            data_str = json.dumps(data, default=str, indent=2)
+            message = f"{message}\nData: {data_str}"
+        self.logger.info(message, *args)
+
+    def warning(self, message, *args, data=None):
+        if data is not None:
+            data_str = json.dumps(data, default=str, indent=2)
+            message = f"{message}\nData: {data_str}"
+        self.logger.warning(message, *args)
+
 
 # Global instance for use throughout your app.
 logger = Logger(log_dir="log_utils/logs")
