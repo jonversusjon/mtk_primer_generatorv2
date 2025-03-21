@@ -101,6 +101,21 @@ export const validateSequence = async (sequence) => {
   }
 };
 
+// api/api.js
+export const initiateProtocol = async (formData) => {
+  const response = await fetch(`${API_BASE_URL}/generate_protocol`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(formData),
+  });
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`API error: ${response.status} ${errorText}`);
+  }
+  // Return only the initial response which contains the jobId and message.
+  return response.json();
+};
+
 /**
  * Establish an SSE connection to monitor protocol generation progress.
  * Supports auto-reconnection on errors with exponential backoff.
@@ -109,9 +124,14 @@ export const validateSequence = async (sequence) => {
  * @param {Object} options - Optional settings (e.g., maxRetries, baseDelay).
  * @returns {EventSource} The event source object.
  */
-export const monitorProtocolProgress = (jobId, onStatusUpdate, options = {}) => {
+// Modify the onmessage handler in monitorProtocolProgress to better handle sequence updates
+export const monitorProtocolProgress = (
+  jobId,
+  onStatusUpdate,
+  options = {}
+) => {
   const maxRetries = options.maxRetries || 5;
-  const baseDelay = options.baseDelay || 2000; // Base delay in milliseconds
+  const baseDelay = options.baseDelay || 2000;
   let retries = 0;
   let eventSource = null;
 
@@ -119,19 +139,51 @@ export const monitorProtocolProgress = (jobId, onStatusUpdate, options = {}) => 
     console.log(
       `Setting up SSE connection for job ${jobId} (Attempt ${retries + 1})`
     );
-    // Build SSE URL without adding an extra /api prefix.
     const sseUrl = constructSSEUrl(`/status/${jobId}`);
+    console.log("SSE URL:", sseUrl);
+
     eventSource = new EventSource(sseUrl);
+    console.log("SSE connection established");
 
     eventSource.onmessage = (event) => {
       try {
         const statusData = JSON.parse(event.data);
-        console.log(`Progress update for job ${jobId}:`, statusData);
+
+        // Enhanced logging to track all incoming updates
+        console.group(`Progress update for job ${jobId}`);
+        console.log("Status:", statusData.status);
+        console.log("Percentage:", statusData.percentage);
+
+        // Log sequence details if present
+        if (statusData.sequences) {
+          console.log("Sequences:", Object.keys(statusData.sequences).length);
+          // Log the first few sequence details
+          Object.entries(statusData.sequences)
+            .slice(0, 3)
+            .forEach(([seqId, seqData]) => {
+              console.log(
+                `Sequence ${seqId}:`,
+                seqData.status,
+                seqData.percentage,
+                seqData.step
+              );
+            });
+        }
+        console.groupEnd();
+
+        // Pass the full update data to the callback
         onStatusUpdate(statusData);
 
-        // Close connection if job is complete or an error occurred.
-        if (statusData.percentage === 100 || statusData.percentage === -1) {
-          console.log(`Job ${jobId} complete or failed, closing SSE connection`);
+        // Close connection if job is complete or an error occurred
+        if (
+          statusData.status === "completed" ||
+          statusData.status === "error" ||
+          statusData.percentage === 100 ||
+          statusData.percentage === -1
+        ) {
+          console.log(
+            `Job ${jobId} complete or failed, closing SSE connection`
+          );
           eventSource.close();
         }
       } catch (error) {
@@ -141,10 +193,16 @@ export const monitorProtocolProgress = (jobId, onStatusUpdate, options = {}) => 
 
     eventSource.onerror = (error) => {
       console.error("SSE connection error:", error);
+
+      // Check if the connection was closed cleanly
+      if (eventSource.readyState === EventSource.CLOSED) {
+        console.log("SSE connection closed cleanly.");
+        return; // Don't try to reconnect if it was closed intentionally
+      }
+
       eventSource.close();
       if (retries < maxRetries) {
         retries++;
-        // Exponential backoff: delay = baseDelay * 2^(retries - 1)
         const reconnectDelay = baseDelay * Math.pow(2, retries - 1);
         console.log(`Attempting to reconnect in ${reconnectDelay}ms...`);
         setTimeout(() => {
@@ -165,6 +223,54 @@ export const monitorProtocolProgress = (jobId, onStatusUpdate, options = {}) => 
 
   return connect();
 };
+
+// Add a new utility function to extract sequence progress details
+export const getSequenceProgressDetails = (statusData) => {
+  if (!statusData || !statusData.sequences) {
+    return [];
+  }
+
+  return Object.entries(statusData.sequences).map(([seqId, seqData]) => {
+    return {
+      id: seqId,
+      status: seqData.status || "unknown",
+      percentage: seqData.percentage || 0,
+      step: seqData.step || "",
+      message: seqData.message || "",
+      data: seqData.data || null,
+    };
+  });
+};
+
+// Example component to display sequence-level progress
+/*
+// In your React component:
+const [jobStatus, setJobStatus] = useState(null);
+
+// When starting the protocol generation:
+generateProtocol(formData, (statusUpdate) => {
+  setJobStatus(statusUpdate);
+});
+
+// In your render method:
+const sequenceDetails = getSequenceProgressDetails(jobStatus);
+return (
+  <div>
+    <h2>Job Progress: {jobStatus?.percentage || 0}%</h2>
+    
+    {sequenceDetails.map(seq => (
+      <div key={seq.id} className="sequence-progress">
+        <h3>Sequence {seq.id}</h3>
+        <p>Status: {seq.status}</p>
+        <p>Progress: {seq.percentage}%</p>
+        <p>Step: {seq.step}</p>
+        <p>Message: {seq.message}</p>
+        <div className="progress-bar" style={{width: `${seq.percentage}%`}}></div>
+      </div>
+    ))}
+  </div>
+);
+*/
 
 /**
  * Generate a protocol based on form data.

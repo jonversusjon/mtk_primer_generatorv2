@@ -1,7 +1,7 @@
 from pydantic import BaseModel, BeforeValidator, PlainSerializer, WithJsonSchema
 from typing import List, Any, Annotated, Optional
 import numpy as np
-import math
+# import math
 
 
 def to_camel(string: str) -> str:
@@ -25,10 +25,10 @@ def validate_numpy_array(v: Any) -> np.ndarray:
     if arr.size == 0:
         raise ValueError("Array must not be empty.")
     
-    num_elements = arr.size
-    exponent = math.log(num_elements, 4)
-    if not exponent.is_integer():
-        raise ValueError("The total number of elements must be 4^N for some positive integer N.")
+    # num_elements = arr.size
+    # exponent = math.log(num_elements, 4)
+    # if not exponent.is_integer():
+    #     raise ValueError("The total number of elements must be 4^N for some positive integer N.")
     return arr
 
 

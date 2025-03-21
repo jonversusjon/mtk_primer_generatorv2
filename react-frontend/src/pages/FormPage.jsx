@@ -1,14 +1,12 @@
 // FormPage.jsx
 import { API_BASE_URL } from "../config/config.js";
-
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Form from "../components/Form/Form";
 import Sidebar from "../components/Form/Sidebar";
-import { generateProtocol } from "../api/api";
+import { initiateProtocol } from "../api/api";
 import useValidateForm from "../hooks/useValidateForm";
 import { useFormUpdater } from "../hooks/useFormUpdater";
-
 import "../styles/Form.css";
 
 const getErrorsBySequence = (errors, count) => {
@@ -43,8 +41,6 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
     maxResults: "one",
   });
 
-  console.log("setFormData type:", typeof setFormData);
-
   const [loading, setLoading] = useState(true);
   const [configLoaded, setConfigLoaded] = useState(false);
   const [speciesLoaded, setSpeciesLoaded] = useState(false);
@@ -60,16 +56,16 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
   const settingsToggleRef = useRef(null);
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const navigate = useNavigate();
-  const eventSourceRef = useRef(null);
+  // Note: eventSourceRef is no longer needed here as SSE is managed in ResultsPage.
 
   const { updateSettings, updateFormInput } = useFormUpdater(setFormData);
 
-  // Log formData changes
+  // Log formData changes for debugging.
   useEffect(() => {
     console.log("FormPage formData:", formData);
   }, [formData]);
 
-  // Fetch initial configuration
+  // Fetch initial configuration.
   useEffect(() => {
     const fetchConfig = async () => {
       try {
@@ -77,15 +73,12 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
         if (savedData) {
           const parsedData = JSON.parse(savedData);
           console.log("Loaded formData from sessionStorage:", parsedData);
-          // Normalize sequences if needed
+          // Normalize sequences if needed.
           if (parsedData.sequencesToDomesticate) {
-            parsedData.sequencesToDomesticate =
-              parsedData.sequencesToDomesticate.map((seq) => ({
-                ...seq,
-                sequence: Array.isArray(seq.sequence)
-                  ? seq.sequence.join("")
-                  : seq.sequence,
-              }));
+            parsedData.sequencesToDomesticate = parsedData.sequencesToDomesticate.map((seq) => ({
+              ...seq,
+              sequence: Array.isArray(seq.sequence) ? seq.sequence.join("") : seq.sequence,
+            }));
           }
           setFormData((prev) => ({ ...prev, ...parsedData }));
         } else {
@@ -102,21 +95,14 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
               sequencesToDomesticate: data.sequencesToDomesticate
                 ? data.sequencesToDomesticate.map((seq) => ({
                     ...seq,
-                    sequence: Array.isArray(seq.sequence)
-                      ? seq.sequence.join("")
-                      : seq.sequence,
+                    sequence: Array.isArray(seq.sequence) ? seq.sequence.join("") : seq.sequence,
                   }))
                 : [defaultSequence],
               species: data.species || "",
               kozak: data.kozak || "",
-              maxMutationsPerSite:
-                data.maxMutationsPerSite !== undefined
-                  ? data.maxMutationsPerSite
-                  : null,
-              maxResults:
-                data.maxResults !== undefined ? data.maxResults : null,
-              verboseMode:
-                data.verboseMode !== undefined ? data.verboseMode : null,
+              maxMutationsPerSite: data.maxMutationsPerSite !== undefined ? data.maxMutationsPerSite : null,
+              maxResults: data.maxResults !== undefined ? data.maxResults : null,
+              verboseMode: data.verboseMode !== undefined ? data.verboseMode : null,
             };
           }
           console.log("New formData set from API:", newData);
@@ -136,7 +122,7 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
     fetchConfig();
   }, []);
 
-  // Fetch available species and update formData
+  // Fetch available species and update formData.
   useEffect(() => {
     const fetchSpecies = async () => {
       try {
@@ -146,25 +132,16 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
         setFormData((prev) => ({
           ...prev,
           availableSpecies: speciesData.species,
-          species:
-            prev.species ||
-            (speciesData.species.length > 0 ? speciesData.species[0] : ""),
-          kozak:
-            prev.kozak ||
-            (speciesData.species.length > 0 ? speciesData.species[0] : ""),
+          species: prev.species || (speciesData.species.length > 0 ? speciesData.species[0] : ""),
+          kozak: prev.kozak || (speciesData.species.length > 0 ? speciesData.species[0] : ""),
           maxMutationsPerSite:
-            prev.maxMutationsPerSite !== null &&
-            prev.maxMutationsPerSite !== undefined
+            prev.maxMutationsPerSite !== null && prev.maxMutationsPerSite !== undefined
               ? prev.maxMutationsPerSite
               : 1,
           maxResults:
-            prev.maxResults !== null && prev.maxResults !== undefined
-              ? prev.maxResults
-              : "one",
+            prev.maxResults !== null && prev.maxResults !== undefined ? prev.maxResults : "one",
           verboseMode:
-            prev.verboseMode !== null && prev.verboseMode !== undefined
-              ? prev.verboseMode
-              : false,
+            prev.verboseMode !== null && prev.verboseMode !== undefined ? prev.verboseMode : false,
         }));
       } catch (err) {
         console.error("Error fetching species:", err);
@@ -178,111 +155,19 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
 
   // Ensure species is set once both config and species have loaded.
   useEffect(() => {
-    if (
-      speciesLoaded &&
-      configLoaded &&
-      formData.availableSpecies.length > 0 &&
-      !formData.species
-    ) {
+    if (speciesLoaded && configLoaded && formData.availableSpecies.length > 0 && !formData.species) {
       setFormData((prev) => ({
         ...prev,
         species: prev.availableSpecies[0],
       }));
     }
-  }, [
-    speciesLoaded,
-    configLoaded,
-    formData.availableSpecies,
-    formData.species,
-  ]);
+  }, [speciesLoaded, configLoaded, formData.availableSpecies, formData.species]);
 
-  // Clean up event source on component unmount.
-  useEffect(() => {
-    return () => {
-      if (eventSourceRef.current) {
-        console.log("Closing event source on unmount");
-        eventSourceRef.current.close();
-      }
-    };
-  }, []);
-
-  // Manual implementation of protocol generation for better logging
-  const manualGenerateProtocol = async (data) => {
-    console.log("Starting manual protocol generation with data:", data);
-
-    try {
-      // Step 1: Call generate_protocol endpoint
-      const response = await fetch(`${API_BASE_URL}/generate_protocol`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Error response from generate_protocol:", errorText);
-        throw new Error(`API error: ${response.status} ${errorText}`);
-      }
-
-      const initialData = await response.json();
-      console.log("Initial protocol response:", initialData);
-
-      const jobId = initialData.jobId;
-
-      // Step 2: Set up SSE connection for status updates
-      const eventSource = new EventSource(`${API_BASE_URL}/status/${jobId}`);
-      eventSourceRef.current = eventSource;
-
-      return new Promise((resolve, reject) => {
-        eventSource.onmessage = (event) => {
-          try {
-            const status = JSON.parse(event.data);
-            console.log("SSE status update:", status);
-
-            // Update progress in UI
-            setProgressStatus(status);
-
-            // Check if job is complete
-            if (status.percentage === 100) {
-              console.log("Job complete! Results:", status.result);
-              eventSource.close();
-              resolve(status.result);
-            }
-
-            // Check if job failed
-            if (status.percentage === -1) {
-              const errorMsg = status.message || "Job failed";
-              console.error("Job failed:", errorMsg);
-              eventSource.close();
-              reject(new Error(errorMsg));
-            }
-          } catch (err) {
-            console.error("Error parsing SSE message:", err, event.data);
-            reject(err);
-          }
-        };
-
-        eventSource.onerror = (err) => {
-          console.error("SSE connection error:", err);
-          eventSource.close();
-          reject(new Error("Connection to status stream failed"));
-        };
-      });
-    } catch (err) {
-      console.error("Error in manual protocol generation:", err);
-      throw err;
-    }
-  };
-
-  // Wait for the form to be initialized before running validations
+  // Validate the form.
   const { errors, isValid } = useValidateForm(formData, defaultsLoaded);
-  const errorsBySequence = getErrorsBySequence(
-    errors,
-    formData.sequencesToDomesticate.length
-  );
+  const errorsBySequence = getErrorsBySequence(errors, formData.sequencesToDomesticate.length);
 
+  // New handleFormSubmit: immediately initiate the protocol and set placeholders.
   const handleFormSubmit = async (data) => {
     console.log("Form submitted with data:", data);
     setProcessing(true);
@@ -294,42 +179,44 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
     });
 
     try {
-      // Store the entire form data in sessionStorage.
+      // 1. Store the submitted form data in sessionStorage.
       sessionStorage.setItem("formData", JSON.stringify(data));
 
-      // Generate a jobId if not already provided.
+      // 2. Generate a jobId if not provided.
       const jobId = data.jobId || Date.now().toString();
       const dataWithJobId = { ...formData, jobId };
 
-      // Store the jobId in sessionStorage for later use on the Results page.
+      // 3. Save the jobId in sessionStorage for later use on the Results page.
       sessionStorage.setItem("jobId", jobId);
 
-      // Use the existing generateProtocol function (with fallback to manualGenerateProtocol)
-      let result;
-      try {
-        console.log("Using generateProtocol API helper");
-        result = await generateProtocol(dataWithJobId, (status) => {
-          console.log("Status update from API helper:", status);
-          setProgressStatus(status);
-        });
-      } catch (apiError) {
-        console.warn(
-          "generateProtocol API helper failed, falling back to manual implementation:",
-          apiError
-        );
-        result = await manualGenerateProtocol(dataWithJobId);
+      // 4. Initiate the protocol to get the initial response.
+      console.log("Calling initiateProtocol API helper");
+      const initialData = await initiateProtocol(dataWithJobId);
+      console.log("Initial protocol response:", initialData);
+
+      // 5. Save the initial message from the server (or use a default).
+      if (initialData.message) {
+        sessionStorage.setItem("initialMessage", initialData.message);
+      } else {
+        sessionStorage.setItem("initialMessage", "Primer design started...");
       }
 
-      console.log("Protocol generation successful, final result:", result);
+      // 6. Build placeholder objects from data.sequencesToDomesticate.
+      const placeholders = data.sequencesToDomesticate.map((seq, idx) => ({
+        id: idx,
+        placeholder: true,
+        sequence: seq.sequence,
+        primerName: seq.primerName || `Sequence ${idx + 1}`,
+      }));
 
-      // Save protocol results in sessionStorage.
-      sessionStorage.setItem("results", JSON.stringify(result));
-      setResults(result);
-      // Navigate to the /results page after job has started.
+      // 7. Store placeholders in sessionStorage and update top-level results.
+      sessionStorage.setItem("results", JSON.stringify(placeholders));
+      setResults(placeholders);
+
+      // 8. Navigate immediately to the Results page.
       navigate("/results");
     } catch (err) {
-      const errorMessage =
-        err.message || "An error occurred while generating the protocol";
+      const errorMessage = err.message || "An error occurred while generating the protocol";
       console.error("Error in handleFormSubmit:", errorMessage, err);
       setError(errorMessage);
     } finally {
@@ -338,9 +225,7 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
   };
 
   if (loading || !defaultsLoaded) {
-    return (
-      <div className="initialization-message">Getting things ready...</div>
-    );
+    return <div className="initialization-message">Getting things ready...</div>;
   }
 
   return (
@@ -360,10 +245,7 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
           updateSettings={updateSettings}
           formData={formData}
         />
-        <div
-          className="form-container"
-          style={{ flex: 1, paddingLeft: "20px" }}
-        >
+        <div className="form-container" style={{ flex: 1, paddingLeft: "20px" }}>
           {error && <div className="alert alert-danger">{error}</div>}
 
           {processing && (

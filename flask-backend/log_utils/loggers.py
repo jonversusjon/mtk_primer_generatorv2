@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from config.logging_config import logger as base_logger  # Centralized logger
 from pydantic import BaseModel
 import numpy as np
+from functools import wraps
 
 class ModuleLoggerAdapter(logging.LoggerAdapter):
     def process(self, msg, kwargs):
@@ -166,6 +167,21 @@ class Logger:
             message = f"{message}\nData: {data_str}"
         self.logger.warning(message, *args)
 
+
+
+    def log_execution(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            start = time.perf_counter()
+            result = func(*args, **kwargs)
+            end = time.perf_counter()
+            elapsed = end - start
+            # Ensure elapsed is a float; if not, default to 0.0.
+            elapsed = elapsed if elapsed is not None else 0.0
+            # Log the execution time with proper formatting.
+            logger.info(f"| COMPLETED: {func.__name__} in {elapsed:.4f} seconds with result={result}")
+            return result
+        return wrapper
 
 # Global instance for use throughout your app.
 logger = Logger(log_dir="log_utils/logs")
