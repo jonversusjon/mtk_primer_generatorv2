@@ -1,21 +1,26 @@
 services:
   backend:
     build:
+      # Use the repository root as context and specify the Dockerfile inside flask_backend
       context: .
       dockerfile: flask_backend/Dockerfile
     working_dir: /app
     volumes:
       - .:/app
+    command: flask run --host=0.0.0.0
     environment:
       - PYTHONPATH=/app
-      - FLASK_ENV=production
-      - CONFIG_MODULE=flask_backend.config.production_config
+      - FLASK_APP=flask_backend.app:create_app()
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - FLASK_TESTING=true
+      - CONFIG_MODULE=flask_backend.config.dev_config
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-    depends_on:
-      - redis
     ports:
       - "5000:5000"
+    depends_on:
+      - redis
 
   worker:
     build:
@@ -27,8 +32,9 @@ services:
     command: celery -A flask_backend.celery_worker.celery worker --loglevel=info
     environment:
       - PYTHONPATH=/app
-      - FLASK_ENV=production
-      - CONFIG_MODULE=flask_backend.config.production_config
+      - FLASK_ENV=development
+      - FLASK_TESTING=true
+      - CONFIG_MODULE=flask_backend.config.dev_config
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
     depends_on:

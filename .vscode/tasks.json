@@ -1,94 +1,63 @@
 {
   "version": "2.0.0",
   "tasks": [
-      {
-          "label": "Start Backend (Flask) (Dev Config)",
-          "type": "shell",
-          "command": "python app.py --config config.test_config --env development",
-          "options": {
-              "cwd": "${workspaceFolder}/flask-backend"
-          },
-          "presentation": {
-              "reveal": "always",
-              "panel": "new",
-              "group": "develop"
-          },
-          "problemMatcher": []
-      },
-      {
-        "label": "Start Backend (Flask) (Testing Config)",
-        "type": "shell",
-        "command": "python app.py --config config.test_config --env testing",
-        "options": {
-            "cwd": "${workspaceFolder}/flask-backend"
-        },
-        "presentation": {
-            "reveal": "always",
-            "panel": "new",
-            "group": "develop"
-        },
-        "problemMatcher": []
+    {
+      "label": "Restart Full Stack (Dev)",
+      "type": "shell",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "docker-compose down && docker-compose -f docker-compose.yaml -f docker-compose.dev.yaml build --no-cache && docker-compose -f docker-compose.yaml -f docker-compose.dev.yaml up"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },    
+    {
+      "label": "Docker: Compose Up (Dev)",
+      "type": "shell",
+      "command": "docker-compose -f docker-compose.yaml -f docker-compose.dev.yaml up --build",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "panel": "shared", "reveal": "always" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Compose Up (Prod)",
+      "type": "shell",
+      "command": "docker-compose -f docker-compose.yaml -f docker-compose.prod.yaml up --build",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "panel": "shared", "reveal": "always" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Compose Down",
+      "type": "shell",
+      "command": "docker-compose down",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "panel": "shared", "reveal": "always" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Frontend (React)",
+      "type": "shell",
+      "command": "npm start",
+      "options": { "cwd": "${workspaceFolder}/react-frontend" },
+      "presentation": { "panel": "new", "reveal": "always" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Full Stack (Dev)",
+      "dependsOn": ["Docker: Compose Up (Dev)", "Start Frontend (React)"],
+      "dependsOrder": "parallel",
+      "presentation": { "panel": "shared", "reveal": "always" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Full Stack (Prod)",
+      "dependsOn": ["Docker: Compose Up (Prod)", "Start Frontend (React)"],
+      "dependsOrder": "parallel",
+      "presentation": { "panel": "shared", "reveal": "always" },
+      "problemMatcher": []
     }
-    ,
-      {
-          "label": "Start Backend (Flask) (Production Config)",
-          "type": "shell",
-          "command": "python app.py",
-        //   "command": "python app.py",
-
-          "options": {
-              "cwd": "${workspaceFolder}/flask-backend"
-          },
-          "presentation": {
-              "reveal": "always",
-              "panel": "new",
-              "group": "develop"
-          },
-          "problemMatcher": []
-      },
-      {
-          "label": "Start Frontend (React)",
-          "type": "shell",
-          "command": "npm start",
-          "options": {
-              "cwd": "${workspaceFolder}/react-frontend"
-          },
-          "presentation": {
-              "reveal": "always",
-              "panel": "new",
-              "group": "develop"
-          },
-          "problemMatcher": []
-      },
-      {
-          "label": "Start Full Stack App (Dev Config)",
-          "dependsOn": ["Start Backend (Flask) (Dev Config)", "Start Frontend (React)"],
-          "dependsOrder": "parallel",
-          "presentation": {
-              "reveal": "always",
-              "panel": "new"
-          },
-          "problemMatcher": []
-      },
-      {
-          "label": "Start Full Stack App (Testing Config)",
-          "dependsOn": ["Start Backend (Flask) (Testing Config)", "Start Frontend (React)"],
-          "dependsOrder": "parallel",
-          "presentation": {
-              "reveal": "always",
-              "panel": "new"
-          },
-          "problemMatcher": []
-      },
-      {
-          "label": "Start Full Stack App (Production Config)",
-          "dependsOn": ["Start Backend (Flask) (Production Config)", "Start Frontend (React)"],
-          "dependsOrder": "parallel",
-          "presentation": {
-              "reveal": "always",
-              "panel": "new"
-          },
-          "problemMatcher": []
-      }
   ]
 }
