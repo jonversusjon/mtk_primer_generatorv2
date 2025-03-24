@@ -1,6 +1,0 @@
-2025-03-24 03:07:19 | INFO     | Initialization - Initializing RestrictionSiteDetector with verbose=False and debug=False
-2025-03-24 03:07:19 | INFO     | Initialization - Initializing MutationAnalyzer with verbose=False and debug=True
-2025-03-24 03:07:19 | INFO     | Initialization - 🔍 Debug mode enabled with detailed logging and validation
-2025-03-24 03:09:04 | INFO     | Initialization - Initializing RestrictionSiteDetector with verbose=False and debug=False
-2025-03-24 03:09:04 | INFO     | Initialization - Initializing MutationAnalyzer with verbose=False and debug=True
-2025-03-24 03:09:04 | INFO     | Initialization - 🔍 Debug mode enabled with detailed logging and validation

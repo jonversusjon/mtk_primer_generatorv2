@@ -78,10 +78,7 @@ const useValidateForm = (formData, shouldValidate = true) => {
             );
           } else {
             const seqValidation = validateDnaSequence(seq.sequence, true, true);
-            console.log(
-              `Validation result for sequence at index ${index}:`,
-              seqValidation
-            );
+
             if (!seqValidation.isValid && !seqValidation.isAdvisory) {
               newErrors[`sequencesToDomesticate[${index}].sequence`] =
                 seqValidation.message;

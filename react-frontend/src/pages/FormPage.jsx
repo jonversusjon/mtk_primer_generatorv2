@@ -192,29 +192,16 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
   const handleFormSubmit = async (data) => {
     setProcessing(true);
     setError(null);
-    setProgressStatus({
-      message: "Initializing protocol generation...",
-      percentage: 0,
-      step: "init",
-    });
-
+  
     try {
-      // Persist form inputs for ResultsPage
+      // Persist inputs for ResultsPage
       sessionStorage.setItem("formData", JSON.stringify(data));
-
-      // Submit to backend and grab Celery task_id
-      const { initialData } = await submitProtocol({
-        ...data,
-        jobId: data.jobId,
-      });
-      const taskId = initialData.task_id;
-      sessionStorage.setItem("jobId", taskId);
-
-      // Persist server’s “initial message” or fallback
-      const message = initialData.message || "Primer design started...";
-      sessionStorage.setItem("initialMessage", message);
-
-      // Build + store placeholder results
+  
+      // Kick off the job — submitProtocol now returns { jobId }
+      const { jobId } = await submitProtocol(data);
+      sessionStorage.setItem("jobId", jobId);
+  
+      // Build & store placeholders for each sequence
       const placeholders = data.sequencesToDomesticate.map((seq, idx) => ({
         id: idx,
         placeholder: true,
@@ -223,18 +210,17 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
       }));
       sessionStorage.setItem("results", JSON.stringify(placeholders));
       setResults(placeholders);
-
-      // Redirect into the live‑update ResultsPage
+  
+      // Navigate to ResultsPage (SSE will drive live updates)
       navigate("/results");
     } catch (err) {
       console.error("Error in handleFormSubmit:", err);
-      setError(
-        err.message || "An error occurred while generating the protocol"
-      );
+      setError(err.message || "Failed to start protocol generation");
     } finally {
       setProcessing(false);
     }
   };
+  
 
   if (loading || !defaultsLoaded) {
     return (

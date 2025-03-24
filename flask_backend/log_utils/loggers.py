@@ -184,4 +184,4 @@ class Logger:
         return wrapper
 
 # Global instance for use throughout your app.
-logger = Logger(log_dir="log_utils/logs")
+logger = Logger(log_dir="flask_backend/log_utils/logs")

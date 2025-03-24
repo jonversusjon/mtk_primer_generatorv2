@@ -46,15 +46,37 @@ def sse_status(job_id):
     print(f"SSE route hit for job_id={job_id}")
     def event_stream():
         while True:
-            # Here, you would pull the latest state of the Celery task.
-            # For example, using Celery’s AsyncResult:
             async_result = get_celery_instance().AsyncResult(job_id)
             state = async_result.state
+            print(f"Current state: {state}")
             meta = async_result.info or {}
-            yield f"data: {json.dumps(meta)}\n\n"
+            
+            # Ensure meta is a dictionary before processing.
+            if not isinstance(meta, dict):
+                msg = "Value of KeyError:", meta.args[0]
+
+
+                logger.log_step("SSE", msg)
+                # Convert non-dict meta to a dict; for example, store its string representation.
+                meta = {"error": str(meta)}
+            
+            # print("Meta keys:", list(meta.keys()))
+            
+            try:
+                data = json.dumps(meta)
+            except TypeError as e:
+                # In case any value is still not serializable, convert it.
+                meta = {str(k): (v if isinstance(v, (int, float, str, bool, list, dict)) else str(v))
+                        for k, v in meta.items()}
+                data = json.dumps(meta)
+                data['error'] = str(e)
+            
+            yield f"data: {data}\n\n"
             if state in ["SUCCESS", "FAILURE"]:
                 break
             time.sleep(2)
+
+            
     return Response(stream_with_context(event_stream()), mimetype="text/event-stream")
 
 

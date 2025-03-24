@@ -12,10 +12,6 @@ function SequenceTab({ sequence, index, updateSequence, mtkPartOptions }) {
   const charCount = sequence.sequence ? sequence.sequence.length : 0;
   const [useSeparateParts, setUseSeparateParts] = useState(false);
 
-  useEffect(() => {
-    console.log(`SequenceTab ${index} - sequence:`, sequence.sequence);
-  }, [sequence.sequence, index]);
-
   const hasInitialized = useRef(false);
   useEffect(() => {
     if (!hasInitialized.current && mtkPartOptions.length > 0) {
@@ -37,10 +33,6 @@ function SequenceTab({ sequence, index, updateSequence, mtkPartOptions }) {
 
   useEffect(() => {
     const safeValue = sequence.sequence || "";
-    const validationResult = safeValue
-      ? validateDnaSequence(safeValue, true)
-      : {};
-    console.log(`SequenceTab ${index} - validation result:`, validationResult); // DEBUG log
 
     if (safeValue) {
       const validationResult = validateDnaSequence(safeValue, true);

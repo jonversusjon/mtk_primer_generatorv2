@@ -2,6 +2,7 @@ import os
 import importlib.util
 from flask import Flask, send_from_directory, jsonify, redirect
 from flask_cors import CORS
+from flask_sse import sse
 
 from flask_backend.celery_app import celery_init_app
 from flask_backend.routes import api, main
@@ -32,6 +33,18 @@ def create_app(config_module=None, env="development"):
     app_config = load_python_config(config_module) if config_module else {}
 
     app = Flask(__name__)
+    
+        # Inject CELERY configuration into Flask config.
+    app.config["CELERY"] = {
+        "broker_url": os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0"),
+        "result_backend": os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0"),
+        "task_serializer": "json",
+        "result_serializer": "json",
+        "accept_content": ["json"],
+        "task_ignore_result": False,
+        "worker_hijack_root_logger": False
+    }
+    
     celery_init_app(app)
 
     # Enable CORS for the entire app
@@ -46,19 +59,9 @@ def create_app(config_module=None, env="development"):
     # Register blueprints
     app.register_blueprint(main)
     app.register_blueprint(api, url_prefix="/api")
+    app.register_blueprint(sse, url_prefix='/stream')
     
     app.config["ACTIVE_CONFIG"] = app_config
-    print(f"Loaded config: {app_config}")
-    
-    # Inject CELERY configuration into Flask config.
-    app.config["CELERY"] = {
-        "broker_url": os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0"),
-        "result_backend": os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0"),
-        "task_serializer": "json",
-        "result_serializer": "json",
-        "accept_content": ["json"],
-        "task_ignore_result": False,
-    }
 
     @app.route('/species', methods=['GET', 'OPTIONS'])
     def species_redirect():

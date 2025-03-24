@@ -7,4 +7,5 @@ venv/
 *.so
 .Python
 log_utils/logs
+log_utils/celery_logs
 /.vscode
