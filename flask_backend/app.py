@@ -25,30 +25,13 @@ def load_python_config(module_path):
 
 def create_app(config_module=None, env="development"):
     """Create and configure the Flask app."""
-    # testing_env = os.getenv('FLASK_TESTING', 'false').lower() == 'true'
-    # logger.log_step("", f"FLASK_TESTING environment variable: {testing_env}")
-    # config_class = TestConfig if testing_env else Config
 
     if not config_module:
         config_module = os.getenv("CONFIG_MODULE")
         
-    # Load additional configuration if a module is provided.
     app_config = load_python_config(config_module) if config_module else {}
 
     app = Flask(__name__)
-    app.config["ACTIVE_CONFIG"] = app_config
-    print(f"Loaded config: {app_config}")
-    # Inject CELERY configuration into Flask config.
-    app.config["CELERY"] = {
-        "broker_url": os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0"),
-        "result_backend": os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0"),
-        "task_serializer": "json",
-        "result_serializer": "json",
-        "accept_content": ["json"],
-        "task_ignore_result": False,
-    }
-
-    # Initialize Celery and store it in app.extensions
     celery_init_app(app)
 
     # Enable CORS for the entire app
@@ -59,10 +42,23 @@ def create_app(config_module=None, env="development"):
             "allow_headers": ["Content-Type"]
         }
     })
-
+    
     # Register blueprints
     app.register_blueprint(main)
     app.register_blueprint(api, url_prefix="/api")
+    
+    app.config["ACTIVE_CONFIG"] = app_config
+    print(f"Loaded config: {app_config}")
+    
+    # Inject CELERY configuration into Flask config.
+    app.config["CELERY"] = {
+        "broker_url": os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0"),
+        "result_backend": os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0"),
+        "task_serializer": "json",
+        "result_serializer": "json",
+        "accept_content": ["json"],
+        "task_ignore_result": False,
+    }
 
     @app.route('/species', methods=['GET', 'OPTIONS'])
     def species_redirect():

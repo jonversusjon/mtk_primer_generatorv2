@@ -1,4 +1,3 @@
-// ResultsPage.jsx
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Results from "../components/Results/Results";
@@ -7,72 +6,73 @@ import { monitorProtocolProgress } from "../api/api";
 function ResultsPage({ results }) {
   const navigate = useNavigate();
 
-  // Load final results (if any) from sessionStorage.
   const [finalResults, setFinalResults] = useState(() => {
-    const savedResults = sessionStorage.getItem("results");
-    return savedResults ? JSON.parse(savedResults) : null;
+    const saved = sessionStorage.getItem("results");
+    return saved ? JSON.parse(saved) : null;
   });
 
-  // Load the initial message from sessionStorage (e.g., "Primer design started")
   const [initialMessage] = useState(() => {
-    return sessionStorage.getItem("initialMessage") || "Primer design started...";
+    const msg =
+      sessionStorage.getItem("initialMessage") || "Primer design started...";
+    console.log("Initial message:", msg);
+    return msg;
   });
 
-  // Build placeholder objects from formData in sessionStorage.
   const placeholders = useMemo(() => {
     const savedFormData = sessionStorage.getItem("formData");
     if (savedFormData) {
-      const parsedFormData = JSON.parse(savedFormData);
-      if (parsedFormData.sequencesToDomesticate) {
-        return parsedFormData.sequencesToDomesticate.map((seq, index) => ({
-          id: index,
+      const parsed = JSON.parse(savedFormData);
+      return (
+        parsed.sequencesToDomesticate?.map((seq, i) => ({
+          id: i,
           placeholder: true,
           sequence: seq.sequence,
-          primerName: seq.primerName || `Sequence ${index + 1}`,
-        }));
-      }
+          primerName: seq.primerName || `Sequence ${i + 1}`,
+        })) || []
+      );
     }
     return [];
   }, []);
 
-  // Local progress state for SSE updates.
-  // This will store global progress as well as per-sequence progress (if available).
   const [progress, setProgress] = useState({});
 
-  // Determine what data to display:
-  // If final results are available, they take precedence.
-  // Otherwise, use the results passed as a prop, or fall back to the placeholders.
   const dataToDisplay = finalResults || results || placeholders;
 
-  // Redirect to the form if no data is available.
   useEffect(() => {
-    if (!dataToDisplay || dataToDisplay.length === 0) {
+    if (!dataToDisplay?.length) {
+      console.log("No data found — redirecting to form");
       navigate("/");
     }
   }, [dataToDisplay, navigate]);
 
-  // Callback to handle SSE updates.
-  // Updates the progress state and, if a global update reaches 100%,
-  // updates the final results.
   const onStatusUpdate = useCallback((statusData) => {
-    // If the status data contains a sequenceId, use it; otherwise, it's global.
-    const key = statusData.sequenceId !== undefined ? statusData.sequenceId : "global";
+    const key = statusData.sequenceId ?? "global";
+    console.log("Received SSE update:", statusData);
+
     setProgress((prev) => ({ ...prev, [key]: statusData }));
 
-    // Update final results if global progress reaches 100%
-    // (For per-sequence updates, consider merging the update with the specific placeholder later.)
-    if (key === "global" && statusData.percentage === 100 && statusData.result) {
+    if (
+      key === "global" &&
+      statusData.percentage === 100 &&
+      statusData.result
+    ) {
+      console.log("Global complete — saving final results:", statusData.result);
       setFinalResults(statusData.result);
       sessionStorage.setItem("results", JSON.stringify(statusData.result));
     }
   }, []);
 
-  // Initialize the SSE connection using the jobId stored in sessionStorage.
   useEffect(() => {
     const jobId = sessionStorage.getItem("jobId");
     if (jobId) {
+      console.log("Initializing SSE for jobId:", jobId);
       const eventSource = monitorProtocolProgress(jobId, onStatusUpdate);
-      return () => eventSource.close();
+      return () => {
+        console.log("Closing SSE connection");
+        eventSource.close();
+      };
+    } else {
+      console.warn("No jobId in sessionStorage — cannot monitor progress");
     }
   }, [onStatusUpdate]);
 
@@ -81,18 +81,18 @@ function ResultsPage({ results }) {
       {progress.global ? (
         <div className="global-progress">
           <p>
-            Global Progress: {progress.global.percentage}% — {progress.global.message}
+            Global Progress: {progress.global.percentage}% —{" "}
+            {progress.global.message}
           </p>
         </div>
       ) : (
-        // If no SSE update has come in yet, display the initial message.
         initialMessage && (
           <div className="global-progress">
             <p>{initialMessage}</p>
           </div>
         )
       )}
-      {dataToDisplay && dataToDisplay.length > 0 ? (
+      {dataToDisplay?.length ? (
         <Results data={dataToDisplay} progress={progress} />
       ) : (
         <p className="initialization-message">Loading...</p>

@@ -25,7 +25,7 @@ class MutationOptimizer():
         if self.debug:
             logger.log_step("Initialization", "🔍 Debug mode enabled with detailed logging and validation")
 
-        self.compatibility_table = self.utils.load_compatibility_table('static/data/compatibility_table.bin')
+        self.compatibility_table = self.utils.load_compatibility_table('flask_backend/static/data/compatibility_table.bin')
         logger.debug("MutationOptimizer initialized with compatibility table.")
         if self.verbose:
             logger.log_step("Initialization", "MutationOptimizer is running in verbose mode.")

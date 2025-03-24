@@ -17,8 +17,6 @@ function App() {
   // We'll store 'results' at the top-level so both pages can share it
   const [results, setResults] = useState(null);
 
-  console.log("Current results:", results);
-
   return (
     <Router>
       <div className={`app ${darkMode ? "dark-mode" : ""}`}>
@@ -53,9 +51,6 @@ function App() {
               element={
                 <ResultsPage
                   results={results}
-                  onMount={() =>
-                    console.log("ResultsPage mounted with:", results)
-                  }
                 />
               }
             />

@@ -2,6 +2,42 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Hard Reset Fullstack",
+      "dependsOn": [
+        "Docker: Compose Down",
+        "Shutdown Frontend (React)",
+        "Docker: Prune Images",
+        "Docker: Compose Rebuild and Up (Dev)"
+      ],
+      "dependsOrder": "sequence",
+      "presentation": { "panel": "shared", "reveal": "always" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Shutdown Frontend (React)",
+      "type": "shell",
+      "command": "npx kill-port 3000",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "panel": "shared", "reveal": "always" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Prune Images",
+      "type": "shell",
+      "command": "docker image prune -af",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "panel": "shared", "reveal": "always" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Compose Rebuild and Up (Dev)",
+      "type": "shell",
+      "command": "docker-compose -f docker-compose.yaml -f docker-compose.dev.yaml up --build",
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "panel": "shared", "reveal": "always" },
+      "problemMatcher": []
+    },    
+    {
       "label": "Restart Full Stack (Dev)",
       "type": "shell",
       "command": "cmd",

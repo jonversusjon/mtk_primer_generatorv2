@@ -6,12 +6,6 @@ const useValidateForm = (formData, shouldValidate = true) => {
   const [advisories, setAdvisories] = useState({});
 
   useEffect(() => {
-    console.log(
-      "useValidateForm - formData:",
-      formData,
-      "shouldValidate:",
-      shouldValidate
-    );
 
     if (!shouldValidate) {
       console.log("Validation skipped because shouldValidate is false.");
@@ -32,8 +26,6 @@ const useValidateForm = (formData, shouldValidate = true) => {
           "Validation error: species is empty. formData.species:",
           formData.species
         );
-      } else {
-        console.log("Species validated successfully:", formData.species);
       }
 
       // Validate template sequence (optional field)
@@ -60,11 +52,6 @@ const useValidateForm = (formData, shouldValidate = true) => {
             formData.templateSequence,
             tempValidation.message
           );
-        } else {
-          console.log(
-            "Template sequence validated successfully:",
-            formData.templateSequence
-          );
         }
       } else {
         console.log(
@@ -81,7 +68,6 @@ const useValidateForm = (formData, shouldValidate = true) => {
         console.log("Validation error: sequencesToDomesticate array is empty.");
       } else {
         formData.sequencesToDomesticate.forEach((seq, index) => {
-          console.log(`Validating sequence at index ${index}:`, seq);
           const trimmedSequence =
             typeof seq.sequence === "string" ? seq.sequence.trim() : "";
           if (!trimmedSequence) {
@@ -110,9 +96,7 @@ const useValidateForm = (formData, shouldValidate = true) => {
                 `Validation advisory at sequence index ${index}:`,
                 seqValidation.message
               );
-            } else {
-              console.log(`Sequence at index ${index} validated successfully.`);
-            }
+            } 
           }
 
           // Validate primer name (required)
@@ -122,12 +106,7 @@ const useValidateForm = (formData, shouldValidate = true) => {
             console.log(
               `Validation error at sequence index ${index}: Primer name is empty.`
             );
-          } else {
-            console.log(
-              `Primer name validated at index ${index}:`,
-              seq.primerName
-            );
-          }
+          } 
 
           // Validate MTK Part Left (required)
           if (!seq.mtkPartLeft || seq.mtkPartLeft.trim() === "") {
@@ -135,11 +114,6 @@ const useValidateForm = (formData, shouldValidate = true) => {
               "MTK Part Left is required.";
             console.log(
               `Validation error at sequence index ${index}: MTK Part Left is empty.`
-            );
-          } else {
-            console.log(
-              `MTK Part Left validated at index ${index}:`,
-              seq.mtkPartLeft
             );
           }
 
@@ -149,11 +123,6 @@ const useValidateForm = (formData, shouldValidate = true) => {
               "MTK Part Right is required.";
             console.log(
               `Validation error at sequence index ${index}: MTK Part Right is empty.`
-            );
-          } else {
-            console.log(
-              `MTK Part Right validated at index ${index}:`,
-              seq.mtkPartRight
             );
           }
         });
@@ -169,7 +138,9 @@ const useValidateForm = (formData, shouldValidate = true) => {
 
   // Overall form is valid if there are no required errors.
   const isValid = Object.keys(errors).length === 0;
-  console.log("Form validation status: isValid =", isValid, "errors:", errors);
+  if (!isValid) {
+    console.log("Form validation errors:", errors);
+  }
   return { errors, advisories, isValid };
 };
 

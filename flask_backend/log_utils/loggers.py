@@ -1,8 +1,8 @@
+import os
 import logging
 import time
 import traceback
 import json
-import os
 from contextlib import contextmanager
 from pydantic import BaseModel
 import numpy as np
@@ -17,18 +17,18 @@ class ModuleLoggerAdapter(logging.LoggerAdapter):
 
 class Logger:
     def __init__(self, name="MTKAdvanced", extra=None, enable_file_logging=True, log_dir="logs", custom_format=True):
-        # Allow extra context info (e.g., {"module": __name__})
         self.extra = extra or {}
-        # Create a child logger and wrap it with a LoggerAdapter for extra context.
         child_logger = base_logger.getChild(name)
         self.logger = ModuleLoggerAdapter(child_logger, self.extra)
         self.logger.logger.propagate = False  # Avoid duplicate logs
         self._setup_handlers(enable_file_logging, log_dir, custom_format)
-        # Container for function timers.
         self.timers = {}
 
     def _setup_handlers(self, enable_file_logging, log_dir, custom_format):
-        # If custom formatting is desired, remove any existing handlers and add our own.
+        # Determine log level from an environment variable (default to INFO)
+        log_level_str = os.getenv("LOG_LEVEL", "INFO").upper()
+        numeric_level = getattr(logging, log_level_str, logging.INFO)
+
         if custom_format:
             for handler in self.logger.logger.handlers[:]:
                 self.logger.logger.removeHandler(handler)
@@ -38,15 +38,14 @@ class Logger:
             )
             console_handler.setFormatter(console_formatter)
             self.logger.logger.addHandler(console_handler)
-            self.logger.logger.setLevel(logging.DEBUG)
-        # Optionally add a file handler.
+            self.logger.logger.setLevel(numeric_level)
         if enable_file_logging:
             os.makedirs(log_dir, exist_ok=True)
             timestamp = time.strftime("%Y%m%d_%H%M%S")
             file_handler = logging.FileHandler(
                 f"{log_dir}/app_logger_{timestamp}.log", encoding="utf-8"
             )
-            file_handler.setLevel(logging.DEBUG)
+            file_handler.setLevel(numeric_level)
             file_formatter = logging.Formatter(
                 "%(asctime)s | %(levelname)-8s | %(message)s",
                 datefmt="%Y-%m-%d %H:%M:%S"

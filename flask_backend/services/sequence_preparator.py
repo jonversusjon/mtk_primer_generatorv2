@@ -24,7 +24,6 @@ class SequencePreparator:
         if self.debug:
             logger.log_step("Initialization", "Debug mode enabled for SequencePreparator")
 
-    @logger.log_function
     def preprocess_sequence(
         self,
         sequence: str,

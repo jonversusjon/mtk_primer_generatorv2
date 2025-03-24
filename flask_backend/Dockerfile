@@ -9,7 +9,9 @@ WORKDIR /app
 
 # Copy the requirements file from flask_backend for dependency caching
 COPY flask_backend/requirements.txt flask_backend/requirements.txt
-
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r flask_backend/requirements.txt
+    
 # Install dependencies
 RUN pip install --no-cache-dir -r flask_backend/requirements.txt
 
@@ -20,4 +22,4 @@ COPY . /app
 EXPOSE 5000
 
 # Default command (Flask dev server)
-CMD ["flask", "run", "--host=0.0.0.0"]
+CMD ["flask", "run", "--host=0.0.0.0", "--reload"]

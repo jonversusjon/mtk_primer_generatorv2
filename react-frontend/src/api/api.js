@@ -69,6 +69,86 @@ const fetchWithErrorHandling = async (url, options = {}) => {
 };
 
 /**
+ * Submits protocol generation request and optionally sets up an SSE connection.
+ * If an onStatusUpdate callback is provided, it will use SSE for real‑time updates.
+ * Otherwise, it falls back to polling for the final result.
+ *
+ * @param {Object} formData - Form data containing protocol info.
+ * @param {Function} [onStatusUpdate] - Optional callback for status updates.
+ * @returns {Promise<Object>} - Returns either the initial response (with an eventSource if SSE is used)
+ *                              or the final result from polling.
+ */
+export const submitProtocol = async (formData, onStatusUpdate) => {
+  console.group("Submit Protocol");
+  // Ensure we have a job ID.
+  const jobId = formData.jobId || Date.now().toString();
+  const dataWithJobId = { ...formData, jobId };
+  let eventSource = null;
+
+  try {
+    // If a status callback is provided, set up an SSE connection.
+    if (onStatusUpdate) {
+      eventSource = monitorProtocolProgress(jobId, onStatusUpdate);
+    }
+
+    console.log(`Sending request to ${API_BASE_URL}/generate_protocol`);
+    console.time("Protocol generation request");
+
+    const response = await fetch(`${API_BASE_URL}/generate_protocol`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dataWithJobId),
+    });
+
+    console.timeEnd("Protocol generation request");
+    console.log(`Response status: ${response.status} ${response.statusText}`);
+
+    // Log response headers.
+    const headers = {};
+    response.headers.forEach((value, key) => (headers[key] = value));
+    console.log("Response headers:", headers);
+
+    // Process the response based on its content type.
+    const contentType = response.headers.get("content-type");
+    let initialData;
+    if (contentType && contentType.includes("application/json")) {
+      initialData = await response.json();
+      console.log("Initial response data:", initialData);
+    } else {
+      initialData = await response.text();
+      console.log(
+        `Non-JSON response (${initialData.length} chars):`,
+        initialData
+      );
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        initialData.error || `Request failed with status ${response.status}`
+      );
+    }
+
+    // If no onStatusUpdate callback was provided and the response includes a jobId,
+    // fall back to polling for the final result.
+    if (!onStatusUpdate && initialData.jobId) {
+      console.log(`Polling for results of job ${initialData.jobId}`);
+      const finalData = await pollForResults(initialData.jobId);
+      console.log("Final data from polling:", finalData);
+      console.groupEnd();
+      return finalData;
+    }
+
+    console.log("Protocol generation initiated successfully");
+    console.groupEnd();
+    return { initialData, eventSource };
+  } catch (error) {
+    console.error("Protocol generation failed:", error);
+    console.groupEnd();
+    throw error;
+  }
+};
+
+/**
  * Fetch available species for the dropdown.
  * @returns {Promise<Array>} Array of available species.
  */
@@ -156,7 +236,6 @@ export const monitorProtocolProgress = (
 
         // Log sequence details if present
         if (statusData.sequences) {
-          console.log("Sequences:", Object.keys(statusData.sequences).length);
           // Log the first few sequence details
           Object.entries(statusData.sequences)
             .slice(0, 3)

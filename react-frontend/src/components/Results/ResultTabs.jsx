@@ -3,8 +3,6 @@ import ResultTab from "./ResultTab";
 
 /*
   ResultTabs renders the tab navigation and content panels.
-  - The tab label is updated to show "(Processing)" if the result is a placeholder
-    or its progress percentage is less than 100.
   - It also ensures the active tab index remains valid when the results change.
 */
 const ResultTabs = ({ results }) => {
@@ -32,7 +30,7 @@ const ResultTabs = ({ results }) => {
               : `Sequence ${index + 1}`;
             // Append a processing indicator if placeholder or not yet complete.
             if (result.placeholder || (result.progress && result.progress.percentage < 100)) {
-              tabLabel += " (Processing)";
+              tabLabel += "";
             }
             return (
               <button

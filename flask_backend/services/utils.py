@@ -15,7 +15,7 @@ from flask_backend.models import RestrictionSite
 from flask_backend.log_utils import logger
 
 class GoldenGateUtils():
-    def __init__(self, verbose: bool = False):
+    def __init__(self, verbose: bool = False, job_id: Optional[str] = None):
         self.verbose = verbose
         self.data_dir = os.path.join(
             os.path.dirname(__file__), "../static/data")

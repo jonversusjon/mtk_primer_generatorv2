@@ -1,5 +1,7 @@
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, Response, stream_with_context
 from functools import wraps
+import time
+import json
 
 from flask_backend.services import GoldenGateUtils
 from flask_backend.log_utils import logger
@@ -37,6 +39,23 @@ def generate_protocol():
     celery = get_celery_instance()
     task = celery.send_task("generate_protocol_task", args=[data])
     return jsonify({"task_id": task.id}), 202
+
+
+@api.route("/status/<job_id>")
+def sse_status(job_id):
+    print(f"SSE route hit for job_id={job_id}")
+    def event_stream():
+        while True:
+            # Here, you would pull the latest state of the Celery task.
+            # For example, using Celery’s AsyncResult:
+            async_result = get_celery_instance().AsyncResult(job_id)
+            state = async_result.state
+            meta = async_result.info or {}
+            yield f"data: {json.dumps(meta)}\n\n"
+            if state in ["SUCCESS", "FAILURE"]:
+                break
+            time.sleep(2)
+    return Response(stream_with_context(event_stream()), mimetype="text/event-stream")
 
 
 @api.route("/task-status/<task_id>", methods=["GET"])

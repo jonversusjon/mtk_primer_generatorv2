@@ -27,7 +27,6 @@ class RestrictionSiteDetector():
 
         self.codon_dict = codon_dict
         
-    @logger.log_function
     def find_sites_to_mutate(self, sequence: str, index: int) -> List[RestrictionSite]:
         """
         Finds both BsmBI and BsaI restriction enzyme recognition sites on both strands of a DNA sequence.
@@ -86,7 +85,6 @@ class RestrictionSiteDetector():
         logger.log_step("Result", f"Total sites found: {len(sites_to_mutate)}")
         return sites_to_mutate
 
-    @logger.log_function
     def get_codons(self, context_seq: str, recognition_start_index: int, frame: int) -> List[Codon]:
         """
         Extracts codons spanned by the recognition site from a context sequence and 

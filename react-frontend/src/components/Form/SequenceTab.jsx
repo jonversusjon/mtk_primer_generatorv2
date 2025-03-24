@@ -36,10 +36,6 @@ function SequenceTab({ sequence, index, updateSequence, mtkPartOptions }) {
   ]);
 
   useEffect(() => {
-    console.log(`SequenceTab ${index} - sequence received:`, sequence.sequence); // DEBUG log
-  }, [sequence.sequence, index]);
-
-  useEffect(() => {
     const safeValue = sequence.sequence || "";
     const validationResult = safeValue
       ? validateDnaSequence(safeValue, true)
