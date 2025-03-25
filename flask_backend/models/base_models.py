@@ -79,12 +79,18 @@ class MutationCodon(ConfiguredBaseModel):
     codon: Codon
     nth_codon_in_rs: int
     
-    
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+        
 class OverhangOption(ConfiguredBaseModel):
     bottom_overhang: str
     top_overhang: str
     overhang_start_index: int
 
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
 
 class Primer(BaseModel):
     name: str = ""
@@ -94,7 +100,10 @@ class Primer(BaseModel):
     gc_content: Optional[float] = None
     length: Optional[int] = None
 
-
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+        
 class Mutation(ConfiguredBaseModel):
     mut_codons: List[MutationCodon]
     mut_indices_rs: Optional[List[int]] = None
@@ -104,7 +113,10 @@ class Mutation(ConfiguredBaseModel):
     last_mut_idx: int
     overhang_options: List[OverhangOption]
     
-
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True
+        
 class RestrictionSite(BaseModel):
     position: int
     frame: int
@@ -117,3 +129,7 @@ class RestrictionSite(BaseModel):
     recognition_seq: str
     enzyme: str
     mutations: Optional[Mutation] = None
+    
+    class Config:
+        alias_generator = to_camel
+        populate_by_name = True

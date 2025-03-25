@@ -1,8 +1,8 @@
 # services/protocol.py
 
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
-from flask_backend.models import DomesticationResult, SequenceToDomesticate, MutationSetCollection
+from flask_backend.models import DomesticationResult, SequenceToDomesticate, MutationSetCollection, RestrictionSite
 from flask_backend.services import (
     SequencePreparator,
     RestrictionSiteDetector,
@@ -121,9 +121,16 @@ class ProtocolMaker():
         # 2. Find restriction sites
         logger.log_step("Restriction Site Detection",
                         f"Detecting restriction sites for sequence {self.request_idx+1}")
-        sites_to_mutate = self.rs_analyzer.find_sites_to_mutate(processed_seq, self.request_idx)
+        sites_to_mutate: List[RestrictionSite] = self.rs_analyzer.find_sites_to_mutate(processed_seq, self.request_idx)
         dom_result.restriction_sites = sites_to_mutate
-
+        if sites_to_mutate:
+            sites_to_mutate_json = [site.model_dump(by_alias=True) for site in sites_to_mutate]
+            progress_callback(
+                step="Restriction Site Detection",
+                message=f"Restriction sites detected for sequence {self.request_idx+1}",
+                progress=62.5,
+                sites=sites_to_mutate_json
+            )
         # 3. Mutation analysis and mutation primer design
         mutation_primers = {}
         if sites_to_mutate:

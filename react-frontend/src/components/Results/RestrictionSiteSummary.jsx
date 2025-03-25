@@ -20,7 +20,7 @@ function RestrictionSiteSummary({ sites }) {
             {sites.map((site, index) => (
               <tr key={index}>
                 <td>{site.enzyme}</td>
-                <td>{site.sequence}</td>
+                <td>{site.recognitionSeq}</td>
                 <td>{site.position}</td>
                 <td>{site.strand}</td>
               </tr>

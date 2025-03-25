@@ -14,29 +14,55 @@ const formatPrimerSequence = (primer) => {
 const ResultTab = ({ result, sequenceIdx }) => {
   const [copied, setCopied] = useState(false);
   // Initialize local progress state; default to 0% if not provided.
-  const [progress, setProgress] = useState(result.progress || { percentage: 0, message: "" });
+  const [progress, setProgress] = useState(
+    result.progress || { percentage: 0, message: "" }
+  );
+  // New state to hold the restriction sites data.
+  const [restrictionSites, setRestrictionSites] = useState(
+    result.restriction_sites || []
+  );
 
   const jobId = sessionStorage.getItem("jobId") || "";
   // Subscribe to SSE updates for this specific sequence.
-  console.log("Subscribing to SSE for jobId:", jobId, "sequenceIdx:", sequenceIdx);
+  console.log(
+    "Subscribing to SSE for jobId:",
+    jobId,
+    "sequenceIdx:",
+    sequenceIdx
+  );
   const sseData = useSSE(jobId, sequenceIdx);
 
   useEffect(() => {
     if (sseData) {
-      // Assume sseData contains properties "progress" (percentage) and "message"
-      setProgress({ percentage: sseData.progress, message: sseData.message });
+      setProgress({ percentage: sseData.data.progress, message: sseData.data.message });
+  
+      if (sseData.data.step === "Restriction Site Detection" && sseData.data.sites) {
+        const sites = sseData.data.sites.map((site) => ({
+          enzyme: site.enzyme,
+          sequence: site.recognitionSeq,
+          position: site.position,
+          strand: site.strand,
+        }));
+        setRestrictionSites(sites);
+      }
     }
   }, [sseData]);
+  
 
   // Copy PCR primer data to clipboard.
   const copyPrimersToClipboard = useCallback(() => {
     if (!result?.PCR_reactions) return;
 
-    const rows = Object.entries(result.PCR_reactions).flatMap(([reactionName, primers]) => {
-      const forwardSeq = formatPrimerSequence(primers.forward);
-      const reverseSeq = formatPrimerSequence(primers.reverse);
-      return [`${reactionName}_FWD\t${forwardSeq}`, `${reactionName}_REV\t${reverseSeq}`];
-    });
+    const rows = Object.entries(result.PCR_reactions).flatMap(
+      ([reactionName, primers]) => {
+        const forwardSeq = formatPrimerSequence(primers.forward);
+        const reverseSeq = formatPrimerSequence(primers.reverse);
+        return [
+          `${reactionName}_FWD\t${forwardSeq}`,
+          `${reactionName}_REV\t${reverseSeq}`,
+        ];
+      }
+    );
     const finalText = rows.join("\n");
 
     navigator.clipboard
@@ -53,7 +79,10 @@ const ResultTab = ({ result, sequenceIdx }) => {
     if (progress && progress.percentage < 100) {
       return (
         <div className="progress-container">
-          <div className="progress-bar" style={{ width: `${progress.percentage}%` }}></div>
+          <div
+            className="progress-bar"
+            style={{ width: `${progress.percentage}%` }}
+          ></div>
           <div className="progress-message">{progress.message}</div>
         </div>
       );
@@ -63,8 +92,16 @@ const ResultTab = ({ result, sequenceIdx }) => {
 
   // Render a placeholder if the sequence is still processing.
   const renderPlaceholderMessage = () => {
-    if (result.placeholder && (!result.PCR_reactions && (!progress || progress.percentage < 100))) {
-      return <div className="placeholder-message">This sequence is still processing...</div>;
+    if (
+      result.placeholder &&
+      !result.PCR_reactions &&
+      (!progress || progress.percentage < 100)
+    ) {
+      return (
+        <div className="placeholder-message">
+          This sequence is still processing...
+        </div>
+      );
     }
     return null;
   };
@@ -90,13 +127,19 @@ const ResultTab = ({ result, sequenceIdx }) => {
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(result.PCR_reactions).map(([reaction, primers], idx) => (
-                  <tr key={idx}>
-                    <td>{reaction}</td>
-                    <td className="primer-cell">{formatPrimerSequence(primers.forward)}</td>
-                    <td className="primer-cell">{formatPrimerSequence(primers.reverse)}</td>
-                  </tr>
-                ))}
+                {Object.entries(result.PCR_reactions).map(
+                  ([reaction, primers], idx) => (
+                    <tr key={idx}>
+                      <td>{reaction}</td>
+                      <td className="primer-cell">
+                        {formatPrimerSequence(primers.forward)}
+                      </td>
+                      <td className="primer-cell">
+                        {formatPrimerSequence(primers.reverse)}
+                      </td>
+                    </tr>
+                  )
+                )}
               </tbody>
             </table>
           </div>
@@ -129,8 +172,9 @@ const ResultTab = ({ result, sequenceIdx }) => {
           </p>
         )}
       </div>
-      {result.restriction_sites && result.restriction_sites.length > 0 && (
-        <RestrictionSiteSummary sites={result.restriction_sites} />
+      {/* Render the updated restriction sites */}
+      {restrictionSites && restrictionSites.length > 0 && (
+        <RestrictionSiteSummary sites={restrictionSites} />
       )}
       {renderPCRReactions()}
       {result.errors && (
