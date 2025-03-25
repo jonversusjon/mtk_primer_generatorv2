@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { SSE_BASE_URL } from "../config/config.js";
 
 const useSSE = (jobId, sequenceIdx) => {
-  const [sseData, setSseData] = useState(null);
+  const [sseEvent, setSseEvent] = useState(null);
 
   useEffect(() => {
     const eventSource = new EventSource(
@@ -10,10 +10,10 @@ const useSSE = (jobId, sequenceIdx) => {
     );
 
     eventSource.onmessage = (event) => {
-      console.log("Received SSE event:", event.data);
+      console.log("Received SSE event:", event);
       try {
         const parsedData = JSON.parse(event.data);
-        setSseData(parsedData);
+        setSseEvent(parsedData); // update with the latest event
       } catch (err) {
         console.error("Error parsing SSE data:", err);
       }
@@ -25,11 +25,12 @@ const useSSE = (jobId, sequenceIdx) => {
     };
 
     return () => {
+      console.log("Closing SSE connection");
       eventSource.close();
     };
   }, [jobId, sequenceIdx]);
 
-  return sseData;
+  return sseEvent;
 };
 
 export default useSSE;

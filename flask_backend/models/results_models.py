@@ -1,34 +1,33 @@
-from pydantic import BaseModel
 from typing import List, Dict, Optional, Any
 
-from flask_backend.models import Mutation, Primer, RestrictionSite, MutationPrimerSet, ConfiguredBaseModel, NumpyArray
+from flask_backend.models import Mutation, Primer, RestrictionSite, MutationPrimerSet, NumpyArray, FrontendFriendly, FrontendNumpyFriendly
 
 
 ### Results ###
-class MutationSet(ConfiguredBaseModel):
+class MutationSet(FrontendNumpyFriendly):
     mutations: List[Mutation]
     compatibility: NumpyArray
     mut_primer_sets: List[MutationPrimerSet] = []
 
 
-class MutationSetCollection(ConfiguredBaseModel):
+class MutationSetCollection(FrontendFriendly):
     sites_to_mutate: List[str]
     sets: List[MutationSet]
     
 
-class PCRReaction(BaseModel):
+class PCRReaction(FrontendFriendly):
     name: str
     forward_primer: Primer
     reverse_primer: Primer
     amplicon_size: int
 
-class EdgePrimerPair(BaseModel):
+class EdgePrimerPair(FrontendFriendly):
     forward: Primer
     reverse: Primer
 
 
 # Protocol model
-class DomesticationResult(BaseModel):
+class DomesticationResult(FrontendFriendly):
     sequence_index: int = -1
     max_results: str = "one"
     processed_sequence: str = ""
@@ -43,7 +42,7 @@ class DomesticationResult(BaseModel):
     errors: Optional[Any] = None
 
 
-class MTKDomesticationProtocol(BaseModel):
+class MTKDomesticationProtocol(FrontendFriendly):
     result_data: Dict[int, DomesticationResult]
 
     

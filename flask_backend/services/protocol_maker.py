@@ -85,7 +85,7 @@ class ProtocolMaker():
         progress_callback(
             step="Protocol Start",
             message=f"Starting Golden Gate protocol creation for sequence {self.request_idx+1}...",
-            progress=12.5
+            progress=12.5,
         )
         
         logger.log_step("Protocol Start", "Starting Golden Gate protocol creation...")
@@ -128,7 +128,7 @@ class ProtocolMaker():
             progress_callback(
                 step="Restriction Site Detection",
                 message=f"Restriction sites detected for sequence {self.request_idx+1}",
-                progress=62.5,
+                event_type="data",
                 sites=sites_to_mutate_json
             )
         # 3. Mutation analysis and mutation primer design
@@ -153,6 +153,13 @@ class ProtocolMaker():
                     max_results_str=self.max_results,
                 )
                 dom_result.mut_primers = mutation_primers
+                
+            progress_callback(
+                step="Primer Design",
+                message=f"Mutation primers designed for sequence {self.request_idx+1}",
+                progress=75.0,
+            )
+
             logger.log_step("Mutation Primers",
                             f"Mutation primers designed: {mutation_primers}")
 
@@ -174,9 +181,19 @@ class ProtocolMaker():
         print("Grouping primers into PCR reactions...")
         logger.log_step("PCR Reaction Grouping",
                         "Grouping primers into PCR reactions using designed primers.")
-        
+
         dom_result.PCR_reactions = self.reaction_organizer.group_primers_into_pcr_reactions(dom_result)
+
+        progress_callback(
+            step="PCR Reaction Grouping",
+            message=f"Finished grouping primers into PCR reactions for sequence {self.request_idx+1}.",
+            progress=100.0,  # Indicates task completion
+            domestication_result=dom_result.model_dump(by_alias=True),
+            event_type="data",
+        )
+
         print("Finished grouping primers into PCR reactions...")
+
 
         return dom_result
 

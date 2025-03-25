@@ -1,23 +1,16 @@
 from typing import List, Optional
-from pydantic import BaseModel, ConfigDict
-
-from flask_backend.models import Primer, Mutation, RestrictionSite, to_camel
+from flask_backend.models import Primer, Mutation, RestrictionSite, FrontendFriendly
 
 
-class SequenceToDomesticate(BaseModel):
+class SequenceToDomesticate(FrontendFriendly):
     primer_name: Optional[str] = None
     sequence: str
     mtk_part_left: str
     mtk_part_right: str
     restriction_sites: Optional[List[RestrictionSite]] = None
 
-    model_config = ConfigDict(
-        alias_generator=to_camel,
-        populate_by_alias=True
-    )
-    
 
-class ProtocolRequest(BaseModel):
+class ProtocolRequest(FrontendFriendly):
     sequences_to_domesticate: List[SequenceToDomesticate]
     species: str = ""
     kozak: str = "MTK"
@@ -27,12 +20,8 @@ class ProtocolRequest(BaseModel):
     max_results: str = "err"
     job_id: Optional[str] = None
 
-    class Config:
-        alias_generator = to_camel
-        populate_by_name = True
         
-        
-class MutationPrimerPair(BaseModel):
+class MutationPrimerPair(FrontendFriendly):
     # forward / reverse for a single restriction site
     site: str
     position: int
@@ -41,6 +30,6 @@ class MutationPrimerPair(BaseModel):
     mutation: Mutation
 
 
-class MutationPrimerSet(BaseModel):
+class MutationPrimerSet(FrontendFriendly):
     # forward / reverse for all restriction sites
     mut_primer_pairs: List[MutationPrimerPair]

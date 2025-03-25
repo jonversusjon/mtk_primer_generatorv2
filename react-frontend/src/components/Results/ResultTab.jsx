@@ -1,80 +1,74 @@
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import RestrictionSiteSummary from "./RestrictionSiteSummary";
-import useSSE from "../../hooks/useSSE"; // adjust the path if needed
-
-// Helper to format primer sequences consistently.
-const formatPrimerSequence = (primer) => {
-  if (!primer) return "None";
-  if (typeof primer === "string") return primer;
-  if (Array.isArray(primer)) return primer.join(", ");
-  if (primer.sequence) return primer.sequence;
-  return "None";
-};
+import useSSE from "../../hooks/useSSE";
+import PcrReaction from "./PcrReactions"; // Adjust the path as needed
 
 const ResultTab = ({ result, sequenceIdx }) => {
-  const [copied, setCopied] = useState(false);
   // Initialize local progress state; default to 0% if not provided.
   const [progress, setProgress] = useState(
     result.progress || { percentage: 0, message: "" }
   );
+
   // New state to hold the restriction sites data.
   const [restrictionSites, setRestrictionSites] = useState(
     result.restriction_sites || []
   );
+  const [reactions, setReactions] = useState(result.reactions || []);
 
   const jobId = sessionStorage.getItem("jobId") || "";
-  // Subscribe to SSE updates for this specific sequence.
-  console.log(
-    "Subscribing to SSE for jobId:",
-    jobId,
-    "sequenceIdx:",
-    sequenceIdx
-  );
 
   // Register this tab to receive tab-specific updates from the server using the jobId and sequenceIdx.
   const sseResult = useSSE(jobId, sequenceIdx);
 
   useEffect(() => {
-    if (sseResult && sseResult.data) {
-      const sseData = sseResult.data;
-      setProgress({ percentage: sseData.progress, message: sseData.message });
+    if (sseResult) {
+      console.log("SSE Data Received:", sseResult);
+      if (sseResult.data) {
+        const sseData = sseResult.data;
 
-      if (sseData.step === "Restriction Site Detection" && sseData.sites) {
-        const sites = sseData.sites.map((site) => ({
-          enzyme: site.enzyme,
-          sequence: site.recognitionSeq,
-          position: site.position,
-          strand: site.strand,
-        }));
-        setRestrictionSites(sites);
+        // Update progress state regardless of event type
+        if (sseData.progress !== undefined && sseData.message) {
+          setProgress({
+            percentage: sseData.progress,
+            message: sseData.message,
+          });
+        }
+
+        // Handle events based on the step, regardless of type
+        switch (sseData.step) {
+          case "Restriction Site Detection":
+            if (sseData.sites) {
+              const sites = sseData.sites.map((site) => ({
+                enzyme: site.enzyme,
+                recognition_seq: site.recognitionSeq,
+                position: site.position,
+                strand: site.strand,
+              }));
+              setRestrictionSites(sites);
+            }
+            break;
+
+          case "PCR Reaction Grouping":
+            // Check both for data or progress events
+            if (
+              sseData.domestication_result &&
+              sseData.domestication_result.pcr_reactions
+            ) {
+              setReactions(sseData.domestication_result.pcr_reactions);
+              console.log(
+                "Updated reactions:",
+                sseData.domestication_result.pcr_reactions
+              );
+            }
+            break;
+
+          // Add additional cases as needed.
+          default:
+            break;
+        }
       }
     }
   }, [sseResult]);
-
-  // Copy PCR primer data to clipboard.
-  const copyPrimersToClipboard = useCallback(() => {
-    if (!result?.PCR_reactions) return;
-
-    const rows = Object.entries(result.PCR_reactions).flatMap(
-      ([reactionName, primers]) => {
-        const forwardSeq = formatPrimerSequence(primers.forward);
-        const reverseSeq = formatPrimerSequence(primers.reverse);
-        return [
-          `${reactionName}_FWD\t${forwardSeq}`,
-          `${reactionName}_REV\t${reverseSeq}`,
-        ];
-      }
-    );
-    const finalText = rows.join("\n");
-
-    navigator.clipboard
-      .writeText(finalText)
-      .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      })
-      .catch((err) => console.error("Failed to copy primers:", err));
-  }, [result]);
 
   // Render a progress bar if the process isn’t complete.
   const renderProgress = () => {
@@ -108,49 +102,6 @@ const ResultTab = ({ result, sequenceIdx }) => {
     return null;
   };
 
-  // Render PCR reactions if available.
-  const renderPCRReactions = () => {
-    if (result.PCR_reactions && Object.keys(result.PCR_reactions).length > 0) {
-      return (
-        <div className="pcr-summary section-container">
-          <div className="section-header">
-            <h3>PCR Reactions</h3>
-            <button onClick={copyPrimersToClipboard} className="small-button">
-              {copied ? "Copied!" : "Copy Primers"}
-            </button>
-          </div>
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Reaction</th>
-                  <th>Forward Primer</th>
-                  <th>Reverse Primer</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(result.PCR_reactions).map(
-                  ([reaction, primers], idx) => (
-                    <tr key={idx}>
-                      <td>{reaction}</td>
-                      <td className="primer-cell">
-                        {formatPrimerSequence(primers.forward)}
-                      </td>
-                      <td className="primer-cell">
-                        {formatPrimerSequence(primers.reverse)}
-                      </td>
-                    </tr>
-                  )
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
-
   return (
     <div className="sequence-results">
       {renderProgress()}
@@ -178,7 +129,8 @@ const ResultTab = ({ result, sequenceIdx }) => {
       {restrictionSites && restrictionSites.length > 0 && (
         <RestrictionSiteSummary sites={restrictionSites} />
       )}
-      {renderPCRReactions()}
+      {/* Render PCR reactions via the new component */}
+      <PcrReaction pcrReactions={reactions} />
       {result.errors && (
         <div className="error-message">
           <strong>Error:</strong> {result.errors}

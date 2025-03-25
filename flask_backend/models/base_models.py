@@ -1,4 +1,4 @@
-from pydantic import BaseModel, BeforeValidator, PlainSerializer, WithJsonSchema
+from pydantic import BaseModel, BeforeValidator, PlainSerializer, WithJsonSchema, ConfigDict
 from typing import List, Any, Annotated, Optional
 import numpy as np
 
@@ -63,19 +63,23 @@ NumpyArray = Annotated[
     })
 ]
 
-class ConfiguredBaseModel(BaseModel):
+
+class FrontendFriendly(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True)
+
+class FrontendNumpyFriendly(FrontendFriendly):
     model_config = {"arbitrary_types_allowed": True}
     
-
-class Codon(BaseModel):
+class Codon(FrontendFriendly):
     amino_acid: str
     context_position: int
     codon_sequence: str
     rs_overlap: List[int]
     usage: float
-    
 
-class MutationCodon(ConfiguredBaseModel):
+class MutationCodon(FrontendFriendly):
     codon: Codon
     nth_codon_in_rs: int
     
@@ -83,16 +87,12 @@ class MutationCodon(ConfiguredBaseModel):
         alias_generator = to_camel
         populate_by_name = True
         
-class OverhangOption(ConfiguredBaseModel):
+class OverhangOption(FrontendFriendly):
     bottom_overhang: str
     top_overhang: str
     overhang_start_index: int
 
-    class Config:
-        alias_generator = to_camel
-        populate_by_name = True
-
-class Primer(BaseModel):
+class Primer(FrontendFriendly):
     name: str = ""
     sequence: str = ""
     binding_region: Optional[str] = None
@@ -100,11 +100,8 @@ class Primer(BaseModel):
     gc_content: Optional[float] = None
     length: Optional[int] = None
 
-    class Config:
-        alias_generator = to_camel
-        populate_by_name = True
         
-class Mutation(ConfiguredBaseModel):
+class Mutation(FrontendFriendly):
     mut_codons: List[MutationCodon]
     mut_indices_rs: Optional[List[int]] = None
     mut_indices_codon: Optional[List[int]] = None
@@ -112,12 +109,9 @@ class Mutation(ConfiguredBaseModel):
     first_mut_idx: int
     last_mut_idx: int
     overhang_options: List[OverhangOption]
-    
-    class Config:
-        alias_generator = to_camel
-        populate_by_name = True
+
         
-class RestrictionSite(BaseModel):
+class RestrictionSite(FrontendFriendly):
     position: int
     frame: int
     codons: List[Codon]
@@ -129,7 +123,3 @@ class RestrictionSite(BaseModel):
     recognition_seq: str
     enzyme: str
     mutations: Optional[Mutation] = None
-    
-    class Config:
-        alias_generator = to_camel
-        populate_by_name = True
