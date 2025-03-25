@@ -1,7 +1,7 @@
 import numpy as np
 from Bio.Seq import Seq
 from flask_backend.services.utils import GoldenGateUtils
-from flask_backend.log_utils import logger
+from flask_backend.logging import logger
 from flask_backend.models import Primer, MutationPrimerPair, MutationPrimerSet, EdgePrimerPair, MutationSet, MutationSetCollection, OverhangOption
 import logging
 from typing import List

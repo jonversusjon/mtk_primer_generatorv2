@@ -4,7 +4,7 @@ from typing import List, Dict
 from Bio.Seq import Seq, CodonTable
 
 from flask_backend.models import RestrictionSite, Codon
-from flask_backend.log_utils import logger
+from flask_backend.logging import logger
 from flask_backend.services.utils import GoldenGateUtils
 
 class RestrictionSiteDetector():

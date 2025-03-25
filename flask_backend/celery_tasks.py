@@ -1,36 +1,42 @@
 # celery_tasks.py
 from celery import shared_task, group
-from flask_sse import sse  # This will use the same Redis connection configured in your Flask app
+from flask_sse import sse
 from flask_backend.services import GoldenGateUtils, ProtocolMaker
-from flask_backend.models import ProtocolRequest # noqa
+from flask_backend.models import ProtocolRequest, DomesticationResult
+from flask_backend.logging import logger
+
+def publish_progress(step: str, message: str, progress: float, job_id: str, sequence_idx: int):
+    """Publish progress updates via Flask-SSE to a Redis channel."""
+    channel = f"job_{job_id}_{sequence_idx}"
+    logger.log_step("Progress Update", f"Step: {step}, Message: {message}, Progress: {progress}")
+    logger.debug(f"Publishing progress to channel {channel}: {message}")
+    sse.publish(
+        {
+            "step": step,
+            "message": message,
+            "progress": progress,
+            "sequenceIdx": sequence_idx,
+        },
+        type="progress",
+        channel=channel,
+    )
 
 @shared_task(ignore_result=False)
-def process_protocol_sequence(req_dict, index: int):
-    # Validate and parse the request.
+def process_protocol_sequence(req_dict: dict, index: int):
+    # No need to call create_app() here because tasks run in an app context.
     req = ProtocolRequest.model_validate(req_dict)
-    
-    # Define a progress callback that publishes events via Flask‑SSE.
+    seq = req.sequences_to_domesticate[index]
+
     def progress_callback(step: str, message: str, progress: float, sequenceIdx: int = None):
-        if sequenceIdx is None:
-            sequenceIdx = index
-        # Publish the progress update to a Redis channel unique to this sequence.
-        channel = f"job_{req.job_id}_{index}"
-        sse.publish(
-            {
-                "step": step,
-                "message": message,
-                "progress": progress,
-                "sequenceIdx": sequenceIdx,
-            },
-            type="progress",
-            channel=channel
+        publish_progress(
+            step=step,
+            message=message,
+            progress=progress,
+            job_id=req.job_id,
+            sequence_idx=sequenceIdx if sequenceIdx is not None else index,
         )
 
-    # Get the sequence to process.
-    seq = req.sequences_to_domesticate[index]
-    
-    # Create a unique job id per sequence by appending the index.
-    protocolMaker = ProtocolMaker(
+    protocol_maker = ProtocolMaker(
         request_idx=index,
         sequence_to_domesticate=seq,
         codon_usage_dict=GoldenGateUtils().get_codon_usage_dict(req.species),
@@ -41,20 +47,24 @@ def process_protocol_sequence(req_dict, index: int):
         verbose=req.verbose_mode,
         job_id=f"{req.job_id}_{index}",
     )
+
+    # Execute protocol and explicitly serialize result.
+    result: DomesticationResult = protocol_maker.create_gg_protocol(progress_callback)
     
-    # Run the protocol – progress updates are published via the callback.
-    result = protocolMaker.create_gg_protocol(progress_callback)
-    return {"sequenceIdx": index, "result": result}
+    return {"sequenceIdx": index, "result": result.model_dump()}
 
 @shared_task(ignore_result=False)
-def generate_protocol_task(req_dict):
-    # Validate the incoming protocol request.
+def generate_protocol_task(req_dict: dict):
     req = ProtocolRequest.model_validate(req_dict)
-    total = len(req.sequences_to_domesticate)
-    
-    # Launch a group of tasks—one per sequence.
-    job = group(process_protocol_sequence.s(req_dict, idx) for idx in range(total))
-    group_result = job.apply_async()
-    
-    # Return immediately with a status and total sequence count.
-    return {"status": "started", "group_task_id": group_result.id, "total": total}
+    total_sequences = len(req.sequences_to_domesticate)
+
+    tasks = group(
+        process_protocol_sequence.s(req_dict, idx) for idx in range(total_sequences)
+    )
+    group_result = tasks.apply_async()
+
+    return {
+        "status": "started",
+        "group_task_id": group_result.id,
+        "total": total_sequences
+    }

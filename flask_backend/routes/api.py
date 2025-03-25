@@ -4,7 +4,8 @@ import time
 import json
 
 from flask_backend.services import GoldenGateUtils
-from flask_backend.log_utils import logger
+from flask_backend.logging import logger
+from flask_backend.celery_tasks import generate_protocol_task
 
 
 api = Blueprint("api", __name__, url_prefix="/api")
@@ -36,8 +37,7 @@ def generate_protocol():
     if not data:
         return jsonify({"error": "No data provided"}), 400
         
-    celery = get_celery_instance()
-    task = celery.send_task("generate_protocol_task", args=[data])
+    task = generate_protocol_task.delay(data)
     return jsonify({"task_id": task.id}), 202
 
 
@@ -128,8 +128,9 @@ def get_species():
     return jsonify({"species": utils.get_available_species()})
 
 
-@api.route("/config", methods=["GET"])
+@api.route("/dummy", methods=["GET"])
 @handle_errors
-def get_config():
+def get_dummy_data():
     """Get active application configuration."""
-    return jsonify(current_app.config.get("ACTIVE_CONFIG", {}))
+    print(f"current_app.config: {current_app.config}")
+    return jsonify(current_app.config.get("PREFILL_DATA", {}))

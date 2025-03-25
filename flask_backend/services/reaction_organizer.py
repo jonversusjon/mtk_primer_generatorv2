@@ -2,7 +2,7 @@
 
 from typing import List
 
-from flask_backend.log_utils import logger
+from flask_backend.logging import logger
 from flask_backend.models import DomesticationResult, Primer, MutationPrimerSet, PCRReaction
 
 class ReactionOrganizer():

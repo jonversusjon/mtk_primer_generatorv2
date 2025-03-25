@@ -12,7 +12,7 @@ from flask_backend.services import (
     ReactionOrganizer,
 )
 from flask_backend.services.utils import GoldenGateUtils
-from flask_backend.log_utils import logger
+from flask_backend.logging import logger
 
 class ProtocolMaker():
     """

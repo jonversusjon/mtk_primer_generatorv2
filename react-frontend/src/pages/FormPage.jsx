@@ -8,20 +8,6 @@ import useValidateForm from "../hooks/useValidateForm";
 import { useFormUpdater } from "../hooks/useFormUpdater";
 import "../styles/Form.css";
 
-const getErrorsBySequence = (errors, count) => {
-  const errorsBySequence = Array.from({ length: count }, () => []);
-  Object.entries(errors).forEach(([key, message]) => {
-    const match = key.match(/sequencesToDomesticate\[(\d+)\]/);
-    if (match) {
-      const index = parseInt(match[1], 10);
-      if (index < count) {
-        errorsBySequence[index].push(message);
-      }
-    }
-  });
-  return errorsBySequence;
-};
-
 const defaultSequence = {
   sequence: "",
   primerName: "",
@@ -40,121 +26,64 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
     maxResults: "one",
   });
 
-  const [loading, setLoading] = useState(true);
-  const [configLoaded, setConfigLoaded] = useState(false);
+  const [prefillLoaded, setPrefillLoaded] = useState(false);
   const [speciesLoaded, setSpeciesLoaded] = useState(false);
-  const defaultsLoaded = configLoaded && speciesLoaded;
-
   const [processing, setProcessing] = useState(false);
-  const [progressStatus, setProgressStatus] = useState({
-    message: "",
-    percentage: 0,
-    step: "",
-  });
   const [error, setError] = useState(null);
   const settingsToggleRef = useRef(null);
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const navigate = useNavigate();
-
   const { updateSettings, updateFormInput } = useFormUpdater(setFormData);
 
-  // Fetch initial configuration.
+  // Load persisted → dummy → default
   useEffect(() => {
-    const fetchConfig = async () => {
+    const initializeFormData = async () => {
       try {
-        const savedData = sessionStorage.getItem("formData");
-        if (savedData) {
-          const parsedData = JSON.parse(savedData);
-          console.log("Loaded formData from sessionStorage:", parsedData);
-          // Normalize sequences if needed.
-          if (parsedData.sequencesToDomesticate) {
-            parsedData.sequencesToDomesticate =
-              parsedData.sequencesToDomesticate.map((seq) => ({
-                ...seq,
-                sequence: Array.isArray(seq.sequence)
-                  ? seq.sequence.join("")
-                  : seq.sequence,
-              }));
-          }
-          setFormData((prev) => ({ ...prev, ...parsedData }));
+        const saved = sessionStorage.getItem("formData");
+        if (saved) {
+          setFormData(JSON.parse(saved));
         } else {
-          const response = await fetch(`${API_BASE_URL}/config`);
-          const data = await response.json();
-          let newData;
-          if (!data || Object.keys(data).length === 0) {
-            console.warn("API returned empty config! Using fallback defaults.");
-            newData = { sequencesToDomesticate: [defaultSequence] };
-          } else {
-            newData = {
-              ...data,
-              sequencesToDomesticate: data.sequencesToDomesticate
-                ? data.sequencesToDomesticate.map((seq) => ({
-                    ...seq,
-                    sequence: Array.isArray(seq.sequence)
-                      ? seq.sequence.join("")
-                      : seq.sequence,
-                  }))
-                : [defaultSequence],
-              species: data.species || "",
-              kozak: data.kozak || "",
-              maxMutationsPerSite:
-                data.maxMutationsPerSite !== undefined
-                  ? data.maxMutationsPerSite
-                  : null,
-              maxResults:
-                data.maxResults !== undefined ? data.maxResults : null,
-              verboseMode:
-                data.verboseMode !== undefined ? data.verboseMode : null,
-            };
-          }
-          setFormData((prev) => ({ ...prev, ...newData }));
+          // 1️⃣ Fetch dummy data
+          const dummyResp = await fetch(`${API_BASE_URL}/dummy`);
+          const dummy = dummyResp.ok ? await dummyResp.json() : {};
+  
+          // 2️⃣ Fetch species list
+          const speciesResp = await fetch(`${API_BASE_URL}/species`);
+          const { species: speciesList = [] } = await speciesResp.json();
+  
+          // 3️⃣ Merge defaults
+          setFormData({
+            ...dummy,
+            availableSpecies: speciesList,
+            species: dummy.species || speciesList[0] || "",
+            kozak: dummy.kozak || speciesList[0] || "",
+          });
         }
       } catch (err) {
-        console.error("Error fetching defaults from API:", err);
-        setFormData((prev) => ({
-          ...prev,
-          sequencesToDomesticate: [defaultSequence],
-        }));
+        console.error("Error loading prefill data", err);
       } finally {
-        setLoading(false);
-        setConfigLoaded(true);
+        setPrefillLoaded(true);
+        setSpeciesLoaded(true);
       }
     };
-    fetchConfig();
+    initializeFormData();
   }, []);
+  
 
-  // Fetch available species and update formData.
+  // Load species dropdown options
   useEffect(() => {
     const fetchSpecies = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/species`);
-        const speciesData = await response.json();
+        const resp = await fetch(`${API_BASE_URL}/species`);
+        const { species } = await resp.json();
         setFormData((prev) => ({
           ...prev,
-          availableSpecies: speciesData.species,
-          species:
-            prev.species ||
-            (speciesData.species.length > 0 ? speciesData.species[0] : ""),
-          kozak:
-            prev.kozak ||
-            (speciesData.species.length > 0 ? speciesData.species[0] : ""),
-          maxMutationsPerSite:
-            prev.maxMutationsPerSite !== null &&
-            prev.maxMutationsPerSite !== undefined
-              ? prev.maxMutationsPerSite
-              : 1,
-          maxResults:
-            prev.maxResults !== null && prev.maxResults !== undefined
-              ? prev.maxResults
-              : "one",
-          verboseMode:
-            prev.verboseMode !== null && prev.verboseMode !== undefined
-              ? prev.verboseMode
-              : false,
+          availableSpecies: species,
+          species: prev.species || species[0] || "",
+          kozak: prev.kozak || species[0] || "",
         }));
-      } catch (err) {
-        console.error("Error fetching species:", err);
-        setFormData((prev) => ({ ...prev, availableSpecies: [] }));
+      } catch {
+        console.error("Error fetching species");
       } finally {
         setSpeciesLoaded(true);
       }
@@ -162,46 +91,21 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
     fetchSpecies();
   }, []);
 
-  // Ensure species is set once both config and species have loaded.
-  useEffect(() => {
-    if (
-      speciesLoaded &&
-      configLoaded &&
-      formData.availableSpecies.length > 0 &&
-      !formData.species
-    ) {
-      setFormData((prev) => ({
-        ...prev,
-        species: prev.availableSpecies[0],
-      }));
-    }
-  }, [
-    speciesLoaded,
-    configLoaded,
-    formData.availableSpecies,
-    formData.species,
-  ]);
-
-  // Validate the form.
-  const { errors, isValid } = useValidateForm(formData, defaultsLoaded);
-  const errorsBySequence = getErrorsBySequence(
-    errors,
-    formData.sequencesToDomesticate.length
+  // Validation
+  const { errors, isValid } = useValidateForm(
+    formData,
+    prefillLoaded && speciesLoaded
   );
 
   const handleFormSubmit = async (data) => {
     setProcessing(true);
     setError(null);
-  
+
     try {
-      // Persist inputs for ResultsPage
       sessionStorage.setItem("formData", JSON.stringify(data));
-  
-      // Kick off the job — submitProtocol now returns { jobId }
       const { jobId } = await submitProtocol(data);
       sessionStorage.setItem("jobId", jobId);
-  
-      // Build & store placeholders for each sequence
+
       const placeholders = data.sequencesToDomesticate.map((seq, idx) => ({
         id: idx,
         placeholder: true,
@@ -209,81 +113,53 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
         primerName: seq.primerName || `Sequence ${idx + 1}`,
       }));
       sessionStorage.setItem("results", JSON.stringify(placeholders));
+      sessionStorage.setItem("jobId", jobId);
       setResults(placeholders);
-  
-      // Navigate to ResultsPage (SSE will drive live updates)
       navigate("/results");
     } catch (err) {
-      console.error("Error in handleFormSubmit:", err);
+      console.error("Submit error:", err);
       setError(err.message || "Failed to start protocol generation");
     } finally {
       setProcessing(false);
     }
   };
-  
 
-  if (loading || !defaultsLoaded) {
-    return (
-      <div className="initialization-message">Getting things ready...</div>
-    );
+  if (!prefillLoaded || !speciesLoaded) {
+    return <div className="initialization-message">Loading form…</div>;
   }
 
   return (
     <div className="form-page-container">
-      <div className="form-header" style={{ width: "100%" }}>
-        <h2 className="primer-form-title">Primer Design Form</h2>
-      </div>
-      <div style={{ display: "flex" }}>
+      <header className="form-header">
+        <h2>Primer Design Form</h2>
+      </header>
+      <div className="form-layout">
         <Sidebar
           sequences={formData.sequencesToDomesticate}
-          errorsBySequence={errorsBySequence}
+          errorsBySequence={errors.sequencesToDomesticate || []}
           onSelectTab={setActiveTabIndex}
           activeTabIndex={activeTabIndex}
-          settingsToggleRef={settingsToggleRef}
-          setShowSettings={setShowSettings}
           showSettings={showSettings}
+          setShowSettings={setShowSettings}
+          settingsToggleRef={settingsToggleRef}
           updateSettings={updateSettings}
           formData={formData}
         />
-        <div
-          className="form-container"
-          style={{ flex: 1, paddingLeft: "20px" }}
-        >
+        <main className="form-container">
           {error && <div className="alert alert-danger">{error}</div>}
-
-          {processing && (
-            <div className="processing-status">
-              <div className="progress">
-                <div
-                  className="progress-bar"
-                  role="progressbar"
-                  style={{ width: `${progressStatus.percentage}%` }}
-                  aria-valuenow={progressStatus.percentage}
-                  aria-valuemin="0"
-                  aria-valuemax="100"
-                >
-                  {progressStatus.percentage}%
-                </div>
-              </div>
-              <p>{progressStatus.message}</p>
-              <p>Current step: {progressStatus.step}</p>
-            </div>
-          )}
-
+          {processing && <p>Processing…</p>}
           <Form
             onSubmit={handleFormSubmit}
             formData={formData}
             updateFields={updateFormInput}
             showSettings={showSettings}
-            setShowSettings={setShowSettings}
-            settingsToggleRef={settingsToggleRef}
-            errors={errors}
+            initialized={prefillLoaded && speciesLoaded}
+            errorsBySequence={errors.sequencesToDomesticate || []}
             isValid={isValid}
-            initialized={defaultsLoaded}
             activeTabIndex={activeTabIndex}
             setActiveTabIndex={setActiveTabIndex}
           />
-        </div>
+        </main>
       </div>
     </div>
   );

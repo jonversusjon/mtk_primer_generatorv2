@@ -8,12 +8,14 @@ services:
       - .:/app
     command: flask run --host=0.0.0.0
     environment:
-      - PYTHONPATH=/app
-      - FLASK_ENV=testing
-      - FLASK_TESTING=true
-      - CONFIG_MODULE=flask_backend.config.testing_config
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      PYTHONPATH: /app
+      FLASK_ENV: testing
+      FLASK_TESTING: true
+      PREFILL_DATA: flask_backend.dev.prefill_data.dev_config_2
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      REDIS_URL: redis://redis:6379/0
+
     ports:
       - "5000:5000"
     depends_on:
@@ -28,12 +30,13 @@ services:
       - .:/app
     command: celery -A flask_backend.celery_worker.celery worker --loglevel=info
     environment:
-      - PYTHONPATH=/app
-      - FLASK_ENV=testing
-      - FLASK_TESTING=true
-      - CONFIG_MODULE=flask_backend.config.testing_config
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      PYTHONPATH: /app
+      FLASK_ENV: testing
+      FLASK_TESTING: true
+      PREFILL_DATA: flask_backend.dev.prefill_data.dev_config_2.
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      REDIS_URL: redis://redis:6379/0
     depends_on:
       - redis
 

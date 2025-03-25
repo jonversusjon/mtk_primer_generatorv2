@@ -12,7 +12,7 @@ from Bio.Seq import Seq
 from prettytable import PrettyTable
 
 from flask_backend.models import RestrictionSite
-from flask_backend.log_utils import logger
+from flask_backend.logging import logger
 
 class GoldenGateUtils():
     def __init__(self, verbose: bool = False, job_id: Optional[str] = None):

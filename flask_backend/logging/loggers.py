@@ -8,7 +8,7 @@ from pydantic import BaseModel
 import numpy as np
 from functools import wraps
 
-from flask_backend.config.logging_config import logger as base_logger
+from flask_backend.settings.config import logger as base_logger
 
 class ModuleLoggerAdapter(logging.LoggerAdapter):
     def process(self, msg, kwargs):

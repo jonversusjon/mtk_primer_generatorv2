@@ -1,12 +1,6 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import RestrictionSiteSummary from "./RestrictionSiteSummary";
-
-/*
-  ResultTab displays the detailed information for a single sequence.
-  - It renders a progress bar if the sequence is still processing.
-  - It shows a placeholder message if the sequence is marked as a placeholder and has no final data.
-  - It displays final results (e.g., PCR reactions, MTK parts, messages) when available.
-*/
+import useSSE from "../../hooks/useSSE"; // adjust the path if needed
 
 // Helper to format primer sequences consistently.
 const formatPrimerSequence = (primer) => {
@@ -17,15 +11,27 @@ const formatPrimerSequence = (primer) => {
   return "None";
 };
 
-const ResultTab = ({ result }) => {
+const ResultTab = ({ result, sequenceIdx }) => {
   const [copied, setCopied] = useState(false);
-  const { mtk_part_left = "N/A", mtk_part_right = "N/A" } = result || {};
+  // Initialize local progress state; default to 0% if not provided.
+  const [progress, setProgress] = useState(result.progress || { percentage: 0, message: "" });
 
-  // Copy PCR primer data (tab-separated) to the clipboard.
+  const jobId = sessionStorage.getItem("jobId") || "";
+  // Subscribe to SSE updates for this specific sequence.
+  console.log("Subscribing to SSE for jobId:", jobId, "sequenceIdx:", sequenceIdx);
+  const sseData = useSSE(jobId, sequenceIdx);
+
+  useEffect(() => {
+    if (sseData) {
+      // Assume sseData contains properties "progress" (percentage) and "message"
+      setProgress({ percentage: sseData.progress, message: sseData.message });
+    }
+  }, [sseData]);
+
+  // Copy PCR primer data to clipboard.
   const copyPrimersToClipboard = useCallback(() => {
     if (!result?.PCR_reactions) return;
 
-    // Build rows for each PCR reaction.
     const rows = Object.entries(result.PCR_reactions).flatMap(([reactionName, primers]) => {
       const forwardSeq = formatPrimerSequence(primers.forward);
       const reverseSeq = formatPrimerSequence(primers.reverse);
@@ -42,28 +48,28 @@ const ResultTab = ({ result }) => {
       .catch((err) => console.error("Failed to copy primers:", err));
   }, [result]);
 
-  // Render progress bar if the sequence is still processing.
+  // Render a progress bar if the process isn’t complete.
   const renderProgress = () => {
-    if (result.progress && result.progress.percentage < 100) {
+    if (progress && progress.percentage < 100) {
       return (
         <div className="progress-container">
-          <div className="progress-bar" style={{ width: `${result.progress.percentage}%` }}></div>
-          <div className="progress-message">{result.progress.message}</div>
+          <div className="progress-bar" style={{ width: `${progress.percentage}%` }}></div>
+          <div className="progress-message">{progress.message}</div>
         </div>
       );
     }
     return null;
   };
 
-  // Render a placeholder message for sequences still processing and with no final data.
+  // Render a placeholder if the sequence is still processing.
   const renderPlaceholderMessage = () => {
-    if (result.placeholder && (!result.PCR_reactions && (!result.progress || result.progress.percentage < 100))) {
+    if (result.placeholder && (!result.PCR_reactions && (!progress || progress.percentage < 100))) {
       return <div className="placeholder-message">This sequence is still processing...</div>;
     }
     return null;
   };
 
-  // Render PCR reactions table if available.
+  // Render PCR reactions if available.
   const renderPCRReactions = () => {
     if (result.PCR_reactions && Object.keys(result.PCR_reactions).length > 0) {
       return (
@@ -112,14 +118,14 @@ const ResultTab = ({ result }) => {
         </div>
       )}
       <div className="mtk-part-info">
-        {mtk_part_left === mtk_part_right ? (
+        {result.mtk_part_left === result.mtk_part_right ? (
           <p>
-            <strong>MTK Part Number:</strong> {mtk_part_left}
+            <strong>MTK Part Number:</strong> {result.mtk_part_left}
           </p>
         ) : (
           <p>
-            <strong>MTK Part Number Left:</strong> {mtk_part_left} <br />
-            <strong>MTK Part Number Right:</strong> {mtk_part_right}
+            <strong>MTK Part Number Left:</strong> {result.mtk_part_left} <br />
+            <strong>MTK Part Number Right:</strong> {result.mtk_part_right}
           </p>
         )}
       </div>

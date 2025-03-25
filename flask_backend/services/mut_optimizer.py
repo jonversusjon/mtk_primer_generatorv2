@@ -4,7 +4,7 @@ from itertools import product
 from tqdm import tqdm
 
 from flask_backend.models import Mutation, MutationSet, MutationSetCollection
-from flask_backend.log_utils import logger
+from flask_backend.logging import logger
 from flask_backend.services.utils import GoldenGateUtils
 
 

@@ -1,4 +1,11 @@
 /* form.css */
+.form-layout {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background-color: var(--background-color);
+}
 
 .initialization-message {
   font-size: 2rem;

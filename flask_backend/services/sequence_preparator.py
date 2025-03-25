@@ -3,7 +3,7 @@ import logging
 from typing import Optional, Tuple
 from Bio.Seq import Seq
 
-from flask_backend.log_utils import logger
+from flask_backend.logging import logger
 
 class SequencePreparator:
     """

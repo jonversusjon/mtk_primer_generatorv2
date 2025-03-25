@@ -1,11 +1,9 @@
-from pathlib import Path
-BASE_DIR = Path(__file__).resolve().parent
-
-CONFIG = {
+# This file contains input form default values for the Flask application.
+form_defaults = {
     "templateSequence": "",
     "species": "",
     "kozak": "",
-    "max_mut_per_site": 1,
+    "maxMutationsPerSite": 1,
     "verbose_mode": True,
     "sequencesToDomesticate": [
         {

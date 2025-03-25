@@ -7,11 +7,11 @@ services:
     volumes:
       - .:/app
     environment:
-      - PYTHONPATH=/app
-      - FLASK_ENV=production
-      - CONFIG_MODULE=flask_backend.config.production_config
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      PYTHONPATH: /app
+      FLASK_ENV: production
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      REDIS_URL: redis://redis:6379/0
     depends_on:
       - redis
     ports:
@@ -26,11 +26,11 @@ services:
       - .:/app
     command: celery -A flask_backend.celery_worker.celery worker --loglevel=info
     environment:
-      - PYTHONPATH=/app
-      - FLASK_ENV=production
-      - CONFIG_MODULE=flask_backend.config.production_config
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      PYTHONPATH: /app
+      FLASK_ENV: production
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      REDIS_URL: redis://redis:6379/0
     depends_on:
       - redis
 
