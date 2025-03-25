@@ -30,14 +30,17 @@ const ResultTab = ({ result, sequenceIdx }) => {
     "sequenceIdx:",
     sequenceIdx
   );
-  const sseData = useSSE(jobId, sequenceIdx);
+
+  // Register this tab to receive tab-specific updates from the server using the jobId and sequenceIdx.
+  const sseResult = useSSE(jobId, sequenceIdx);
 
   useEffect(() => {
-    if (sseData) {
-      setProgress({ percentage: sseData.data.progress, message: sseData.data.message });
-  
-      if (sseData.data.step === "Restriction Site Detection" && sseData.data.sites) {
-        const sites = sseData.data.sites.map((site) => ({
+    if (sseResult && sseResult.data) {
+      const sseData = sseResult.data;
+      setProgress({ percentage: sseData.progress, message: sseData.message });
+
+      if (sseData.step === "Restriction Site Detection" && sseData.sites) {
+        const sites = sseData.sites.map((site) => ({
           enzyme: site.enzyme,
           sequence: site.recognitionSeq,
           position: site.position,
@@ -46,8 +49,7 @@ const ResultTab = ({ result, sequenceIdx }) => {
         setRestrictionSites(sites);
       }
     }
-  }, [sseData]);
-  
+  }, [sseResult]);
 
   // Copy PCR primer data to clipboard.
   const copyPrimersToClipboard = useCallback(() => {
