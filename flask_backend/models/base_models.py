@@ -82,10 +82,6 @@ class Codon(FrontendFriendly):
 class MutationCodon(FrontendFriendly):
     codon: Codon
     nth_codon_in_rs: int
-    
-    class Config:
-        alias_generator = to_camel
-        populate_by_name = True
         
 class OverhangOption(FrontendFriendly):
     bottom_overhang: str

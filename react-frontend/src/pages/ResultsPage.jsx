@@ -1,18 +1,12 @@
 // ResultsPage.jsx
 import React, { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import Results from "../components/Results/Results";
+import ResultTabs from "../components/Results//ResultTabs";
 
 function ResultsPage({ results }) {
   const navigate = useNavigate();
 
-  // const [initialMessage] = useState(() => {
-  //   const msg =
-  //     sessionStorage.getItem("initialMessage") || "Primer design started...";
-  //   console.log("Initial message:", msg);
-  //   return msg;
-  // });
-
+  // Build placeholder data from stored form data if needed.
   const placeholders = useMemo(() => {
     const savedFormData = sessionStorage.getItem("formData");
     if (savedFormData) {
@@ -31,6 +25,7 @@ function ResultsPage({ results }) {
 
   const dataToDisplay = results || placeholders;
 
+  // Redirect to form if no data is available.
   useEffect(() => {
     if (!dataToDisplay?.length) {
       console.log("No data found — redirecting to form");
@@ -41,7 +36,7 @@ function ResultsPage({ results }) {
   return (
     <div className="output-container">
       {dataToDisplay?.length ? (
-        <Results data={dataToDisplay} />
+        <ResultTabs results={dataToDisplay} />
       ) : (
         <p className="initialization-message">Loading...</p>
       )}

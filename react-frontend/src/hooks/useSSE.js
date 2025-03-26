@@ -40,7 +40,7 @@ const useSSE = (jobId, sequenceIdx) => {
 
     // Cleanup: only close when the component using this hook unmounts
     return () => {
-      console.log("Closing SSE connection for channel", channel);
+      console.log("Closing SSE connection for job", jobId);
       eventSource.close();
     };
   }, [jobId, sequenceIdx, channel]);
