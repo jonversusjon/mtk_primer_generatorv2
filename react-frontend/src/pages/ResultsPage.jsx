@@ -1,17 +1,17 @@
 // ResultsPage.jsx
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Results from "../components/Results/Results";
 
 function ResultsPage({ results }) {
   const navigate = useNavigate();
 
-  const [initialMessage] = useState(() => {
-    const msg =
-      sessionStorage.getItem("initialMessage") || "Primer design started...";
-    console.log("Initial message:", msg);
-    return msg;
-  });
+  // const [initialMessage] = useState(() => {
+  //   const msg =
+  //     sessionStorage.getItem("initialMessage") || "Primer design started...";
+  //   console.log("Initial message:", msg);
+  //   return msg;
+  // });
 
   const placeholders = useMemo(() => {
     const savedFormData = sessionStorage.getItem("formData");
@@ -45,6 +45,7 @@ function ResultsPage({ results }) {
       ) : (
         <p className="initialization-message">Loading...</p>
       )}
+      <div className="h-16" />
     </div>
   );
 }

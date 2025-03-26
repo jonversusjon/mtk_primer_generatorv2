@@ -7,7 +7,8 @@ from flask_backend.services import GoldenGateUtils, ProtocolMaker
 from flask_backend.models import ProtocolRequest, DomesticationResult
 from flask_backend.logging import logger
 
-def publish_sse(step: str, message: str, job_id: str, sequence_idx: int, progress: Optional[float] = None, event_type: Optional[str] = None, **kwargs):
+def publish_sse(step: str, message: str, job_id: str, sequence_idx: int, 
+             step_progress: Optional[float] = None, event_type: Optional[str] = None, **kwargs):
     """
     Publish updates via Flask-SSE to a Redis channel.
     
@@ -16,8 +17,10 @@ def publish_sse(step: str, message: str, job_id: str, sequence_idx: int, progres
         message (str): Human-readable message.
         job_id (str): Unique identifier for the job.
         sequence_idx (int): Index of the current sequence.
-        progress (Optional[float]): Progress percentage, if applicable.
-        event_type (Optional[str]): Explicit event type ('progress' or 'data'). If None, inferred from 'progress'.
+        step_progress (Optional[float]): Progress percentage for the current step (0-100).
+                                       If None, no progress bar is shown for this step.
+        event_type (Optional[str]): Explicit event type ('progress' or 'data'). 
+                                  If None, inferred based on whether step_progress is provided.
         **kwargs: Arbitrary additional data to include in the payload.
     """
     channel = f"job_{job_id}_{sequence_idx}"
@@ -27,11 +30,13 @@ def publish_sse(step: str, message: str, job_id: str, sequence_idx: int, progres
         "sequenceIdx": sequence_idx,
         **kwargs
     }
-
-    if progress is not None:
-        payload["progress"] = progress
+    
+    # Add step progress if provided
+    if step_progress is not None:
+        payload["stepProgress"] = step_progress
         inferred_type = "progress"
-        logger.log_step("Progress Update", f"Step: {step}, Message: {message}, Progress: {progress}")
+        logger.log_step("Progress Update", 
+                       f"Step: {step}, Message: {message}, Step Progress: {step_progress}")
     else:
         inferred_type = "data"
         logger.log_step("Data Update", f"Step: {step}, Message: {message}")
@@ -52,12 +57,16 @@ def process_protocol_sequence(req_dict: dict, index: int):
     req = ProtocolRequest.model_validate(req_dict)
     seq = req.sequences_to_domesticate[index]
 
-    def progress_callback(step: str, message: str, progress: Optional[float] = None, sequence_idx: Optional[int] = None, event_type: Optional[str] = None, **kwargs):
-        logger.log_step("Progress Callback", f"Step: {step}, Message: {message}, Progress: {progress}")
+    def progress_callback(step: str, message: str, progress: Optional[float] = None, 
+                        step_progress: Optional[float] = None, sequence_idx: Optional[int] = None,
+                        event_type: Optional[str] = None, **kwargs):
+        logger.log_step("Progress Callback", 
+                    f"Step: {step}, Message: {message}, Overall Progress: {progress}, Step Progress: {step_progress}")
         publish_sse(
             step=step,
             message=message,
             progress=progress,
+            step_progress=step_progress,
             job_id=req.job_id,
             sequence_idx=sequence_idx if sequence_idx is not None else index,
             event_type=event_type,

@@ -4,7 +4,7 @@ from flask_backend.services.utils import GoldenGateUtils
 from flask_backend.logging import logger
 from flask_backend.models import Primer, MutationPrimerPair, MutationPrimerSet, EdgePrimerPair, MutationSet, MutationSetCollection, OverhangOption
 import logging
-from typing import List
+from typing import List, Optional
 
 RESULT_MAPPING = {
     "one":   lambda num_sites, total_coords: 1,
@@ -51,8 +51,12 @@ class PrimerDesigner():
             {"kozak": self.kozak}
         )
 
-    def design_mutation_primers(self, mutation_sets: MutationSetCollection,
-                                primer_name: str = None, max_results_str: str = "one"):
+    def design_mutation_primers(
+        self,
+        mutation_sets: MutationSetCollection,
+        primer_name: str = None,
+        max_results_str: str = "one",
+        progress_callback: Optional[callable] = None):
         """
         Designs mutation primers for the provided mutation sets using compatibility matrices.
         Returns a list of MutationPrimerSet objects.

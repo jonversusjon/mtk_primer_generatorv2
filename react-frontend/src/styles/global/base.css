@@ -54,16 +54,7 @@ body {
   
   
   
-  /* Responsive Adjustments */
-  @media (max-width: 860px) {
 
-  
-    .form-container,
-    .output-container {
-      max-width: 100%;
-      height: auto;
-    }
-  }
 
   /* Animations */
 @keyframes fadeIn {

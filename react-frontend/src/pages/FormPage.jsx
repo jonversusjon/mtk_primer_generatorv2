@@ -161,6 +161,7 @@ function FormPage({ showSettings, setShowSettings, setResults }) {
           />
         </main>
       </div>
+      <div className="h-16" />
     </div>
   );
 }

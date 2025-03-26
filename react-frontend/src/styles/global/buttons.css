@@ -28,3 +28,12 @@ button {
   .btn-warning:hover {
     background-color: var(--warning-hover);
   }
+
+.subtle-link {
+    border: none;
+  }
+
+  .dark-mode .subtle-link {
+    background: none;
+    border: none;
+  }

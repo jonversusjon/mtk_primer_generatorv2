@@ -1,141 +1,329 @@
-import React, { useState, useEffect } from "react";
-import RestrictionSiteSummary from "./RestrictionSiteSummary";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import useSSE from "../../hooks/useSSE";
-import PcrReaction from "./PcrReactions"; // Adjust the path as needed
+import ProtocolTracker from "./ProtocolTracker";
 
 const ResultTab = ({ result, sequenceIdx }) => {
-  // Initialize local progress state; default to 0% if not provided.
-  const [progress, setProgress] = useState(
-    result.progress || { percentage: 0, message: "" }
+  // Define all possible steps in order - ensure these match EXACTLY with backend step names
+  const allSteps = [
+    "Preprocessing",
+    "Restriction Site Detection",
+    "Mutation Analysis",
+    "Primer Design",
+    "PCR Reaction Grouping",
+  ];
+
+  // Initialize steps with waiting status
+  const [protocolSteps, setProtocolSteps] = useState(
+    allSteps.map((name) => ({
+      name,
+      status: "waiting",
+      progress: null,
+      message: "",
+      notificationCount: 0,
+    }))
   );
 
-  // New state to hold the restriction sites data.
-  const [restrictionSites, setRestrictionSites] = useState(
-    result.restriction_sites || []
-  );
-  const [reactions, setReactions] = useState(result.reactions || []);
+  // Use a ref to track processed events to avoid duplicates
+  const processedEvents = useRef(new Set());
+
+  // Messages for the message log
+  const [messagesSet, setMessagesSet] = useState(new Set());
+
+  // State for result data organized by step
+  const [stepData, setStepData] = useState({
+    ProtocolStart: {},
+    Preprocessing: {
+      processedSequence: result.processed_sequence || "",
+    },
+    RestrictionSiteDetection: {
+      restrictionSites: result.restriction_sites || [],
+    },
+    PrimerDesign: {
+      edgePrimers: result.edge_primers || null,
+      mutPrimers: result.mut_primers || {},
+    },
+    PCRReactionGrouping: {
+      pcrReactions: result.PCR_reactions || [],
+    },
+  });
+
+  // State to store the latest SSE data
+  const [currentSseData, setCurrentSseData] = useState(null);
 
   const jobId = sessionStorage.getItem("jobId") || "";
 
-  // Register this tab to receive tab-specific updates from the server using the jobId and sequenceIdx.
+  // Register this tab to receive tab-specific updates
   const sseResult = useSSE(jobId, sequenceIdx);
 
+  // Debug log all SSE events
   useEffect(() => {
     if (sseResult) {
-      console.log("SSE Data Received:", sseResult);
-      if (sseResult.data) {
-        const sseData = sseResult.data;
+      console.log(`[ResultTab:${sequenceIdx}] SSE event received:`, sseResult);
+    }
+  }, [sseResult, sequenceIdx]);
 
-        // Update progress state regardless of event type
-        if (sseData.progress !== undefined && sseData.message) {
-          setProgress({
-            percentage: sseData.progress,
-            message: sseData.message,
-          });
-        }
+  // Update step data based on SSE event
+  const updateStepData = useCallback(
+    (sseData) => {
+      switch (sseData.step) {
+        case "Restriction Site Detection":
+          if (sseData.sites) {
+            const sites = sseData.sites.map((site) => ({
+              enzyme: site.enzyme,
+              recognition_seq: site.recognitionSeq,
+              position: site.position,
+              strand: site.strand,
+            }));
 
-        // Handle events based on the step, regardless of type
-        switch (sseData.step) {
-          case "Restriction Site Detection":
-            if (sseData.sites) {
-              const sites = sseData.sites.map((site) => ({
-                enzyme: site.enzyme,
-                recognition_seq: site.recognitionSeq,
-                position: site.position,
-                strand: site.strand,
-              }));
-              setRestrictionSites(sites);
+            setStepData((prevData) => ({
+              ...prevData,
+              RestrictionSiteDetection: {
+                ...prevData.RestrictionSiteDetection,
+                restrictionSites: sites,
+              },
+            }));
+
+            // Update notification count for this step
+            if (sites.length > 0) {
+              setProtocolSteps((prevSteps) => {
+                return prevSteps.map((step) =>
+                  step.name === "Restriction Site Detection"
+                    ? { ...step, notificationCount: sites.length }
+                    : step
+                );
+              });
             }
-            break;
+          }
+          break;
 
-          case "PCR Reaction Grouping":
-            // Check both for data or progress events
-            if (
-              sseData.domestication_result &&
-              sseData.domestication_result.pcr_reactions
-            ) {
-              setReactions(sseData.domestication_result.pcr_reactions);
-              console.log(
-                "Updated reactions:",
-                sseData.domestication_result.pcr_reactions
+        case "Primer Design":
+          // Track primer updates for notification count
+          let edgePrimerCount = 0;
+          let mutPrimerCount = 0;
+
+          if (sseData.edgePrimers) {
+            edgePrimerCount = Object.keys(sseData.edgePrimers).length;
+            setStepData((prevData) => ({
+              ...prevData,
+              PrimerDesign: {
+                ...prevData.PrimerDesign,
+                edgePrimers: sseData.edgePrimers,
+              },
+            }));
+          }
+
+          if (sseData.mutPrimers) {
+            mutPrimerCount = Object.keys(sseData.mutPrimers).length;
+            setStepData((prevData) => ({
+              ...prevData,
+              PrimerDesign: {
+                ...prevData.PrimerDesign,
+                mutPrimers: sseData.mutPrimers,
+              },
+            }));
+          }
+
+          // Update notification count if we have any primers
+          const totalPrimerCount = edgePrimerCount + mutPrimerCount;
+          if (totalPrimerCount > 0) {
+            setProtocolSteps((prevSteps) => {
+              return prevSteps.map((step) =>
+                step.name === "Primer Design"
+                  ? { ...step, notificationCount: totalPrimerCount }
+                  : step
               );
+            });
+          }
+          break;
+
+        case "PCR Reaction Grouping":
+          if (
+            sseData.domestication_result &&
+            sseData.domestication_result.pcr_reactions
+          ) {
+            const pcrReactions = sseData.domestication_result.pcr_reactions;
+            setStepData((prevData) => ({
+              ...prevData,
+              PCRReactionGrouping: {
+                ...prevData.PCRReactionGrouping,
+                pcrReactions: pcrReactions,
+              },
+            }));
+
+            // Update notification count for PCR reactions
+            if (pcrReactions.length > 0) {
+              setProtocolSteps((prevSteps) => {
+                return prevSteps.map((step) =>
+                  step.name === "PCR Reaction Grouping"
+                    ? { ...step, notificationCount: pcrReactions.length }
+                    : step
+                );
+              });
             }
-            break;
+          }
+          break;
 
-          // Add additional cases as needed.
-          default:
-            break;
-        }
+        case "Preprocessing":
+          if (sseData.processedSequence) {
+            setStepData((prevData) => ({
+              ...prevData,
+              Preprocessing: {
+                ...prevData.Preprocessing,
+                processedSequence: sseData.processedSequence,
+              },
+            }));
+          }
+          break;
+
+        default:
+          console.warn(
+            `[ResultTab:${sequenceIdx}] Unknown step:`,
+            sseData.step
+          );
+          break;
       }
-    }
-  }, [sseResult]);
+    },
+    [sequenceIdx]
+  );
 
-  // Render a progress bar if the process isn’t complete.
-  const renderProgress = () => {
-    if (progress && progress.percentage < 100) {
-      return (
-        <div className="progress-container">
-          <div
-            className="progress-bar"
-            style={{ width: `${progress.percentage}%` }}
-          ></div>
-          <div className="progress-message">{progress.message}</div>
-        </div>
-      );
-    }
-    return null;
-  };
+  // Process SSE data - memoized to ensure consistent reference
+  const processSseData = useCallback(
+    (sseData) => {
+      if (!sseData || !sseData.step) return;
 
-  // Render a placeholder if the sequence is still processing.
-  const renderPlaceholderMessage = () => {
-    if (
-      result.placeholder &&
-      !result.PCR_reactions &&
-      (!progress || progress.percentage < 100)
-    ) {
-      return (
-        <div className="placeholder-message">
-          This sequence is still processing...
-        </div>
+      // Generate a unique ID for this event to prevent duplicate processing
+      const eventId = `${sseData.step}-${sseData.message}-${sseData.stepProgress}`;
+      if (processedEvents.current.has(eventId)) {
+        console.log(
+          `[ResultTab:${sequenceIdx}] Skipping duplicate event:`,
+          eventId
+        );
+        return;
+      }
+
+      // Mark as processed
+      processedEvents.current.add(eventId);
+      console.log(
+        `[ResultTab:${sequenceIdx}] Processing event:`,
+        eventId,
+        sseData
       );
+
+      // Always update the current SSE data to ensure notification counts are passed along
+      // We'll store the most recent message for each step
+      setCurrentSseData(sseData);
+
+      // Update steps state
+      setProtocolSteps((prevSteps) => {
+        const stepIndex = prevSteps.findIndex(
+          (step) => step.name === sseData.step
+        );
+
+        if (stepIndex === -1) {
+          console.warn(
+            `[ResultTab:${sequenceIdx}] Step not found:`,
+            sseData.step
+          );
+          return prevSteps; // Step not found, return unchanged
+        }
+
+        // Create a new steps array to modify
+        const newSteps = [...prevSteps];
+
+        // Mark all previous steps as completed if they're not already
+        for (let i = 0; i < stepIndex; i++) {
+          if (newSteps[i].status !== "completed") {
+            newSteps[i] = {
+              ...newSteps[i],
+              status: "completed",
+              progress: 100,
+            };
+          }
+        }
+
+        // Update the current step
+        const stepProgress =
+          sseData.stepProgress !== undefined
+            ? sseData.stepProgress
+            : newSteps[stepIndex].progress;
+        const stepMessage = sseData.message || newSteps[stepIndex].message;
+
+        if (stepProgress >= 100) {
+          // If step reached 100%, mark as completed
+          newSteps[stepIndex] = {
+            ...newSteps[stepIndex],
+            status: "completed",
+            progress: 100,
+            message: stepMessage,
+          };
+
+          // If this wasn't the last step, set the next step to active
+          if (stepIndex < newSteps.length - 1) {
+            newSteps[stepIndex + 1] = {
+              ...newSteps[stepIndex + 1],
+              status: "active",
+            };
+          }
+        } else {
+          // This is an in-progress update
+          newSteps[stepIndex] = {
+            ...newSteps[stepIndex],
+            status: "active",
+            progress: stepProgress,
+            message: stepMessage,
+          };
+        }
+
+        return newSteps;
+      });
+
+      // Add to messages log if there's a new message
+      if (sseData.message) {
+        setMessagesSet((prev) => {
+          // Create a new Set to trigger a re-render
+          const newSet = new Set(prev);
+          newSet.add(`${sseData.step}: ${sseData.message}`);
+          return newSet;
+        });
+      }
+
+      // Update step-specific data based on event content
+      updateStepData(sseData);
+    },
+    [sequenceIdx, updateStepData]
+  );
+
+  // Handle SSE updates - now with proper dependencies
+  useEffect(() => {
+    if (!sseResult) return;
+
+    // Handle different data structures that might come from SSE
+    let sseData;
+    if (sseResult.data) {
+      sseData = sseResult.data;
+    } else {
+      sseData = sseResult;
     }
-    return null;
-  };
+
+    if (sseData) {
+      console.log(`[ResultTab:${sequenceIdx}] Processing SSE Data:`, sseData);
+      processSseData(sseData);
+    }
+  }, [sseResult, processSseData, sequenceIdx]);
+
+  // Convert message set to array for rendering
+  const messages = Array.from(messagesSet);
 
   return (
-    <div className="sequence-results">
-      {renderProgress()}
-      {renderPlaceholderMessage()}
-      {result.messages && result.messages.length > 0 && (
-        <div className="messages">
-          {result.messages.map((msg, idx) => (
-            <div key={idx}>{msg}</div>
-          ))}
-        </div>
-      )}
-      <div className="mtk-part-info">
-        {result.mtk_part_left === result.mtk_part_right ? (
-          <p>
-            <strong>MTK Part Number:</strong> {result.mtk_part_left}
-          </p>
-        ) : (
-          <p>
-            <strong>MTK Part Number Left:</strong> {result.mtk_part_left} <br />
-            <strong>MTK Part Number Right:</strong> {result.mtk_part_right}
-          </p>
-        )}
+    <div className="sequence-results p-4">
+      <div className="mb-6">
+        <ProtocolTracker
+          steps={protocolSteps}
+          messages={messages}
+          resultData={stepData}
+          sseData={currentSseData}
+        />
       </div>
-      {/* Render the updated restriction sites */}
-      {restrictionSites && restrictionSites.length > 0 && (
-        <RestrictionSiteSummary sites={restrictionSites} />
-      )}
-      {/* Render PCR reactions via the new component */}
-      <PcrReaction pcrReactions={reactions} />
-      {result.errors && (
-        <div className="error-message">
-          <strong>Error:</strong> {result.errors}
-        </div>
-      )}
     </div>
   );
 };

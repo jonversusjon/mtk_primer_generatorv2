@@ -13,12 +13,15 @@
   margin: 0 auto;     /* Center horizontally if you set a max-width */
   padding: 0px 24px 24px 24px;
   max-width: 1000px;
+  padding: 0 20px;
+  min-height: 60vh; /* Adjust for header height */
 }
 
-@media (max-width: 860px) {
-
-  .form-container,
-  .output-container {
-    padding: 0px 16px 16px 16px;
+  @media (max-width: 860px) {
+    .form-container,
+    .output-container {
+      max-width: 100%;
+      height: auto;
+      padding: 0px 16px 16px 16px;
+    }
   }
-}

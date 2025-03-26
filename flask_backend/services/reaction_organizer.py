@@ -1,6 +1,6 @@
 # services/reactions.py
 
-from typing import List
+from typing import List, Optional
 
 from flask_backend.logging import logger
 from flask_backend.models import DomesticationResult, Primer, MutationPrimerSet, PCRReaction
@@ -32,7 +32,10 @@ class ReactionOrganizer():
             amplicon_size=amplicon_size
         )
 
-    def group_primers_into_pcr_reactions(self, domestication_result: DomesticationResult) -> dict:
+    def group_primers_into_pcr_reactions(
+        self,
+        domestication_result: DomesticationResult,
+        progress_callback: Optional[callable] = None) -> dict:
         """
         Groups primers into nested PCR reactions using chaining logic for each mutation solution.
 

@@ -137,10 +137,6 @@ tbody tr:nth-child(odd) {
     font-size: 1.2rem;
 }
 
-.output-container {
-    padding: 0 20px
-}
-
 .section-container {
     margin-bottom: 32px;
     border-radius: 16px;

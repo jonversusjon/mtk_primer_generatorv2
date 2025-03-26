@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import List, Dict
+from typing import List, Dict, Optional
 from Bio.Seq import Seq, CodonTable
 
 from flask_backend.models import RestrictionSite, Codon
@@ -27,7 +27,12 @@ class RestrictionSiteDetector():
 
         self.codon_dict = codon_dict
         
-    def find_sites_to_mutate(self, sequence: str, index: int) -> List[RestrictionSite]:
+    def find_sites_to_mutate(
+        self,
+        sequence: str,
+        index: int,
+        progress_callback: Optional[callable] = None
+        ) -> List[RestrictionSite]:
         """
         Finds both BsmBI and BsaI restriction enzyme recognition sites on both strands of a DNA sequence.
         """

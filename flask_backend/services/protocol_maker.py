@@ -80,92 +80,108 @@ class ProtocolMaker():
         Returns:
             dict: A dictionary containing protocol details.
         """
-        print("Starting Golden Gate protocol creation...")
-        
-        progress_callback(
-            step="Protocol Start",
-            message=f"Starting Golden Gate protocol creation for sequence {self.request_idx+1}...",
-            progress=12.5,
-        )
-        
-        logger.log_step("Protocol Start", "Starting Golden Gate protocol creation...")
-        logger.log_step("Process Sequence", f"Processing sequence {self.request_idx+1}")
-        
+        # Initialize the result object
+        logger.log_step("Protocol Start - Process Sequence", f"Processing sequence {self.request_idx+1}")        
         dom_result = DomesticationResult(
             sequence_index=self.request_idx,
             mtk_part_left=self.seq_to_dom.mtk_part_left,
             mtk_part_right=self.seq_to_dom.mtk_part_right,
         )
-
-        # 1. Preprocess sequence (remove start/stop codons, etc.)
-        progress_callback(
-            step="Preprocessing",
-            message=f"Preprocessing sequence at index {self.request_idx+1}...",
-            progress=25.0,
-        )
-        logger.log_step("Preprocessing",
-                        f"Preprocessing sequence at index {self.request_idx+1}")
         
-        processed_seq, message, _ = self.sequence_preparator.preprocess_sequence(
-            self.seq_to_dom.sequence, self.seq_to_dom.mtk_part_left)
-        if message:
-            dom_result.messages.append(message)
+        # 1 - Preprocess the sequence
+        logger.log_step("Preprocessing", f"Preprocessing sequence at index {self.request_idx+1}")
+        processed_seq, _ = self.sequence_preparator.preprocess_sequence(
+            self.seq_to_dom.sequence, 
+            self.seq_to_dom.mtk_part_left,
             
-        dom_result.processed_sequence = str(processed_seq) if processed_seq else str(self.seq_to_dom.sequence)
-        progress_callback(
-            step="Preprocessing",
-            message=f"Finished preprocessing sequence at index {self.request_idx+1}... {message}",
-            progress=50.0
+            progress_callback=lambda prog, msg, evt, **kwargs: progress_callback(
+                step="Preprocessing",
+                message=msg,
+                step_progress=prog,
+                sequence_idx=self.request_idx,
+                event_type=evt,
+                **kwargs
+            )
         )
-        
-        # 2. Find restriction sites
-        logger.log_step("Restriction Site Detection",
-                        f"Detecting restriction sites for sequence {self.request_idx+1}")
-        sites_to_mutate: List[RestrictionSite] = self.rs_analyzer.find_sites_to_mutate(processed_seq, self.request_idx)
+        dom_result.processed_sequence = str(processed_seq) if processed_seq else str(self.seq_to_dom.sequence)
+    
+        # 2 - Restriction Site Detection
+        logger.log_step("Restriction Site Detection", f"Detecting restriction sites for sequence {self.request_idx+1}")
+        sites_to_mutate: List[RestrictionSite] = self.rs_analyzer.find_sites_to_mutate(
+            processed_seq,
+            self.request_idx,
+            progress_callback=lambda prog, msg, **kwargs: progress_callback(
+                step="Restriction Sites", 
+                message=msg, 
+                step_progress=prog,
+                **kwargs
+            )
+        )
         dom_result.restriction_sites = sites_to_mutate
+        
         if sites_to_mutate:
             sites_to_mutate_json = [site.model_dump(by_alias=True) for site in sites_to_mutate]
             progress_callback(
                 step="Restriction Site Detection",
-                message=f"Restriction sites detected for sequence {self.request_idx+1}",
+                message=f"Found {len(sites_to_mutate)} restriction sites",
+                step_progress=100,
                 event_type="data",
-                sites=sites_to_mutate_json
+                sites=sites_to_mutate_json,
+                notification_count=len(sites_to_mutate),
             )
-        # 3. Mutation analysis and mutation primer design
+        else:
+            # Complete with simple completion message
+            progress_callback(
+                step="Restriction Site Detection",
+                message="No restriction sites found",
+                step_progress=100,
+                notification_count=0,
+            )
+        
         mutation_primers = {}
         if sites_to_mutate:
-            logger.log_step("Mutation Analysis",
-                            f"Analyzing mutations for sequence {self.request_idx+1}")
-            mutation_options = self.mutation_analyzer.get_all_mutations(sites_to_mutate)
+            # 3 - Mutation Analysis
+            logger.log_step("Mutation Analysis", f"Analyzing mutations for sequence {self.request_idx+1}")
+            mutation_options = self.mutation_analyzer.get_all_mutations(
+                sites_to_mutate,
+                progress_callback=lambda prog, msg, **kwargs: progress_callback(
+                    step="Mutation Analysis", 
+                    message=msg, 
+                    step_progress=prog,
+                    **kwargs
+                )
+            )
+            
             optimized_mutations: MutationSetCollection = None
             if mutation_options:
-                logger.log_step("Mutation Optimization",
-                                f"Optimizing mutations for sequence {self.request_idx+1}")
+                logger.log_step("Mutation Optimization", f"Optimizing mutations for sequence {self.request_idx+1}")
                 optimized_mutations = self.mutation_optimizer.optimize_mutations(
-                    mutation_options=mutation_options
+                    mutation_options=mutation_options,
+                    progress_callback=lambda prog, msg, **kwargs: progress_callback(
+                        step="Mutation Analysis", 
+                        message=msg, 
+                        step_progress=prog,
+                        **kwargs
+                    )
                 )
 
-                logger.log_step("Primer Design",
-                                f"Designing mutation primers for sequence {self.request_idx+1}")
+                # 4 - Primer Design
+                logger.log_step("Primer Design", f"Designing mutation primers for sequence {self.request_idx+1}")
                 mutation_primers = self.primer_designer.design_mutation_primers(
                     mutation_sets=optimized_mutations,
                     primer_name=self.seq_to_dom.primer_name,
                     max_results_str=self.max_results,
+                    progress_callback=lambda prog, msg, **kwargs: progress_callback(
+                        step="Mutation Analysis", 
+                        message=msg, 
+                        step_progress=prog,
+                        **kwargs
+                    )
                 )
                 dom_result.mut_primers = mutation_primers
-                
-            progress_callback(
-                step="Primer Design",
-                message=f"Mutation primers designed for sequence {self.request_idx+1}",
-                progress=75.0,
-            )
-
-            logger.log_step("Mutation Primers",
-                            f"Mutation primers designed: {mutation_primers}")
-
-        # 4. Generate edge primers
-        logger.log_step("Edge Primer Design",
-                        f"Designing edge primers for sequence {self.request_idx+1}")
+        
+        # Generate edge primers
+        logger.log_step("Edge Primer Design", f"Designing edge primers for sequence {self.request_idx+1}")
         dom_result.edge_primers = self.primer_designer.generate_GG_edge_primers(
             self.request_idx,
             processed_seq,
@@ -176,24 +192,26 @@ class ProtocolMaker():
         logger.log_step("Edge Primer Result", "Edge primers generated.",
                         {"edge_forward": dom_result.edge_primers.forward,
                         "edge_reverse": dom_result.edge_primers.reverse})
-
-        # 5. Group primers into PCR reactions
-        print("Grouping primers into PCR reactions...")
-        logger.log_step("PCR Reaction Grouping",
-                        "Grouping primers into PCR reactions using designed primers.")
-
-        dom_result.PCR_reactions = self.reaction_organizer.group_primers_into_pcr_reactions(dom_result)
-
+        
+        # Complete primer design - report 100% progress for this step            
         progress_callback(
-            step="PCR Reaction Grouping",
-            message=f"Finished grouping primers into PCR reactions for sequence {self.request_idx+1}.",
-            progress=100.0,  # Indicates task completion
-            domestication_result=dom_result.model_dump(by_alias=True),
-            event_type="data",
+            step="Primer Design",
+            message=f"Completed primer design for sequence {self.request_idx+1}",
+            step_progress=100,
+        )
+        
+        logger.log_step("PCR Reaction Grouping", "Grouping primers into PCR reactions using designed primers.")
+        
+        dom_result.PCR_reactions = self.reaction_organizer.group_primers_into_pcr_reactions(
+            dom_result,
+            progress_callback=lambda prog, msg, **kwargs: progress_callback(
+                step="Mutation Analysis", 
+                message=msg, 
+                step_progress=prog,
+                **kwargs
+            )
         )
 
         print("Finished grouping primers into PCR reactions...")
 
-
         return dom_result
-

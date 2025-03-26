@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 import numpy as np
 from itertools import product
 from tqdm import tqdm
@@ -35,7 +35,11 @@ class MutationOptimizer():
             logger.validate(isinstance(self.compatibility_table, np.ndarray),
                             "Compatibility table is a numpy array")
 
-    def optimize_mutations(self, mutation_options: Dict) -> MutationSetCollection:
+    def optimize_mutations(
+        self,
+        mutation_options: Dict,
+        progress_callback: Optional[callable] = None
+        ) -> MutationSetCollection:
         logger.log_step("Start Optimization", "Beginning mutation optimization process.")
         
         logger.log_step("Generate Mutation Sets", "Creating all possible mutation combinations.")
