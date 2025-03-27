@@ -85,11 +85,11 @@ class MutationAnalyzer():
             nonlocal completed_operations
             completed_operations += increment
             prog = min(99, int((completed_operations / total_estimated_operations) * 100))
-            send_update(message, prog, **kwargs)
+            send_update(message=message, prog=prog, **kwargs)
         
         try:
             # Initialize progress
-            send_update(f"Starting mutation analysis for {len(sites_to_mutate)} site(s)", 0)
+            send_update(message=f"Starting mutation analysis for {len(sites_to_mutate)} site(s)", prog=0)
             
             for site_idx, site in enumerate(sites_to_mutate):
                 site_key = f"mutation_{site.position}"
@@ -246,7 +246,7 @@ class MutationAnalyzer():
                 if valid_mutations:
                     mutation_options[site_key] = valid_mutations
                     logger.log_step("Site Completed", f"Site {site.position}: {len(valid_mutations)} valid mutation(s) found")
-                    send_update("Site Completed", 100, site_key=site_key, mutation_count=len(valid_mutations))
+                    send_update(message="Site Completed", prog=100, site_key=site_key, mutation_count=len(valid_mutations))
                 else:
                     logger.log_step("No Alternatives Found",
                                     f"Site {site.position}: No alternative codons found",
@@ -256,7 +256,7 @@ class MutationAnalyzer():
 
             # Final update to ensure we reach 100%
             sites_to_mutate_json = [site.model_dump(by_alias=True) for site in sites_to_mutate]
-            send_update("Mutation Analysis Complete", 100, sites_to_mutate=sites_to_mutate_json)
+            send_update(message="Mutation Analysis Complete", prog=100, sites_to_mutate=sites_to_mutate_json)
                 
             logger.debug(f"Mutation options collected: {mutation_options}")
             if self.verbose:

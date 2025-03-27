@@ -208,6 +208,6 @@ class ReactionOrganizer():
 
         logger.log_step("Group PCR Reactions Complete", "Completed grouping of all nested PCR reactions.",
                         {"total_mutation_sets": len(nested_reactions["mutation_sets"])})
-        send_update("PCR Reaction Grouping Complete", 100)
+        send_update(message="PCR Reaction Grouping Complete", prog=100)
         
         return nested_reactions

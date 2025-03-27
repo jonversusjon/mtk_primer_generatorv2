@@ -87,11 +87,10 @@ class ProtocolMaker():
         
         # 1 - Preprocess the sequence
         logger.log_step("Preprocessing", f"Preprocessing sequence at index {self.request_idx+1}")
-        callback = partial(send_update, "Preprocessing")
         processed_seq, valid_seq = self.sequence_preparator.preprocess_sequence(
             self.seq_to_dom.sequence, 
             self.seq_to_dom.mtk_part_left,
-            send_update=callback
+            partial(send_update, step="Preprocessing")
         )
         # TODO: need a way to gracefully handle invalid sequences that snuck past
         # the frontend validation.
@@ -104,7 +103,7 @@ class ProtocolMaker():
         logger.log_step("Restriction Site Detection", f"Detecting restriction sites for sequence {self.request_idx+1}")
         sites_to_mutate: List[RestrictionSite] = self.rs_analyzer.find_sites_to_mutate(
             processed_seq,
-            partial(send_update, "Restriction Sites")
+            partial(send_update, step="Restriction Sites")
         )
         dom_result.restriction_sites = sites_to_mutate
 
@@ -114,7 +113,7 @@ class ProtocolMaker():
             logger.log_step("Mutation Analysis", f"Analyzing mutations for sequence {self.request_idx+1}")
             mutation_options = self.mutation_analyzer.get_all_mutations(
                 sites_to_mutate,
-                partial(send_update, "Mutation Analysis")
+                partial(send_update, step="Mutation Analysis")
             )
             
             optimized_mutations: MutationSetCollection = None 
@@ -122,7 +121,7 @@ class ProtocolMaker():
                 logger.log_step("Mutation Optimization", f"Optimizing mutations for sequence {self.request_idx+1}")
                 optimized_mutations = self.mutation_optimizer.optimize_mutations(
                     mutation_options,
-                    partial(send_update, "Mutation Analysis")
+                    partial(send_update, step="Mutation Analysis")
                 )
 
                 # 4 - Primer Design
@@ -131,7 +130,7 @@ class ProtocolMaker():
                     optimized_mutations,
                     self.seq_to_dom.primer_name if self.seq_to_dom.primer_name else f"Primer{self.request_idx+1}",
                     self.max_results if self.max_results else "one",
-                    partial(send_update, "Primer Design")
+                    partial(send_update, step="Primer Design")
                 )
                 dom_result.mut_primers = mutation_primers
         
@@ -143,7 +142,7 @@ class ProtocolMaker():
             self.seq_to_dom.mtk_part_left,
             self.seq_to_dom.mtk_part_right,
             self.seq_to_dom.primer_name,
-            partial(send_update, "Primer Design")
+            partial(send_update, step="Primer Design")
         )
         logger.log_step("Edge Primer Result", "Edge primers generated.",
                         {"edge_forward": dom_result.edge_primers.forward,
@@ -151,10 +150,18 @@ class ProtocolMaker():
         
         logger.log_step("PCR Reaction Grouping", "Grouping primers into PCR reactions using designed primers.")
         
-        dom_result.PCR_reactions = self.reaction_organizer.group_primers_into_pcr_reactions(
+        nested_reactions = self.reaction_organizer.group_primers_into_pcr_reactions(
             dom_result,
-            partial(send_update, "PCR Reaction Grouping")
+            partial(send_update, step="PCR Reaction Grouping")
         )
+
+        # Flatten the reactions into a list of PCRReaction
+        dom_result.PCR_reactions = [
+            reaction
+            for mutation_set in nested_reactions["mutation_sets"]
+            for solution in mutation_set["solutions"]
+            for reaction in solution["reactions"]
+        ]
 
         print("Finished grouping primers into PCR reactions...")
 

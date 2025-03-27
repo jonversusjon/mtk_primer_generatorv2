@@ -13,7 +13,7 @@ def publish_sse(
     sequence_idx: int,
     step: str,
     message: str,
-    step_progress: Optional[float] = None,
+    prog: Optional[float] = None,
     **kwargs):
     """
     Publish updates via Flask-SSE to a Redis channel.
@@ -23,7 +23,7 @@ def publish_sse(
         message (str): Human-readable message.
         job_id (str): Unique identifier for the job.
         sequence_idx (int): Index of the current sequence.
-        step_progress (Optional[float]): Progress percentage for the current step (0-100).
+        prog (Optional[float]): Progress percentage for the current step (0-100).
                                        If None, no progress bar is shown for this step.
         **kwargs: Arbitrary additional data to include in the payload.
     """
@@ -35,10 +35,22 @@ def publish_sse(
         "message": message,
         **kwargs
     }
-    if step_progress is not None:
-        payload["stepProgress"] = step_progress
+    if prog is not None:
+        payload["stepProgress"] = prog
 
     logger.log_step("SSE Publish", f"Publishing to channel {channel}: {json.dumps(payload, default=str)}")
+    try:
+        # Attempt to serialize keyword arguments
+        json.dumps(kwargs)
+    except TypeError as e:
+        # Log the error and the problematic data
+        print(f"Serialization Error: {e}")
+        print(f"Problematic data: {kwargs}")
+        # Decide how to handle: maybe send only serializable parts,
+        # or use a custom serializer like the one in utils.py
+        # For now, maybe just send message and progress
+        # Or raise the error to halt execution
+        raise e
     
     sse.publish(
         payload,
@@ -51,7 +63,18 @@ def process_protocol_sequence(req_dict: dict, index: int):
     req = ProtocolRequest.model_validate(req_dict)
     seq = req.sequences_to_domesticate[index]
 
-    progress_callback = partial(publish_sse, req.job_id, index)
+    progress_callback = partial(publish_sse, job_id=req.job_id, sequence_idx=index)
+
+    # # Log all variables sent to ProtocolMaker
+    # logger.log_step("ProtocolMaker Input", f"Request Index: {index}")
+    # logger.log_step("ProtocolMaker Input", f"Sequence to Domesticate: {seq}")
+    # logger.log_step("ProtocolMaker Input", f"Codon Usage Dict: {GoldenGateUtils().get_codon_usage_dict(req.species)}")
+    # logger.log_step("ProtocolMaker Input", f"Max Mutations: {req.max_mut_per_site}")
+    # logger.log_step("ProtocolMaker Input", f"Template Sequence: {req.template_sequence}")
+    # logger.log_step("ProtocolMaker Input", f"Kozak: {req.kozak}")
+    # logger.log_step("ProtocolMaker Input", f"Max Results: {req.max_results}")
+    # logger.log_step("ProtocolMaker Input", f"Verbose Mode: {req.verbose_mode}")
+    # logger.log_step("ProtocolMaker Input", f"Job ID: {req.job_id}_{index}")
 
     protocol_maker = ProtocolMaker(
         request_idx=index,
@@ -66,9 +89,9 @@ def process_protocol_sequence(req_dict: dict, index: int):
     )
 
     # Execute protocol and explicitly serialize result.
-    result: DomesticationResult = protocol_maker.create_gg_protocol(progress_callback)
+    result: DomesticationResult = protocol_maker.create_gg_protocol(send_update=progress_callback)
     
-    return {"sequenceIdx": index, "result": result.model_dump()}
+    return {"sequenceIdx": index, "result": result.model_dump(by_alias=True)}
 
 @shared_task(ignore_result=False)
 def generate_protocol_task(req_dict: dict):

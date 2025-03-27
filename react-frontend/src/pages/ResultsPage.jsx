@@ -5,29 +5,27 @@ import ResultTabs from "../components/Results/ResultTabs";
 
 function ResultsPage({ results }) {
   const navigate = useNavigate();
-  // Get the jobId from sessionStorage (or from any other source you use)
+  // Get the jobId from sessionStorage
   const jobId = sessionStorage.getItem("jobId");
 
-  // Build placeholder data from stored form data if needed.
+  // Build placeholder sequences from stored form data if no results are provided.
   const placeholders = useMemo(() => {
     const savedFormData = sessionStorage.getItem("formData");
     if (savedFormData) {
       const parsed = JSON.parse(savedFormData);
-      return (
-        parsed.sequencesToDomesticate?.map((seq, i) => ({
-          id: i, // used as sequenceIdx later
-          placeholder: true,
-          sequence: seq.sequence,
-          primerName: seq.primerName || `Sequence ${i + 1}`,
-        })) || []
-      );
+      return parsed.sequencesToDomesticate?.map((seq, i) => ({
+        id: i, // This id will serve as the sequenceIdx
+        placeholder: true,
+        sequence: seq.sequence,
+        primerName: seq.primerName || `Sequence ${i + 1}`,
+      })) || [];
     }
     return [];
   }, []);
 
   const dataToDisplay = results || placeholders;
 
-  // Redirect to form if no data is available.
+  // Redirect to form if there is no data
   useEffect(() => {
     if (!dataToDisplay?.length) {
       console.log("No data found — redirecting to form");
@@ -38,7 +36,7 @@ function ResultsPage({ results }) {
   return (
     <div className="output-container">
       {dataToDisplay?.length ? (
-        // Pass jobId along with the data so that each ResultTab can receive both
+        // Pass both the results (or placeholders) and jobId to ResultTabs.
         <ResultTabs results={dataToDisplay} jobId={jobId} />
       ) : (
         <p className="initialization-message">Loading...</p>

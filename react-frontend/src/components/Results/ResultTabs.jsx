@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import ResultTab from "./ResultTab";
 
 const ResultTabs = ({ jobId }) => {
-  // Load sequences to domesticate from sessionStorage
+  // Load sequences from sessionStorage (each sequence gets an id that serves as sequenceIdx)
   const [sequences, setSequences] = useState([]);
 
   useEffect(() => {
@@ -12,7 +12,6 @@ const ResultTabs = ({ jobId }) => {
       try {
         const parsed = JSON.parse(savedFormData);
         if (parsed.sequencesToDomesticate?.length > 0) {
-          // Map each sequence to an object with an id (which serves as sequenceIdx)
           const seqs = parsed.sequencesToDomesticate.map((seq, i) => ({
             id: i,
             primerName: seq.primerName || `Sequence ${i + 1}`,

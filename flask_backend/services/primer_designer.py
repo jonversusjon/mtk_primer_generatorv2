@@ -141,10 +141,10 @@ class PrimerDesigner():
         if not all_primers:
             if self.debug:
                 logger.log_step("Design Failure", "Failed to design primers for any mutation set", level=logging.WARNING)
-            send_update("No valid primer sets found", 100, notification_count=1, callout="ERROR: No valid primer sets found for mutations.")
+            send_update(message="No valid primer sets found", prog=100, notification_count=1, callout="ERROR: No valid primer sets found for mutations.")
             return None
 
-        send_update(f"{len(all_primers)} mutation primer sets designed successfully", 100)
+        send_update(message=f"{len(all_primers)} mutation primer sets designed successfully", prog=100)
         
         return all_primers
 
@@ -315,6 +315,6 @@ class PrimerDesigner():
             reverse=r_primer
         )
         
-        send_update("Edge primers generated successfully", 100)
+        send_update(message="Edge primers generated successfully", prog=100)
         return edge_primers
 
