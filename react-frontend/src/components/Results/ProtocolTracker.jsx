@@ -165,15 +165,15 @@ const TabContent = ({ stepName, stepData, messages, activeStep, sseData }) => {
       // Placeholder for primer design summary
       return (
         <div className="mt-2">
-          <h3 className="font-semibold text-gray-700 mb-2">
+          <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">
             Designed Primers:
           </h3>
           {data.edgePrimers && Object.keys(data.edgePrimers).length > 0 && (
             <div className="mb-4">
-              <h4 className="text-sm font-medium text-gray-600 mb-1">
+              <h4 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
                 Edge Primers:
               </h4>
-              <div className="border rounded overflow-hidden">
+              <div className="border dark:border-gray-700 rounded overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
@@ -205,10 +205,10 @@ const TabContent = ({ stepName, stepData, messages, activeStep, sseData }) => {
           )}
           {data.mutPrimers && Object.keys(data.mutPrimers).length > 0 && (
             <div>
-              <h4 className="text-sm font-medium text-gray-600 mb-1">
+              <h4 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
                 Mutation Primers:
               </h4>
-              <div className="border rounded overflow-hidden">
+              <div className="border dark:border-gray-700 rounded overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
@@ -247,7 +247,9 @@ const TabContent = ({ stepName, stepData, messages, activeStep, sseData }) => {
       // Placeholder for PCR reactions display
       return (
         <div className="mt-2">
-          <h3 className="font-semibold text-gray-700 mb-2">PCR Reactions:</h3>
+          <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">
+            PCR Reactions:
+          </h3>
           <div className="space-y-4">
             {data.pcrReactions.map((reaction, idx) => (
               <div
@@ -407,6 +409,9 @@ const ProtocolTracker = ({ steps, messages, resultData, sseData }) => {
   const activeSteps = steps.filter((step) => step.status === "active");
   const waitingSteps = steps.filter((step) => step.status === "waiting");
 
+  // Track if the user has manually selected a tab
+  const [userSelectedTab, setUserSelectedTab] = useState(false);
+
   // Determine initial active tab: last completed or first active
   const [activeTab, setActiveTab] = useState(() => {
     if (activeSteps.length > 0) return activeSteps[0].name;
@@ -415,35 +420,63 @@ const ProtocolTracker = ({ steps, messages, resultData, sseData }) => {
     return steps.length > 0 ? steps[0].name : null; // Fallback to first step if none are active/completed
   });
 
+  // Custom tab selection handler that sets the user selection flag
+  const handleTabSelect = (tabName) => {
+    setActiveTab(tabName);
+    setUserSelectedTab(true);
+
+    // Optional: Reset the flag after a period if you want auto-switching to resume
+    // at some point after manual selection
+    // const timer = setTimeout(() => setUserSelectedTab(false), 30000); // 30 seconds
+    // return () => clearTimeout(timer);
+  };
+
+  // Effect to detect when a new step becomes active - reset user selection in this case
+  useEffect(() => {
+    // If a new step has become active, we can reset the user selection flag
+    // This allows auto-switching to resume when workflow progresses
+    if (activeSteps.length > 0) {
+      const mostRecentActiveStep = activeSteps[activeSteps.length - 1].name;
+      if (
+        userSelectedTab &&
+        !completedSteps.some((step) => step.name === mostRecentActiveStep)
+      ) {
+        setUserSelectedTab(false);
+        // Optionally, auto-switch to this new step
+        setActiveTab(mostRecentActiveStep);
+      }
+    }
+  }, [activeSteps, completedSteps, userSelectedTab]);
+
   // Effect to potentially switch tab based on SSE *callout* message
   // (Consider if this behavior is desired - might jump user unexpectedly)
   useEffect(() => {
-    // Only attempt to switch if sseData has new information
-    if (sseData) {
-      // Find the step that has the most recent SSE data with a callout
-      const stepsWithCallouts = Object.entries(sseData)
-        .filter(([_, data]) => data?.callout)
-        .map(([stepName, data]) => ({
-          stepName,
-          timestamp: data.timestamp || Date.now(), // Use timestamp if available
-        }))
-        .sort((a, b) => b.timestamp - a.timestamp); // Sort by most recent
+    // Skip auto-switching if user has manually selected a tab
+    if (userSelectedTab || !sseData) return;
 
-      if (stepsWithCallouts.length > 0) {
-        // Get the most recent step with a callout
-        const mostRecentStep = stepsWithCallouts[0].stepName;
+    // Find the step that has the most recent SSE data with a callout
+    const stepsWithCallouts = Object.entries(sseData)
+      .filter(([_, data]) => data?.callout)
+      .map(([stepName, data]) => ({
+        stepName,
+        timestamp: data.timestamp || Date.now(), // Use timestamp if available
+      }))
+      .sort((a, b) => b.timestamp - a.timestamp); // Sort by most recent
 
-        // Check if this step is currently rendered
-        const isStepRendered = [...completedSteps, ...activeSteps].some(
-          (step) => step.name === mostRecentStep
-        );
+    if (stepsWithCallouts.length > 0) {
+      // Get the most recent step with a callout
+      const mostRecentStep = stepsWithCallouts[0].stepName;
 
-        if (isStepRendered) {
-          setActiveTab(mostRecentStep);
-        }
+      // Check if this step is currently rendered
+      const isStepRendered = [...completedSteps, ...activeSteps].some(
+        (step) => step.name === mostRecentStep
+      );
+
+      if (isStepRendered) {
+        setActiveTab(mostRecentStep);
       }
     }
-  }, [sseData, completedSteps, activeSteps]);
+  }, [sseData, completedSteps, activeSteps, userSelectedTab]);
 
   // Derive the list of tabs to show (completed + active)
   const tabsToShow = steps.filter(
@@ -458,7 +491,7 @@ const ProtocolTracker = ({ steps, messages, resultData, sseData }) => {
             key={step.name}
             name={step.name}
             isActive={activeTab === step.name}
-            onClick={() => setActiveTab(step.name)}
+            onClick={() => handleTabSelect(step.name)}
             notificationCount={step.notificationCount || 0}
           />
         ))}
