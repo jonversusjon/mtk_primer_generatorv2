@@ -134,6 +134,7 @@ class SequencePreparator:
                     logger.log_step("Frame Warning", "Sequence not in frame and no codon trimming performed", level=logging.ERROR)
                     send_update("Sequence not in frame and cannot be corrected", 100,
                                 notification_count=notification_count,
+                                processed_sequence=str(cleaned_sequence),
                                 callout="Error: Sequence not in frame and cannot be corrected. Be sure this is what you intended.")
                     return str(sequence), True
             else:
@@ -152,6 +153,8 @@ class SequencePreparator:
 
             logger.log_step("Preprocessing Complete", f"Final cleaned sequence: {str(cleaned_sequence)}")
             
-            send_update(f"Preprocessing complete: {message}", 100, notification_count=notification_count, callout=message, processed_sequence=str(cleaned_sequence))
+            send_update(f"Preprocessing complete: {message}", 100,
+                        notification_count=notification_count,
+                        callout=message, processed_sequence=str(cleaned_sequence))
                 
         return str(cleaned_sequence), True

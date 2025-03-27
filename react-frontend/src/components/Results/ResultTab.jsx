@@ -429,29 +429,23 @@ const ResultTab = ({ result, sequenceIdx }) => {
           }
           break;
 
-        case "Preprocessing":
-          console.log(
-            `[ResultTab:${sequenceIdx}] Preprocessing step received:`,
-            sseData
-          );
-          if (sseData.processedSequence) {
+          case "Preprocessing":
             console.log(
-              `[ResultTab:${sequenceIdx}] Updating processed sequence:`,
-              sseData.processedSequence
+              `[ResultTab:${sequenceIdx}] Preprocessing step received:`,
+              sseData
             );
+          
             setStepData((prevData) => ({
               ...prevData,
               Preprocessing: {
                 ...prevData.Preprocessing,
-                processedSequence: sseData.processedSequence,
+                ...(sseData.processedSequence && {
+                  processedSequence: sseData.processedSequence,
+                }),
               },
             }));
-          } else {
-            console.warn(
-              `[ResultTab:${sequenceIdx}] No processedSequence found in SSE data.`
-            );
-          }
-          break;
+            break;
+          
 
         default:
           console.warn(
@@ -469,10 +463,12 @@ const ResultTab = ({ result, sequenceIdx }) => {
     (sseData) => {
       if (!sseData || !sseData.step) return;
 
+      if (sseData.sequenceIdx !== sequenceIdx) {
+        console.log(`[ResultTab:${sequenceIdx}] Ignoring event for sequenceIdx ${sseData.sequenceIdx}`);
+        return;
+      }
       // Generate a unique ID for this event - include timestamp if available
-      const eventId = `${sseData.step}-${sseData.message}-${
-        sseData.stepProgress
-      }-${Date.now()}`;
+      const eventId = `${sseData.sequenceIdx}-${sseData.step}-${sseData.message}-${sseData.stepProgress}-${Date.now()}`;
       if (processedEvents.current.has(eventId)) {
         console.log(
           `[ResultTab:${sequenceIdx}] Skipping duplicate event:`,
@@ -505,8 +501,19 @@ const ResultTab = ({ result, sequenceIdx }) => {
           [sseData.step]: sseData,
         };
       });
-
-      // Update steps state
+  
+      // 3) If SSE includes a notification_count, apply it
+      if (sseData.notification_count && sseData.notification_count > 0) {
+        setProtocolSteps((prevSteps) =>
+          prevSteps.map((step) =>
+            step.name === sseData.step
+              ? { ...step, notificationCount: sseData.notification_count }
+              : step
+          )
+        );
+      }
+  
+      // 4) Update step status and data (progress, message, arrays, etc.)
       setProtocolSteps((prevSteps) => {
         const stepIndex = prevSteps.findIndex(
           (step) => step.name === sseData.step
