@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "../../styles/ProtocolTracker.css";
 import RestrictionSiteSummary from "./RestrictionSiteSummary";
+import MutationAnalysisSummary from "./MutationAnalysisSummary";
 
 const ProgressStep = ({ name, progress, message }) => (
   <div className="border rounded-lg p-4 mb-4 shadow-sm bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
@@ -111,7 +112,9 @@ const TabContent = ({
 }) => {
   const stepMessages = messages.filter((msg) => msg.startsWith(`${stepName}:`));
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
-  const [isPayloadVisible, setIsPayloadVisible] = useState(false); // State for payload visibility
+  const [isPayloadVisible, setIsPayloadVisible] = useState(false);
+  // eslint-disable-next-line no-unused-vars
+  const [selectedMutationSetIndex, _setSelectedMutationSetIndex] = useState(0);
 
   // Get step-specific SSE data instead of global sseData
   const stepSseData = sseData ? sseData[stepName] : null;
@@ -132,48 +135,77 @@ const TabContent = ({
       return <RestrictionSiteSummary sites={data.restrictionSites} />;
     }
     // Add other 'else if' conditions here for different step names
-    else if (stepName === "Mutation Analysis" && data.mutations?.length > 0) {
-      // You would need to create a component for displaying mutations
-      // return <MutationAnalysisSummary mutations={data.mutations} />;
-      return (
-        <div className="mt-2">
-          <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">
-            Mutations Found:
-          </h3>
-          <div className="border dark:border-gray-700 rounded overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Position
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Sequence
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {data.mutations.map((mutation, idx) => (
-                  <tr key={idx}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                      {mutation.type}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                      {mutation.position}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500 dark:text-gray-300">
-                      {mutation.sequence}
-                    </td>
+    else if (stepName === "Mutation Analysis") {
+      // Check if we have the data needed for the MutationAnalysisSummary component
+      if (
+        data.MutationAnalysis?.restrictionSites?.length > 0 &&
+        data.MutationAnalysis?.mutationSets?.length > 0
+      ) {
+        // Find the first restriction site that has mutation data
+        const restrictionSite = data.MutationAnalysis.restrictionSites.find(
+          (site) => site.context_seq && site.context_rs_indices && site.codons
+        );
+
+        if (restrictionSite) {
+          return (
+            <div className="mt-2">
+              <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-4">
+                Mutation Analysis Summary
+              </h3>
+              <MutationAnalysisSummary
+                restrictionSite={restrictionSite}
+                mutationSets={data.MutationAnalysis.mutationSets}
+                selectedMutationSetIndex={selectedMutationSetIndex}
+              />
+            </div>
+          );
+        }
+      }
+
+      // Fallback to the existing table view if we don't have the required data
+      if (data.MutationAnalysis?.mutations?.length > 0) {
+        return (
+          <div className="mt-2">
+            <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">
+              Mutations Found:
+            </h3>
+            <div className="border dark:border-gray-700 rounded overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Position
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Sequence
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {data.MutationAnalysis.mutations.map((mutation, idx) => (
+                    <tr key={idx}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                        {mutation.type}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                        {mutation.position}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500 dark:text-gray-300">
+                        {mutation.sequence}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      );
+        );
+      }
+
+      return null;
     } else if (
       stepName === "Primer Design" &&
       (data.edgePrimers || data.mutPrimers)
@@ -341,8 +373,6 @@ const TabContent = ({
 
       {/* Main content area for the tab */}
       <div className="p-4">
-
-
         {/* Display Callout messages if they exist - show most recent on top */}
         {callouts.length > 0 && (
           <div className="space-y-2">
@@ -466,14 +496,14 @@ const ProtocolTracker = ({ steps, messages, resultData, sseData }) => {
       .filter(([_, data]) => data?.callout)
       .forEach(([stepName, stepData]) => {
         // Add callout to the appropriate step's collection
-        setStepCallouts(prev => {
+        setStepCallouts((prev) => {
           const existingCallouts = prev[stepName] || [];
-          
+
           // Skip if this exact callout already exists for this step
-          if (existingCallouts.some(c => c.message === stepData.callout)) {
+          if (existingCallouts.some((c) => c.message === stepData.callout)) {
             return prev;
           }
-          
+
           // Add the new callout
           return {
             ...prev,
@@ -481,9 +511,9 @@ const ProtocolTracker = ({ steps, messages, resultData, sseData }) => {
               ...existingCallouts,
               {
                 message: stepData.callout,
-                timestamp: stepData.timestamp || Date.now()
-              }
-            ]
+                timestamp: stepData.timestamp || Date.now(),
+              },
+            ],
           };
         });
       });

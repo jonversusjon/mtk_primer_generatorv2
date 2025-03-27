@@ -57,6 +57,8 @@ const ResultTab = ({ result, sequenceIdx }) => {
     },
     MutationAnalysis: {
       mutations: [],
+      restrictionSites: result.restriction_sites || [], // Add this line to access restriction sites
+      mutationSets: result.mut_primers ? [{ mutations: result.mut_primers }] : [] // Add this line for mutation sets
     },
     PrimerDesign: {
       edgePrimers: result.edge_primers || null,
@@ -280,11 +282,30 @@ const ResultTab = ({ result, sequenceIdx }) => {
                 });
               }
 
+              // Handle mutation sets if provided in the SSE data
+              let updatedMutationSets =
+                prevData.MutationAnalysis?.mutationSets || [];
+              if (sseData.mutationSets) {
+                updatedMutationSets = sseData.mutationSets;
+              } else if (sseData.mut_primers) {
+                // Convert mut_primers to mutation sets format if needed
+                updatedMutationSets = [{ mutations: sseData.mut_primers }];
+              }
+
+              // Get restriction site data if provided or use existing
+              const restrictionSites =
+                sseData.restrictionSites ||
+                prevData.MutationAnalysis?.restrictionSites ||
+                prevData.RestrictionSiteDetection?.restrictionSites ||
+                [];
+
               return {
                 ...prevData,
                 MutationAnalysis: {
                   ...prevData.MutationAnalysis,
                   mutations: combinedMutations,
+                  restrictionSites: restrictionSites,
+                  mutationSets: updatedMutationSets,
                 },
               };
             });

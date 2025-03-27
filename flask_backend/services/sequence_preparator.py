@@ -132,8 +132,10 @@ class SequencePreparator:
                     message = ("Provided sequence does not appear to be in frame. If this is not intended, please check the sequence.")
                     notification_count = 1
                     logger.log_step("Frame Warning", "Sequence not in frame and no codon trimming performed", level=logging.ERROR)
-                    send_update("Error: Sequence not in frame and cannot be corrected", 100, notification_count=notification_count)
-                    return str(sequence), False
+                    send_update("Sequence not in frame and cannot be corrected", 100,
+                                notification_count=notification_count,
+                                callout="Error: Sequence not in frame and cannot be corrected. Be sure this is what you intended.")
+                    return str(sequence), True
             else:
                 if trim_start_codon and trim_stop_codon:
                     message = "Start and stop codons detected and removed."

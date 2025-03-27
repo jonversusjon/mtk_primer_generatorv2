@@ -255,7 +255,8 @@ class MutationAnalyzer():
                     update_progress(1, "No Alternatives Found", site_key=site_key, mutation_count=0)
 
             # Final update to ensure we reach 100%
-            send_update("Mutation Analysis Complete", 100, total_sites=len(sites_to_mutate))
+            sites_to_mutate_json = [site.model_dump(by_alias=True) for site in sites_to_mutate]
+            send_update("Mutation Analysis Complete", 100, sites_to_mutate=sites_to_mutate_json)
                 
             logger.debug(f"Mutation options collected: {mutation_options}")
             if self.verbose:
