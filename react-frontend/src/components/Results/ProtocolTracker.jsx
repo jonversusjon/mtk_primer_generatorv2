@@ -55,29 +55,42 @@ const TabButton = ({ name, isActive, onClick, notificationCount }) => (
 );
 
 // DisplayMessage component for showing SSE display_messages
-const DisplayMessage = ({ message }) => (
-  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3 mb-4">
-    <div className="flex items-start">
-      <div className="flex-shrink-0 pt-0.5">
-        <svg
-          className="h-5 w-5 text-blue-500 dark:text-blue-400"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path
-            fillRule="evenodd"
-            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z"
-            clipRule="evenodd"
-          />
-        </svg>
-      </div>
-      <div className="ml-3">
-        <p className="text-sm text-blue-700 dark:text-blue-300">{message}</p>
+const DisplayMessage = ({ message, timestamp }) => {
+  console.log("DisplayMessage rendering with:", { message, timestamp });
+
+  return (
+    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3 mb-4">
+      <div className="flex items-start">
+        <div className="flex-shrink-0 pt-0.5">
+          <svg
+            className="h-5 w-5 text-blue-500 dark:text-blue-400"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </div>
+        <div className="ml-3">
+          <div>
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              {message}
+            </p>
+            {timestamp && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {new Date(timestamp).toLocaleTimeString()}
+              </p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Map of step names to resultData keys
 const stepToDataKeyMap = {
@@ -88,17 +101,20 @@ const stepToDataKeyMap = {
   "PCR Reaction Grouping": "PCRReactionGrouping",
 };
 
-const TabContent = ({ stepName, stepData, messages, activeStep, sseData }) => {
+const TabContent = ({
+  stepName,
+  stepData,
+  messages,
+  activeStep,
+  sseData,
+  callouts,
+}) => {
   const stepMessages = messages.filter((msg) => msg.startsWith(`${stepName}:`));
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
   const [isPayloadVisible, setIsPayloadVisible] = useState(false); // State for payload visibility
 
   // Get step-specific SSE data instead of global sseData
   const stepSseData = sseData ? sseData[stepName] : null;
-
-  // Determine if there's a specific callout message for this step
-  const callout =
-    stepSseData && stepSseData.callout ? stepSseData.callout : null;
 
   // Helper function to get the specific content *element* for the current step
   const renderStepDetailContent = () => {
@@ -309,6 +325,9 @@ const TabContent = ({ stepName, stepData, messages, activeStep, sseData }) => {
   // Get the specific detail content using the helper
   const detailContent = renderStepDetailContent();
 
+  // DEBUG: Log callouts when rendering
+  console.log("TabContent - Rendering with callouts:", callouts);
+
   return (
     <div className="protocol-tab-content">
       {/* Display Progress if this is the active step */}
@@ -322,8 +341,23 @@ const TabContent = ({ stepName, stepData, messages, activeStep, sseData }) => {
 
       {/* Main content area for the tab */}
       <div className="p-4">
-        {/* Display Callout message if it exists */}
-        {callout && <DisplayMessage message={callout} />}
+
+
+        {/* Display Callout messages if they exist - show most recent on top */}
+        {callouts.length > 0 && (
+          <div className="space-y-2">
+            {callouts
+              .slice()
+              .reverse()
+              .map((callout, idx) => (
+                <DisplayMessage
+                  key={idx}
+                  message={callout.message}
+                  timestamp={callout.timestamp}
+                />
+              ))}
+          </div>
+        )}
 
         {/* Display the specific detail content */}
         {detailContent}
@@ -412,6 +446,9 @@ const ProtocolTracker = ({ steps, messages, resultData, sseData }) => {
   // Track if the user has manually selected a tab
   const [userSelectedTab, setUserSelectedTab] = useState(false);
 
+  // Track callouts for each step
+  const [stepCallouts, setStepCallouts] = useState({});
+
   // Determine initial active tab: last completed or first active
   const [activeTab, setActiveTab] = useState(() => {
     if (activeSteps.length > 0) return activeSteps[0].name;
@@ -419,6 +456,38 @@ const ProtocolTracker = ({ steps, messages, resultData, sseData }) => {
       return completedSteps[completedSteps.length - 1].name;
     return steps.length > 0 ? steps[0].name : null; // Fallback to first step if none are active/completed
   });
+
+  // Effect to accumulate callouts when new ones arrive
+  useEffect(() => {
+    if (!sseData) return;
+
+    // Process only steps that have callouts
+    Object.entries(sseData)
+      .filter(([_, data]) => data?.callout)
+      .forEach(([stepName, stepData]) => {
+        // Add callout to the appropriate step's collection
+        setStepCallouts(prev => {
+          const existingCallouts = prev[stepName] || [];
+          
+          // Skip if this exact callout already exists for this step
+          if (existingCallouts.some(c => c.message === stepData.callout)) {
+            return prev;
+          }
+          
+          // Add the new callout
+          return {
+            ...prev,
+            [stepName]: [
+              ...existingCallouts,
+              {
+                message: stepData.callout,
+                timestamp: stepData.timestamp || Date.now()
+              }
+            ]
+          };
+        });
+      });
+  }, [sseData]);
 
   // Custom tab selection handler that sets the user selection flag
   const handleTabSelect = (tabName) => {
@@ -504,8 +573,21 @@ const ProtocolTracker = ({ steps, messages, resultData, sseData }) => {
           messages={messages}
           activeStep={activeSteps.find((step) => step.name === activeTab)}
           sseData={sseData} // Pass the entire sseData object
+          callouts={stepCallouts[activeTab] || []} // Pass only callouts for this step
         />
       )}
+
+      {/* Debug output to check callout data */}
+      <div className="mt-4 p-2 bg-gray-100 dark:bg-gray-800 text-xs rounded">
+        <details>
+          <summary className="cursor-pointer text-blue-500 dark:text-blue-400">
+            Debug Callout Data
+          </summary>
+          <pre className="mt-2 overflow-auto">
+            {JSON.stringify({ activeTab, allCallouts: stepCallouts }, null, 2)}
+          </pre>
+        </details>
+      </div>
 
       {waitingSteps.map((step) => (
         <WaitingStep key={step.name} name={step.name} />

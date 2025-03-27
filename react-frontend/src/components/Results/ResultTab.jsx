@@ -92,7 +92,81 @@ const ResultTab = ({ result, sequenceIdx }) => {
     }
   }, [sseResult, sequenceIdx]);
 
-  // Update step data based on SSE event
+  // Helper functions for deep merging objects and handling arrays
+  const mergeDeep = useCallback((target, source) => {
+    if (!source) return target;
+
+    const output = { ...target };
+
+    Object.keys(source).forEach((key) => {
+      if (source[key] === null || source[key] === undefined) {
+        // Skip null/undefined values to preserve existing data
+        return;
+      }
+
+      // Handle explicit empty arrays (clear the data)
+      if (Array.isArray(source[key]) && source[key].length === 0) {
+        output[key] = [];
+        return;
+      }
+
+      // If both are objects and not arrays, recursively merge
+      if (
+        typeof source[key] === "object" &&
+        source[key] !== null &&
+        typeof output[key] === "object" &&
+        output[key] !== null &&
+        !Array.isArray(source[key]) &&
+        !Array.isArray(output[key])
+      ) {
+        output[key] = mergeDeep(output[key], source[key]);
+      }
+      // For arrays, append new items instead of replacing (unless specified as empty)
+      else if (Array.isArray(source[key]) && Array.isArray(output[key])) {
+        // Check if arrays contain objects with IDs for deduplication
+        if (
+          source[key].length > 0 &&
+          typeof source[key][0] === "object" &&
+          source[key][0] !== null
+        ) {
+          // If objects have an ID field, use that for deduplication
+          const idField =
+            "id" in source[key][0]
+              ? "id"
+              : "enzyme" in source[key][0]
+              ? "enzyme"
+              : "position" in source[key][0]
+              ? "position"
+              : null;
+
+          if (idField) {
+            // Filter out existing items with the same ID
+            const existingIds = new Set(
+              output[key].map((item) => item[idField])
+            );
+            const newItems = source[key].filter(
+              (item) => !existingIds.has(item[idField])
+            );
+            output[key] = [...output[key], ...newItems];
+          } else {
+            // No ID field for deduplication, just append
+            output[key] = [...output[key], ...source[key]];
+          }
+        } else {
+          // Simple values, just append
+          output[key] = [...output[key], ...source[key]];
+        }
+      }
+      // Otherwise just replace the value
+      else {
+        output[key] = source[key];
+      }
+    });
+
+    return output;
+  }, []);
+
+  // Update step data based on SSE event - modified for incremental updates
   const updateStepData = useCallback(
     (sseData) => {
       // Skip if step is missing
@@ -124,24 +198,48 @@ const ResultTab = ({ result, sequenceIdx }) => {
               strand: site.strand,
             }));
 
-            setStepData((prevData) => ({
-              ...prevData,
-              RestrictionSiteDetection: {
-                ...prevData.RestrictionSiteDetection,
-                restrictionSites: sites,
-              },
-            }));
+            setStepData((prevData) => {
+              // Get existing sites or empty array
+              const existingSites =
+                prevData.RestrictionSiteDetection?.restrictionSites || [];
 
-            // Update notification count for this step
-            if (sites.length > 0) {
-              setProtocolSteps((prevSteps) => {
-                return prevSteps.map((step) =>
-                  step.name === "Restriction Sites"
-                    ? { ...step, notificationCount: sites.length }
-                    : step
-                );
-              });
-            }
+              // Deduplicate by enzyme and position
+              const existingKeys = new Set(
+                existingSites.map(
+                  (site) => `${site.enzyme}-${site.position}-${site.strand}`
+                )
+              );
+
+              // Filter out duplicates
+              const newSites = sites.filter(
+                (site) =>
+                  !existingKeys.has(
+                    `${site.enzyme}-${site.position}-${site.strand}`
+                  )
+              );
+
+              // Create combined array
+              const combinedSites = [...existingSites, ...newSites];
+
+              // Update notification count for combined sites
+              if (combinedSites.length > 0) {
+                setProtocolSteps((prevSteps) => {
+                  return prevSteps.map((step) =>
+                    step.name === "Restriction Site Detection"
+                      ? { ...step, notificationCount: combinedSites.length }
+                      : step
+                  );
+                });
+              }
+
+              return {
+                ...prevData,
+                RestrictionSiteDetection: {
+                  ...prevData.RestrictionSiteDetection,
+                  restrictionSites: combinedSites,
+                },
+              };
+            });
           }
           break;
 
@@ -153,64 +251,98 @@ const ResultTab = ({ result, sequenceIdx }) => {
               sequence: mutation.sequence,
             }));
 
-            setStepData((prevData) => ({
-              ...prevData,
-              MutationAnalysis: {
-                ...prevData.MutationAnalysis,
-                mutations: mutations,
-              },
-            }));
+            setStepData((prevData) => {
+              // Get existing mutations or empty array
+              const existingMutations =
+                prevData.MutationAnalysis?.mutations || [];
 
-            // Update notification count for this step
-            if (mutations.length > 0) {
+              // Deduplicate by position and type
+              const existingKeys = new Set(
+                existingMutations.map((mut) => `${mut.type}-${mut.position}`)
+              );
+
+              // Filter out duplicates
+              const newMutations = mutations.filter(
+                (mut) => !existingKeys.has(`${mut.type}-${mut.position}`)
+              );
+
+              // Create combined array
+              const combinedMutations = [...existingMutations, ...newMutations];
+
+              // Update notification count for combined mutations
+              if (combinedMutations.length > 0) {
+                setProtocolSteps((prevSteps) => {
+                  return prevSteps.map((step) =>
+                    step.name === "Mutation Analysis"
+                      ? { ...step, notificationCount: combinedMutations.length }
+                      : step
+                  );
+                });
+              }
+
+              return {
+                ...prevData,
+                MutationAnalysis: {
+                  ...prevData.MutationAnalysis,
+                  mutations: combinedMutations,
+                },
+              };
+            });
+          }
+          break;
+
+        case "Primer Design":
+          setStepData((prevData) => {
+            // Starting with the existing data
+            const updatedPrimerData = {
+              ...prevData.PrimerDesign,
+            };
+
+            // Update edgePrimers if provided
+            if (sseData.edgePrimers) {
+              // Merge with existing edge primers rather than replacing
+              updatedPrimerData.edgePrimers = {
+                ...(updatedPrimerData.edgePrimers || {}),
+                ...sseData.edgePrimers,
+              };
+            }
+
+            // Update mutPrimers if provided
+            if (sseData.mutPrimers) {
+              // Merge with existing mutation primers rather than replacing
+              updatedPrimerData.mutPrimers = {
+                ...(updatedPrimerData.mutPrimers || {}),
+                ...sseData.mutPrimers,
+              };
+            }
+
+            // Calculate total primer count for notification
+            const edgePrimerCount = updatedPrimerData.edgePrimers
+              ? Object.keys(updatedPrimerData.edgePrimers).length
+              : 0;
+
+            const mutPrimerCount = updatedPrimerData.mutPrimers
+              ? Object.keys(updatedPrimerData.mutPrimers).length
+              : 0;
+
+            const totalPrimerCount = edgePrimerCount + mutPrimerCount;
+
+            // Update notification count if we have any primers
+            if (totalPrimerCount > 0) {
               setProtocolSteps((prevSteps) => {
                 return prevSteps.map((step) =>
-                  step.name === "Mutation Analysis"
-                    ? { ...step, notificationCount: mutations.length }
+                  step.name === "Primer Design"
+                    ? { ...step, notificationCount: totalPrimerCount }
                     : step
                 );
               });
             }
-          }
-          break;
-        case "Primer Design":
-          // Track primer updates for notification count
-          let edgePrimerCount = 0;
-          let mutPrimerCount = 0;
 
-          if (sseData.edgePrimers) {
-            edgePrimerCount = Object.keys(sseData.edgePrimers).length;
-            setStepData((prevData) => ({
+            return {
               ...prevData,
-              PrimerDesign: {
-                ...prevData.PrimerDesign,
-                edgePrimers: sseData.edgePrimers,
-              },
-            }));
-          }
-
-          if (sseData.mutPrimers) {
-            mutPrimerCount = Object.keys(sseData.mutPrimers).length;
-            setStepData((prevData) => ({
-              ...prevData,
-              PrimerDesign: {
-                ...prevData.PrimerDesign,
-                mutPrimers: sseData.mutPrimers,
-              },
-            }));
-          }
-
-          // Update notification count if we have any primers
-          const totalPrimerCount = edgePrimerCount + mutPrimerCount;
-          if (totalPrimerCount > 0) {
-            setProtocolSteps((prevSteps) => {
-              return prevSteps.map((step) =>
-                step.name === "Primer Design"
-                  ? { ...step, notificationCount: totalPrimerCount }
-                  : step
-              );
-            });
-          }
+              PrimerDesign: updatedPrimerData,
+            };
+          });
           break;
 
         case "PCR Reaction Grouping":
@@ -218,25 +350,59 @@ const ResultTab = ({ result, sequenceIdx }) => {
             sseData.domestication_result &&
             sseData.domestication_result.pcr_reactions
           ) {
-            const pcrReactions = sseData.domestication_result.pcr_reactions;
-            setStepData((prevData) => ({
-              ...prevData,
-              PCRReactionGrouping: {
-                ...prevData.PCRReactionGrouping,
-                pcrReactions: pcrReactions,
-              },
-            }));
+            const newPcrReactions = sseData.domestication_result.pcr_reactions;
 
-            // Update notification count for PCR reactions
-            if (pcrReactions.length > 0) {
-              setProtocolSteps((prevSteps) => {
-                return prevSteps.map((step) =>
-                  step.name === "PCR Reaction Grouping"
-                    ? { ...step, notificationCount: pcrReactions.length }
-                    : step
-                );
-              });
-            }
+            setStepData((prevData) => {
+              // Get existing PCR reactions or empty array
+              const existingReactions =
+                prevData.PCRReactionGrouping?.pcrReactions || [];
+
+              // For PCR reactions, we need to check if the reaction is already present
+              // We'll use a combination of template, forwardPrimer and reversePrimer as a key
+              const existingKeys = new Set(
+                existingReactions.map(
+                  (rxn) =>
+                    `${rxn.template || ""}-${rxn.forwardPrimer || ""}-${
+                      rxn.reversePrimer || ""
+                    }`
+                )
+              );
+
+              // Filter out duplicates
+              const uniqueNewReactions = newPcrReactions.filter(
+                (rxn) =>
+                  !existingKeys.has(
+                    `${rxn.template || ""}-${rxn.forwardPrimer || ""}-${
+                      rxn.reversePrimer || ""
+                    }`
+                  )
+              );
+
+              // Create combined array
+              const combinedReactions = [
+                ...existingReactions,
+                ...uniqueNewReactions,
+              ];
+
+              // Update notification count
+              if (combinedReactions.length > 0) {
+                setProtocolSteps((prevSteps) => {
+                  return prevSteps.map((step) =>
+                    step.name === "PCR Reaction Grouping"
+                      ? { ...step, notificationCount: combinedReactions.length }
+                      : step
+                  );
+                });
+              }
+
+              return {
+                ...prevData,
+                PCRReactionGrouping: {
+                  ...prevData.PCRReactionGrouping,
+                  pcrReactions: combinedReactions,
+                },
+              };
+            });
           }
           break;
 
@@ -301,10 +467,21 @@ const ResultTab = ({ result, sequenceIdx }) => {
       );
 
       // Update SSE data by step - store each step's data separately
-      setSseDataByStep((prevData) => ({
-        ...prevData,
-        [sseData.step]: sseData,
-      }));
+      // Using mergeDeep to combine with existing data instead of replacing
+      setSseDataByStep((prevData) => {
+        // If this step already has data, merge with it
+        if (prevData[sseData.step]) {
+          return {
+            ...prevData,
+            [sseData.step]: mergeDeep(prevData[sseData.step], sseData),
+          };
+        }
+        // Otherwise just add the new data
+        return {
+          ...prevData,
+          [sseData.step]: sseData,
+        };
+      });
 
       // Update steps state
       setProtocolSteps((prevSteps) => {
@@ -383,7 +560,7 @@ const ResultTab = ({ result, sequenceIdx }) => {
       // Update step-specific data based on event content
       updateStepData(sseData);
     },
-    [sequenceIdx, updateStepData]
+    [sequenceIdx, updateStepData, mergeDeep]
   );
 
   // Handle SSE updates - now with proper dependencies

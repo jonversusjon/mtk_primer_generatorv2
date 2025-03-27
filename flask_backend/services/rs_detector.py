@@ -91,9 +91,7 @@ class RestrictionSiteDetector():
             send_update(f"Found {len(sites_to_mutate)} restriction sites", 100, sites=sites_to_mutate_json, notification_count=len(sites_to_mutate))
         else:
             send_update("No restriciton sites found", 100, sites=sites_to_mutate_json, callout="No site mutations needed", notification_count=0)
-            
-        send_update(f"Found {len(sites_to_mutate)} restriction sites", 100)
-        
+                    
         return sites_to_mutate
 
     def get_codons(self, context_seq: str, recognition_start_index: int, frame: int) -> List[Codon]:
