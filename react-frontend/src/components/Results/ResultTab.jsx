@@ -39,7 +39,7 @@ const ResultTab = ({ result, sequenceIdx }) => {
   const stepToDataKeyMap = useMemo(
     () => ({
       Preprocessing: "Preprocessing",
-      "Restriction Site Detection": "RestrictionSiteDetection",
+      "Restriction Sites": "RestrictionSiteDetection",
       "Mutation Analysis": "MutationAnalysis",
       "Primer Design": "PrimerDesign",
       "PCR Reaction Grouping": "PCRReactionGrouping",
@@ -58,7 +58,9 @@ const ResultTab = ({ result, sequenceIdx }) => {
     MutationAnalysis: {
       mutations: [],
       restrictionSites: result.restriction_sites || [], // Add this line to access restriction sites
-      mutationSets: result.mut_primers ? [{ mutations: result.mut_primers }] : [] // Add this line for mutation sets
+      mutationSets: result.mut_primers
+        ? [{ mutations: result.mut_primers }]
+        : [], // Add this line for mutation sets
     },
     PrimerDesign: {
       edgePrimers: result.edge_primers || null,
@@ -227,7 +229,7 @@ const ResultTab = ({ result, sequenceIdx }) => {
               if (combinedSites.length > 0) {
                 setProtocolSteps((prevSteps) => {
                   return prevSteps.map((step) =>
-                    step.name === "Restriction Site Detection"
+                    step.name === "Restriction Sites"
                       ? { ...step, notificationCount: combinedSites.length }
                       : step
                   );

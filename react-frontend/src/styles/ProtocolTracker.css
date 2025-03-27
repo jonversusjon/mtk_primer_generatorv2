@@ -13,6 +13,11 @@
 .tab-content {
   min-height: 300px;
 }
+
+.tab-icon-container {
+  margin-right: 6px;
+}
+
 /* Minimal tab button */
 .protocol-tab-button {
   font-weight: 500;

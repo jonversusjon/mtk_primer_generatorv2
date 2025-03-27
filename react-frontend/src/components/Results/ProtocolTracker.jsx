@@ -96,7 +96,7 @@ const DisplayMessage = ({ message, timestamp }) => {
 // Map of step names to resultData keys
 const stepToDataKeyMap = {
   Preprocessing: "Preprocessing",
-  "Restriction Site Detection": "RestrictionSiteDetection",
+  "Restriction Sites": "RestrictionSiteDetection",
   "Mutation Analysis": "MutationAnalysis",
   "Primer Design": "PrimerDesign",
   "PCR Reaction Grouping": "PCRReactionGrouping",
