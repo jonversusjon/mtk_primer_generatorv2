@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import useSSE from "../../hooks/useSSE";
 import ProtocolTracker from "./ProtocolTracker";
 
@@ -26,17 +32,31 @@ const ResultTab = ({ result, sequenceIdx }) => {
   // Use a ref to track processed events to avoid duplicates
   const processedEvents = useRef(new Set());
 
-  // Messages for the message log
-  const [messagesSet, setMessagesSet] = useState(new Set());
+  // Messages for the message log - use callback for initialization
+  const [messagesSet, setMessagesSet] = useState(() => new Set());
+
+  // Create a map to convert step names to data keys
+  const stepToDataKeyMap = useMemo(
+    () => ({
+      Preprocessing: "Preprocessing",
+      "Restriction Site Detection": "RestrictionSiteDetection",
+      "Mutation Analysis": "MutationAnalysis",
+      "Primer Design": "PrimerDesign",
+      "PCR Reaction Grouping": "PCRReactionGrouping",
+    }),
+    []
+  );
 
   // State for result data organized by step
   const [stepData, setStepData] = useState({
-    ProtocolStart: {},
     Preprocessing: {
       processedSequence: result.processed_sequence || "",
     },
     RestrictionSiteDetection: {
       restrictionSites: result.restriction_sites || [],
+    },
+    MutationAnalysis: {
+      mutations: [],
     },
     PrimerDesign: {
       edgePrimers: result.edge_primers || null,
@@ -47,13 +67,23 @@ const ResultTab = ({ result, sequenceIdx }) => {
     },
   });
 
-  // State to store the latest SSE data
-  const [currentSseData, setCurrentSseData] = useState(null);
+  // Store SSE data per step instead of just the latest overall
+  const [sseDataByStep, setSseDataByStep] = useState({});
 
   const jobId = sessionStorage.getItem("jobId") || "";
 
   // Register this tab to receive tab-specific updates
   const sseResult = useSSE(jobId, sequenceIdx);
+
+  useEffect(() => {
+    return () =>
+      console.log(
+        "Component using useSSE for",
+        jobId,
+        sequenceIdx,
+        "is unmounting"
+      );
+  }, [jobId, sequenceIdx]);
 
   // Debug log all SSE events
   useEffect(() => {
@@ -65,8 +95,27 @@ const ResultTab = ({ result, sequenceIdx }) => {
   // Update step data based on SSE event
   const updateStepData = useCallback(
     (sseData) => {
+      // Skip if step is missing
+      if (!sseData.step) {
+        console.warn(
+          `[ResultTab:${sequenceIdx}] Missing step in SSE data:`,
+          sseData
+        );
+        return;
+      }
+
+      // Get the data key for this step
+      const dataKey = stepToDataKeyMap[sseData.step];
+      if (!dataKey) {
+        console.warn(
+          `[ResultTab:${sequenceIdx}] No data key mapping for step:`,
+          sseData.step
+        );
+        return;
+      }
+
       switch (sseData.step) {
-        case "Restriction Site Detection":
+        case "Restriction Sites":
           if (sseData.sites) {
             const sites = sseData.sites.map((site) => ({
               enzyme: site.enzyme,
@@ -87,7 +136,7 @@ const ResultTab = ({ result, sequenceIdx }) => {
             if (sites.length > 0) {
               setProtocolSteps((prevSteps) => {
                 return prevSteps.map((step) =>
-                  step.name === "Restriction Site Detection"
+                  step.name === "Restriction Sites"
                     ? { ...step, notificationCount: sites.length }
                     : step
                 );
@@ -95,7 +144,7 @@ const ResultTab = ({ result, sequenceIdx }) => {
             }
           }
           break;
-        
+
         case "Mutation Analysis":
           if (sseData.mutations) {
             const mutations = sseData.mutations.map((mutation) => ({
@@ -192,18 +241,26 @@ const ResultTab = ({ result, sequenceIdx }) => {
           break;
 
         case "Preprocessing":
-          console.log(`[ResultTab:${sequenceIdx}] Preprocessing step received:`, sseData);
+          console.log(
+            `[ResultTab:${sequenceIdx}] Preprocessing step received:`,
+            sseData
+          );
           if (sseData.processedSequence) {
-            console.log(`[ResultTab:${sequenceIdx}] Updating processed sequence:`, sseData.processedSequence);
+            console.log(
+              `[ResultTab:${sequenceIdx}] Updating processed sequence:`,
+              sseData.processedSequence
+            );
             setStepData((prevData) => ({
               ...prevData,
               Preprocessing: {
-          ...prevData.Preprocessing,
-          processedSequence: sseData.processedSequence,
+                ...prevData.Preprocessing,
+                processedSequence: sseData.processedSequence,
               },
             }));
           } else {
-            console.warn(`[ResultTab:${sequenceIdx}] No processedSequence found in SSE data.`);
+            console.warn(
+              `[ResultTab:${sequenceIdx}] No processedSequence found in SSE data.`
+            );
           }
           break;
 
@@ -215,7 +272,7 @@ const ResultTab = ({ result, sequenceIdx }) => {
           break;
       }
     },
-    [sequenceIdx]
+    [sequenceIdx, stepToDataKeyMap]
   );
 
   // Process SSE data - memoized to ensure consistent reference
@@ -223,8 +280,10 @@ const ResultTab = ({ result, sequenceIdx }) => {
     (sseData) => {
       if (!sseData || !sseData.step) return;
 
-      // Generate a unique ID for this event to prevent duplicate processing
-      const eventId = `${sseData.step}-${sseData.message}-${sseData.stepProgress}`;
+      // Generate a unique ID for this event - include timestamp if available
+      const eventId = `${sseData.step}-${sseData.message}-${
+        sseData.stepProgress
+      }-${Date.now()}`;
       if (processedEvents.current.has(eventId)) {
         console.log(
           `[ResultTab:${sequenceIdx}] Skipping duplicate event:`,
@@ -241,9 +300,11 @@ const ResultTab = ({ result, sequenceIdx }) => {
         sseData
       );
 
-      // Always update the current SSE data to ensure notification counts are passed along
-      // We'll store the most recent message for each step
-      setCurrentSseData(sseData);
+      // Update SSE data by step - store each step's data separately
+      setSseDataByStep((prevData) => ({
+        ...prevData,
+        [sseData.step]: sseData,
+      }));
 
       // Update steps state
       setProtocolSteps((prevSteps) => {
@@ -353,7 +414,7 @@ const ResultTab = ({ result, sequenceIdx }) => {
           steps={protocolSteps}
           messages={messages}
           resultData={stepData}
-          sseData={currentSseData}
+          sseData={sseDataByStep}
         />
       </div>
     </div>

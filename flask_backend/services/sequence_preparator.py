@@ -150,6 +150,6 @@ class SequencePreparator:
 
             logger.log_step("Preprocessing Complete", f"Final cleaned sequence: {str(cleaned_sequence)}")
             
-            send_update(f"Preprocessing complete: {message}", 100, notification_count=notification_count, callout=message)
+            send_update(f"Preprocessing complete: {message}", 100, notification_count=notification_count, callout=message, processed_sequence=str(cleaned_sequence))
                 
         return str(cleaned_sequence), True

@@ -30,7 +30,13 @@ const TabButton = ({ name, isActive, onClick, notificationCount }) => (
     onClick={onClick}
   >
     <div className="tab-icon-container">
-      {notificationCount > 0 ? (
+      {/* Display checkmark only if completed (progress 100) and no notifications */}
+      {notificationCount === 0 &&
+      isActive /* Assuming isActive implies it could be completed or active */ ? (
+        <div className="checkmark-container">
+          ✔
+        </div> /* Or refine based on actual step status if available */
+      ) : notificationCount > 0 ? (
         <span className="tab-notification">{notificationCount}</span>
       ) : (
         <div className="checkmark-container">✔</div>
@@ -65,44 +71,221 @@ const DisplayMessage = ({ message }) => (
   </div>
 );
 
+// Map of step names to resultData keys
+const stepToDataKeyMap = {
+  Preprocessing: "Preprocessing",
+  "Restriction Sites": "RestrictionSiteDetection",
+  "Mutation Analysis": "MutationAnalysis",
+  "Primer Design": "PrimerDesign",
+  "PCR Reaction Grouping": "PCRReactionGrouping",
+};
+
 const TabContent = ({ stepName, stepData, messages, activeStep, sseData }) => {
   const stepMessages = messages.filter((msg) => msg.startsWith(`${stepName}:`));
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
+  const [isPayloadVisible, setIsPayloadVisible] = useState(false); // State for payload visibility
 
-  // Check if there's a display message for this step in the SSE data
+  // Get step-specific SSE data instead of global sseData
+  const stepSseData = sseData ? sseData[stepName] : null;
+
+  // Determine if there's a specific callout message for this step
   const callout =
-    sseData && sseData.step === stepName && sseData.callout
-      ? sseData.callout
-      : null;
+    stepSseData && stepSseData.callout ? stepSseData.callout : null;
 
-  const renderStepSpecificContent = () => {
-    // If there's a display message for this step, show it first
-    if (callout) {
+  // Helper function to get the specific content *element* for the current step
+  const renderStepDetailContent = () => {
+    // Get the appropriate data key for this step
+    const dataKey = stepToDataKeyMap[stepName];
+    if (!dataKey || !stepData || !stepData[dataKey]) {
+      console.warn(`No data found for step: ${stepName}, key: ${dataKey}`);
+      return null;
+    }
+
+    // Get data specific to this step
+    const data = stepData[dataKey];
+
+    if (
+      stepName === "Restriction Sites" &&
+      data.restrictionSites?.length > 0
+    ) {
+      return <RestrictionSiteSummary sites={data.restrictionSites} />;
+    }
+    // Add other 'else if' conditions here for different step names
+    else if (stepName === "Mutation Analysis" && data.mutations?.length > 0) {
+      // You would need to create a component for displaying mutations
+      // return <MutationAnalysisSummary mutations={data.mutations} />;
       return (
-        <div className="p-4">
-          <DisplayMessage message={callout} />
-          {renderStepDetailContent()}
+        <div className="mt-2">
+          <h3 className="font-semibold text-gray-700 mb-2">Mutations Found:</h3>
+          <div className="border rounded overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Position
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Sequence
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {data.mutations.map((mutation, idx) => (
+                  <tr key={idx}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {mutation.type}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {mutation.position}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">
+                      {mutation.sequence}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    } else if (
+      stepName === "Primer Design" &&
+      (data.edgePrimers || data.mutPrimers)
+    ) {
+      // Placeholder for primer design summary
+      return (
+        <div className="mt-2">
+          <h3 className="font-semibold text-gray-700 mb-2">
+            Designed Primers:
+          </h3>
+          {data.edgePrimers && Object.keys(data.edgePrimers).length > 0 && (
+            <div className="mb-4">
+              <h4 className="text-sm font-medium text-gray-600 mb-1">
+                Edge Primers:
+              </h4>
+              <div className="border rounded overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Name
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Sequence
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {Object.entries(data.edgePrimers).map(
+                      ([name, primer], idx) => (
+                        <tr key={idx}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">
+                            {primer.sequence || primer}
+                          </td>
+                        </tr>
+                      )
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+          {data.mutPrimers && Object.keys(data.mutPrimers).length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-600 mb-1">
+                Mutation Primers:
+              </h4>
+              <div className="border rounded overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Name
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Sequence
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {Object.entries(data.mutPrimers).map(
+                      ([name, primer], idx) => (
+                        <tr key={idx}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">
+                            {primer.sequence || primer}
+                          </td>
+                        </tr>
+                      )
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    } else if (
+      stepName === "PCR Reaction Grouping" &&
+      data.pcrReactions?.length > 0
+    ) {
+      // Placeholder for PCR reactions display
+      return (
+        <div className="mt-2">
+          <h3 className="font-semibold text-gray-700 mb-2">PCR Reactions:</h3>
+          <div className="space-y-4">
+            {data.pcrReactions.map((reaction, idx) => (
+              <div key={idx} className="border rounded p-3 bg-gray-50">
+                <h4 className="font-medium text-gray-700 mb-2">
+                  Reaction {idx + 1}
+                </h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="col-span-2">
+                    <span className="font-medium">Template:</span>{" "}
+                    {reaction.template || "N/A"}
+                  </div>
+                  <div>
+                    <span className="font-medium">Forward Primer:</span>{" "}
+                    {reaction.forwardPrimer || "N/A"}
+                  </div>
+                  <div>
+                    <span className="font-medium">Reverse Primer:</span>{" "}
+                    {reaction.reversePrimer || "N/A"}
+                  </div>
+                  {reaction.product && (
+                    <div className="col-span-2">
+                      <span className="font-medium">Product:</span>
+                      <div className="font-mono text-xs mt-1 p-1 bg-gray-100 rounded">
+                        {reaction.product}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       );
     }
 
-    // Otherwise, just show regular step content
-    return <div className="p-4">{renderStepDetailContent()}</div>;
+    // Return null or a placeholder if no specific content for this step
+    return null;
   };
 
-  const renderStepDetailContent = () => {
-    if (
-      stepName === "Restriction Site Detection" &&
-      stepData?.restrictionSites?.length > 0
-    ) {
-      // Use the RestrictionSiteSummary component
-      return <RestrictionSiteSummary sites={stepData.restrictionSites} />;
-    }
-
-  };
+  // Get the specific detail content using the helper
+  const detailContent = renderStepDetailContent();
 
   return (
     <div className="protocol-tab-content">
+      {/* Display Progress if this is the active step */}
       {activeStep && activeStep.name === stepName && (
         <ProgressStep
           name={activeStep.name}
@@ -110,8 +293,43 @@ const TabContent = ({ stepName, stepData, messages, activeStep, sseData }) => {
           message={activeStep.message}
         />
       )}
-      {renderStepSpecificContent()}
 
+      {/* Main content area for the tab */}
+      <div className="p-4">
+        {/* Display Callout message if it exists */}
+        {callout && <DisplayMessage message={callout} />}
+
+        {/* Display the specific detail content */}
+        {detailContent}
+
+        {/* Section to display SSE Payload (Toggleable) */}
+        {/* Only show payload section if stepSseData exists for this specific step */}
+        {stepSseData && (
+          <div className="border-t border-gray-200 mt-4 pt-4">
+            <button
+              className="text-blue-500 hover:text-blue-700 text-xs cursor-pointer subtle-link mb-2"
+              onClick={() => setIsPayloadVisible(!isPayloadVisible)}
+              style={{
+                textDecoration: "none",
+                color: "inherit",
+                fontStyle: "italic",
+                border: "none",
+              }}
+            >
+              {isPayloadVisible
+                ? "Hide Raw SSE Payload"
+                : "Show Raw SSE Payload"}
+            </button>
+            {isPayloadVisible && (
+              <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">
+                {JSON.stringify(stepSseData, null, 2)}
+              </pre>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Section for displaying all step-specific messages (Toggleable) */}
       {stepMessages.length > 0 && (
         <div className="border-t border-gray-200 p-4">
           {!isMessagesOpen && (
@@ -144,6 +362,7 @@ const TabContent = ({ stepName, stepData, messages, activeStep, sseData }) => {
                   textDecoration: "none",
                   color: "inherit",
                   fontStyle: "italic",
+                  border: "none",
                 }}
               >
                 hide messages
@@ -161,42 +380,59 @@ const ProtocolTracker = ({ steps, messages, resultData, sseData }) => {
   const activeSteps = steps.filter((step) => step.status === "active");
   const waitingSteps = steps.filter((step) => step.status === "waiting");
 
-  const [activeTab, setActiveTab] = useState(
-    completedSteps.length > 0
-      ? completedSteps[completedSteps.length - 1].name
-      : activeSteps.length > 0
-      ? activeSteps[0].name
-      : null
-  );
+  // Determine initial active tab: last completed or first active
+  const [activeTab, setActiveTab] = useState(() => {
+    if (activeSteps.length > 0) return activeSteps[0].name;
+    if (completedSteps.length > 0)
+      return completedSteps[completedSteps.length - 1].name;
+    return steps.length > 0 ? steps[0].name : null; // Fallback to first step if none are active/completed
+  });
 
-  // Set the active tab to the step that has an SSE message when it arrives
-  // BUT only if one doesn't exist already - to prevent flashing
+  // Effect to potentially switch tab based on SSE *callout* message
+  // (Consider if this behavior is desired - might jump user unexpectedly)
   useEffect(() => {
-    if (sseData && sseData.step && sseData.display_message) {
-      // Only update if we don't have an active tab yet or
-      // if the SSE message is for the currently active tab
-      if (!activeTab || sseData.step === activeTab) {
-        const relevantStep = [...completedSteps, ...activeSteps].find(
-          (step) => step.name === sseData.step
+    // Only attempt to switch if sseData has new information
+    if (sseData) {
+      // Find the step that has the most recent SSE data with a callout
+      const stepsWithCallouts = Object.entries(sseData)
+        .filter(([_, data]) => data?.callout)
+        .map(([stepName, data]) => ({
+          stepName,
+          timestamp: data.timestamp || Date.now(), // Use timestamp if available
+        }))
+        .sort((a, b) => b.timestamp - a.timestamp); // Sort by most recent
+
+      if (stepsWithCallouts.length > 0) {
+        // Get the most recent step with a callout
+        const mostRecentStep = stepsWithCallouts[0].stepName;
+
+        // Check if this step is currently rendered
+        const isStepRendered = [...completedSteps, ...activeSteps].some(
+          (step) => step.name === mostRecentStep
         );
 
-        if (relevantStep) {
-          setActiveTab(relevantStep.name);
+        if (isStepRendered) {
+          setActiveTab(mostRecentStep);
         }
       }
     }
-  }, [sseData, completedSteps, activeSteps, activeTab]);
+  }, [sseData, completedSteps, activeSteps]);
+
+  // Derive the list of tabs to show (completed + active)
+  const tabsToShow = steps.filter(
+    (step) => step.status === "completed" || step.status === "active"
+  );
 
   return (
     <div>
       <div className="protocol-tab-container">
-        {completedSteps.concat(activeSteps).map((step) => (
+        {tabsToShow.map((step) => (
           <TabButton
             key={step.name}
             name={step.name}
             isActive={activeTab === step.name}
             onClick={() => setActiveTab(step.name)}
-            notificationCount={step.notificationCount}
+            notificationCount={step.notificationCount || 0}
           />
         ))}
       </div>
@@ -204,10 +440,10 @@ const ProtocolTracker = ({ steps, messages, resultData, sseData }) => {
       {activeTab && (
         <TabContent
           stepName={activeTab}
-          stepData={resultData[activeTab.replace(/\s+/g, "")]}
+          stepData={resultData} // Pass the full resultData object
           messages={messages}
           activeStep={activeSteps.find((step) => step.name === activeTab)}
-          sseData={sseData}
+          sseData={sseData} // Pass the entire sseData object
         />
       )}
 
