@@ -70,17 +70,17 @@ const TabContent = ({ stepName, stepData, messages, activeStep, sseData }) => {
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
 
   // Check if there's a display message for this step in the SSE data
-  const displayMessage =
-    sseData && sseData.step === stepName && sseData.display_message
-      ? sseData.display_message
+  const callout =
+    sseData && sseData.step === stepName && sseData.callout
+      ? sseData.callout
       : null;
 
   const renderStepSpecificContent = () => {
     // If there's a display message for this step, show it first
-    if (displayMessage) {
+    if (callout) {
       return (
         <div className="p-4">
-          <DisplayMessage message={displayMessage} />
+          <DisplayMessage message={callout} />
           {renderStepDetailContent()}
         </div>
       );
