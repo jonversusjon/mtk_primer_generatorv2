@@ -3,24 +3,32 @@ import "../../styles/ProtocolTracker.css";
 import RestrictionSiteSummary from "./RestrictionSiteSummary";
 
 const ProgressStep = ({ name, progress, message }) => (
-  <div className="border rounded-lg p-4 mb-4 shadow-sm bg-blue-50 border-blue-200">
+  <div className="border rounded-lg p-4 mb-4 shadow-sm bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
     <div className="flex justify-between items-center mb-2">
-      <span className="font-semibold text-gray-800">{name}</span>
-      <span className="text-sm text-gray-500">{progress}%</span>
+      <span className="font-semibold text-gray-800 dark:text-gray-100">
+        {name}
+      </span>
+      <span className="text-sm text-gray-500 dark:text-gray-400">
+        {progress}%
+      </span>
     </div>
-    <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
       <div
-        className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+        className="bg-blue-500 dark:bg-blue-400 h-2 rounded-full transition-all duration-300"
         style={{ width: `${progress}%` }}
       ></div>
     </div>
-    {message && <p className="text-sm text-gray-600 mt-1">{message}</p>}
+    {message && (
+      <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{message}</p>
+    )}
   </div>
 );
 
 const WaitingStep = ({ name }) => (
-  <div className="border rounded-lg p-4 mb-4 shadow-sm bg-white border-gray-200">
-    <span className="font-semibold text-gray-800">{name}</span>
+  <div className="border rounded-lg p-4 mb-4 shadow-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <span className="font-semibold text-gray-800 dark:text-gray-200">
+      {name}
+    </span>
   </div>
 );
 
@@ -48,11 +56,11 @@ const TabButton = ({ name, isActive, onClick, notificationCount }) => (
 
 // DisplayMessage component for showing SSE display_messages
 const DisplayMessage = ({ message }) => (
-  <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
+  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3 mb-4">
     <div className="flex items-start">
       <div className="flex-shrink-0 pt-0.5">
         <svg
-          className="h-5 w-5 text-blue-500"
+          className="h-5 w-5 text-blue-500 dark:text-blue-400"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 20 20"
           fill="currentColor"
@@ -65,7 +73,7 @@ const DisplayMessage = ({ message }) => (
         </svg>
       </div>
       <div className="ml-3">
-        <p className="text-sm text-blue-700">{message}</p>
+        <p className="text-sm text-blue-700 dark:text-blue-300">{message}</p>
       </div>
     </div>
   </div>
@@ -74,7 +82,7 @@ const DisplayMessage = ({ message }) => (
 // Map of step names to resultData keys
 const stepToDataKeyMap = {
   Preprocessing: "Preprocessing",
-  "Restriction Sites": "RestrictionSiteDetection",
+  "Restriction Site Detection": "RestrictionSiteDetection",
   "Mutation Analysis": "MutationAnalysis",
   "Primer Design": "PrimerDesign",
   "PCR Reaction Grouping": "PCRReactionGrouping",
@@ -104,10 +112,7 @@ const TabContent = ({ stepName, stepData, messages, activeStep, sseData }) => {
     // Get data specific to this step
     const data = stepData[dataKey];
 
-    if (
-      stepName === "Restriction Sites" &&
-      data.restrictionSites?.length > 0
-    ) {
+    if (stepName === "Restriction Sites" && data.restrictionSites?.length > 0) {
       return <RestrictionSiteSummary sites={data.restrictionSites} />;
     }
     // Add other 'else if' conditions here for different step names
@@ -116,32 +121,34 @@ const TabContent = ({ stepName, stepData, messages, activeStep, sseData }) => {
       // return <MutationAnalysisSummary mutations={data.mutations} />;
       return (
         <div className="mt-2">
-          <h3 className="font-semibold text-gray-700 mb-2">Mutations Found:</h3>
-          <div className="border rounded overflow-hidden">
+          <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">
+            Mutations Found:
+          </h3>
+          <div className="border dark:border-gray-700 rounded overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Type
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Position
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Sequence
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {data.mutations.map((mutation, idx) => (
                   <tr key={idx}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                       {mutation.type}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                       {mutation.position}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500 dark:text-gray-300">
                       {mutation.sequence}
                     </td>
                   </tr>
@@ -168,24 +175,24 @@ const TabContent = ({ stepName, stepData, messages, activeStep, sseData }) => {
               </h4>
               <div className="border rounded overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Name
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Sequence
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {Object.entries(data.edgePrimers).map(
                       ([name, primer], idx) => (
                         <tr key={idx}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                             {name}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500 dark:text-gray-300">
                             {primer.sequence || primer}
                           </td>
                         </tr>
@@ -203,24 +210,24 @@ const TabContent = ({ stepName, stepData, messages, activeStep, sseData }) => {
               </h4>
               <div className="border rounded overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Name
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Sequence
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {Object.entries(data.mutPrimers).map(
                       ([name, primer], idx) => (
                         <tr key={idx}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                             {name}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500 dark:text-gray-300">
                             {primer.sequence || primer}
                           </td>
                         </tr>
@@ -243,27 +250,44 @@ const TabContent = ({ stepName, stepData, messages, activeStep, sseData }) => {
           <h3 className="font-semibold text-gray-700 mb-2">PCR Reactions:</h3>
           <div className="space-y-4">
             {data.pcrReactions.map((reaction, idx) => (
-              <div key={idx} className="border rounded p-3 bg-gray-50">
-                <h4 className="font-medium text-gray-700 mb-2">
+              <div
+                key={idx}
+                className="border rounded p-3 bg-gray-50 dark:bg-gray-800 dark:border-gray-700"
+              >
+                <h4 className="font-medium text-gray-700 dark:text-gray-200 mb-2">
                   Reaction {idx + 1}
                 </h4>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div className="col-span-2">
-                    <span className="font-medium">Template:</span>{" "}
-                    {reaction.template || "N/A"}
+                    <span className="font-medium dark:text-gray-300">
+                      Template:
+                    </span>{" "}
+                    <span className="dark:text-gray-300">
+                      {reaction.template || "N/A"}
+                    </span>
                   </div>
                   <div>
-                    <span className="font-medium">Forward Primer:</span>{" "}
-                    {reaction.forwardPrimer || "N/A"}
+                    <span className="font-medium dark:text-gray-300">
+                      Forward Primer:
+                    </span>{" "}
+                    <span className="dark:text-gray-300">
+                      {reaction.forwardPrimer || "N/A"}
+                    </span>
                   </div>
                   <div>
-                    <span className="font-medium">Reverse Primer:</span>{" "}
-                    {reaction.reversePrimer || "N/A"}
+                    <span className="font-medium dark:text-gray-300">
+                      Reverse Primer:
+                    </span>{" "}
+                    <span className="dark:text-gray-300">
+                      {reaction.reversePrimer || "N/A"}
+                    </span>
                   </div>
                   {reaction.product && (
                     <div className="col-span-2">
-                      <span className="font-medium">Product:</span>
-                      <div className="font-mono text-xs mt-1 p-1 bg-gray-100 rounded">
+                      <span className="font-medium dark:text-gray-300">
+                        Product:
+                      </span>
+                      <div className="font-mono text-xs mt-1 p-1 bg-gray-100 dark:bg-gray-900 rounded dark:text-gray-300">
                         {reaction.product}
                       </div>
                     </div>
@@ -307,7 +331,7 @@ const TabContent = ({ stepName, stepData, messages, activeStep, sseData }) => {
         {stepSseData && (
           <div className="border-t border-gray-200 mt-4 pt-4">
             <button
-              className="text-blue-500 hover:text-blue-700 text-xs cursor-pointer subtle-link mb-2"
+              className="text-blue-500 hover:text-blue-700 text-xs cursor-pointer subtle-link mb-2 dark:text-gray-400 dark:hover:text-gray-300"
               onClick={() => setIsPayloadVisible(!isPayloadVisible)}
               style={{
                 textDecoration: "none",
@@ -321,7 +345,7 @@ const TabContent = ({ stepName, stepData, messages, activeStep, sseData }) => {
                 : "Show Raw SSE Payload"}
             </button>
             {isPayloadVisible && (
-              <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">
+              <pre className="bg-gray-100 dark:bg-gray-800 p-2 rounded text-xs overflow-x-auto dark:text-gray-300">
                 {JSON.stringify(stepSseData, null, 2)}
               </pre>
             )}
@@ -350,13 +374,16 @@ const TabContent = ({ stepName, stepData, messages, activeStep, sseData }) => {
             <>
               <div className="space-y-1 max-h-40 overflow-y-auto">
                 {stepMessages.map((msg, index) => (
-                  <div key={index} className="text-gray-600 text-xs">
+                  <div
+                    key={index}
+                    className="text-gray-600 dark:text-gray-400 text-xs"
+                  >
                     {msg.replace(`${stepName}: `, "")}
                   </div>
                 ))}
               </div>
               <button
-                className="text-blue-500 hover:text-blue-700 text-xs cursor-pointer mt-2"
+                className="text-blue-500 hover:text-blue-700 text-xs cursor-pointer mt-2 dark:text-gray-400 dark:hover:text-gray-300"
                 onClick={() => setIsMessagesOpen(false)}
                 style={{
                   textDecoration: "none",
