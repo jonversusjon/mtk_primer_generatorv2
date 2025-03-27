@@ -1,5 +1,6 @@
 # celery_tasks.py
 import json
+from functools import partial
 from typing import Optional
 from celery import shared_task, group
 from flask_sse import sse
@@ -7,8 +8,13 @@ from flask_backend.services import GoldenGateUtils, ProtocolMaker
 from flask_backend.models import ProtocolRequest, DomesticationResult
 from flask_backend.logging import logger
 
-def publish_sse(step: str, message: str, job_id: str, sequence_idx: int, 
-             step_progress: Optional[float] = None, event_type: Optional[str] = None, **kwargs):
+def publish_sse(
+    job_id: str,
+    sequence_idx: int,
+    step: str,
+    message: str,
+    step_progress: Optional[float] = None,
+    **kwargs):
     """
     Publish updates via Flask-SSE to a Redis channel.
     
@@ -19,35 +25,23 @@ def publish_sse(step: str, message: str, job_id: str, sequence_idx: int,
         sequence_idx (int): Index of the current sequence.
         step_progress (Optional[float]): Progress percentage for the current step (0-100).
                                        If None, no progress bar is shown for this step.
-        event_type (Optional[str]): Explicit event type ('progress' or 'data'). 
-                                  If None, inferred based on whether step_progress is provided.
         **kwargs: Arbitrary additional data to include in the payload.
     """
     channel = f"job_{job_id}_{sequence_idx}"
     payload = {
+        "jobId": job_id,
+        "sequenceIdx": sequence_idx,
         "step": step,
         "message": message,
-        "sequenceIdx": sequence_idx,
         **kwargs
     }
-    
-    # Add step progress if provided
     if step_progress is not None:
         payload["stepProgress"] = step_progress
-        inferred_type = "progress"
-        logger.log_step("Progress Update", 
-                       f"Step: {step}, Message: {message}, Step Progress: {step_progress}")
-    else:
-        inferred_type = "data"
-        logger.log_step("Data Update", f"Step: {step}, Message: {message}")
 
-    logger.log_step(" ******* SSE Publish ****** ", f"Publishing to channel {channel}: {json.dumps(payload, default=str)}")
+    logger.log_step("SSE Publish", f"Publishing to channel {channel}: {json.dumps(payload, default=str)}")
     
-    event_type = event_type or inferred_type
-
     sse.publish(
         payload,
-        type=event_type,
         channel=channel,
     )
 
@@ -57,22 +51,7 @@ def process_protocol_sequence(req_dict: dict, index: int):
     req = ProtocolRequest.model_validate(req_dict)
     seq = req.sequences_to_domesticate[index]
 
-    def progress_callback(step: str, message: str, progress: Optional[float] = None, 
-                        step_progress: Optional[float] = None, sequence_idx: Optional[int] = None,
-                        event_type: Optional[str] = None, **kwargs):
-        logger.log_step("Progress Callback", 
-                    f"Step: {step}, Message: {message}, Overall Progress: {progress}, Step Progress: {step_progress}")
-        publish_sse(
-            step=step,
-            message=message,
-            progress=progress,
-            step_progress=step_progress,
-            job_id=req.job_id,
-            sequence_idx=sequence_idx if sequence_idx is not None else index,
-            event_type=event_type,
-            **kwargs,
-        )
-
+    progress_callback = partial(publish_sse, req.job_id, index)
 
     protocol_maker = ProtocolMaker(
         request_idx=index,

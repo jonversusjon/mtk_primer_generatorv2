@@ -1,7 +1,7 @@
 import itertools
 import math
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from flask_backend.models import RestrictionSite, Codon, MutationCodon, Mutation, OverhangOption
 from flask_backend.services.utils import GoldenGateUtils
@@ -71,7 +71,7 @@ class MutationAnalyzer():
     def get_all_mutations(
         self,
         sites_to_mutate: List[RestrictionSite],
-        progress_callback: Optional[callable] = None
+        send_update: callable
         ) -> Dict[str, List[Mutation]]:
         logger.log_step("Mutation Analysis", f"Starting mutation analysis for {len(sites_to_mutate)} site(s)")
         mutation_options = {}
@@ -81,24 +81,22 @@ class MutationAnalyzer():
         completed_operations = 0
         
         # Helper function to update progress
-        def update_progress(increment, message, **kwargs):
+        def update_progress(message, increment, **kwargs):
             nonlocal completed_operations
             completed_operations += increment
-            if progress_callback:
-                progress_percentage = min(99, int((completed_operations / total_estimated_operations) * 100))
-                progress_callback(progress_percentage, message, **kwargs)
+            prog = min(99, int((completed_operations / total_estimated_operations) * 100))
+            send_update(message, prog, **kwargs)
         
         try:
             # Initialize progress
-            if progress_callback:
-                progress_callback(0, f"Starting mutation analysis for {len(sites_to_mutate)} site(s)")
+            send_update(f"Starting mutation analysis for {len(sites_to_mutate)} site(s)", 0)
             
             for site_idx, site in enumerate(sites_to_mutate):
                 site_key = f"mutation_{site.position}"
                 logger.log_step("Process Site",
                                 f"Analyzing site {site_idx+1}/{len(sites_to_mutate)} at position {site.position}",
                                 {"site_details": site})
-                update_progress(1, f"Processing site {site_idx+1}/{len(sites_to_mutate)}", site_key=site_key)
+                update_progress(f"Processing site {site_idx+1}/{len(sites_to_mutate)}", 1, site_key=site_key)
                 
                 valid_mutations = []
                 alternatives_by_codon = []
@@ -107,7 +105,7 @@ class MutationAnalyzer():
                 for codon_idx, codon in enumerate(site.codons):
                     logger.log_step("Process Codon",
                                     f"Analyzing codon {codon_idx+1}/{len(site.codons)}: {codon.codon_sequence} at context position {codon.context_position}")
-                    update_progress(1, f"Analyzing codon {codon_idx+1}/{len(site.codons)} in site {site_idx+1}", 
+                    update_progress(f"Analyzing codon {codon_idx+1}/{len(site.codons)} in site {site_idx+1}", 1, 
                                     site_key=site_key, codon_index=codon_idx)
                     
                     # Retrieve all synonymous codon sequences for the given amino acid.
@@ -151,7 +149,7 @@ class MutationAnalyzer():
                         })
                     
                     # Update progress after processing all alternatives for this codon
-                    update_progress(alt_count, f"Processed {alt_count} alternatives for codon {codon_idx+1}", 
+                    update_progress(f"Processed {alt_count} alternatives for codon {codon_idx+1}", alt_count,  
                                     site_key=site_key, codon_index=codon_idx)
                     
                     if alternatives:
@@ -173,7 +171,7 @@ class MutationAnalyzer():
                                 
                                 # Update progress periodically during combination processing
                                 if combination_count % 10 == 0:
-                                    update_progress(10, f"Processing combinations for site {site.position}", 
+                                    update_progress(f"Processing combinations for site {site.position}", 10,
                                                 site_key=site_key, combinations_processed=combination_count)
                                 
                                 mutation_codons = [item['mutation_codon'] for item in combination]
@@ -237,7 +235,7 @@ class MutationAnalyzer():
                                 
                                 # Update progress for each valid mutation generated
                                 if valid_mutation_count % 5 == 0:
-                                    update_progress(5, f"Generated {valid_mutation_count} valid mutations for site {site.position}", 
+                                    update_progress(f"Generated {valid_mutation_count} valid mutations for site {site.position}", 5,
                                                 site_key=site_key)
                                 
                                 logger.log_step("Valid Mutation",
@@ -248,7 +246,7 @@ class MutationAnalyzer():
                 if valid_mutations:
                     mutation_options[site_key] = valid_mutations
                     logger.log_step("Site Completed", f"Site {site.position}: {len(valid_mutations)} valid mutation(s) found")
-                    progress_callback(100, "Site Completed", site_key=site_key, mutation_count=len(valid_mutations))
+                    send_update("Site Completed", 100, site_key=site_key, mutation_count=len(valid_mutations))
                 else:
                     logger.log_step("No Alternatives Found",
                                     f"Site {site.position}: No alternative codons found",
@@ -257,8 +255,7 @@ class MutationAnalyzer():
                     update_progress(1, "No Alternatives Found", site_key=site_key, mutation_count=0)
 
             # Final update to ensure we reach 100%
-            if progress_callback:
-                progress_callback(100, "Mutation Analysis Complete", total_sites=len(sites_to_mutate))
+            send_update("Mutation Analysis Complete", 100, total_sites=len(sites_to_mutate))
                 
             logger.debug(f"Mutation options collected: {mutation_options}")
             if self.verbose:

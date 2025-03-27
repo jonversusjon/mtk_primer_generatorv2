@@ -6,7 +6,7 @@ const ResultTab = ({ result, sequenceIdx }) => {
   // Define all possible steps in order - ensure these match EXACTLY with backend step names
   const allSteps = [
     "Preprocessing",
-    "Restriction Site Detection",
+    "Restriction Sites",
     "Mutation Analysis",
     "Primer Design",
     "PCR Reaction Grouping",
@@ -95,7 +95,35 @@ const ResultTab = ({ result, sequenceIdx }) => {
             }
           }
           break;
+        
+        case "Mutation Analysis":
+          if (sseData.mutations) {
+            const mutations = sseData.mutations.map((mutation) => ({
+              type: mutation.type,
+              position: mutation.position,
+              sequence: mutation.sequence,
+            }));
 
+            setStepData((prevData) => ({
+              ...prevData,
+              MutationAnalysis: {
+                ...prevData.MutationAnalysis,
+                mutations: mutations,
+              },
+            }));
+
+            // Update notification count for this step
+            if (mutations.length > 0) {
+              setProtocolSteps((prevSteps) => {
+                return prevSteps.map((step) =>
+                  step.name === "Mutation Analysis"
+                    ? { ...step, notificationCount: mutations.length }
+                    : step
+                );
+              });
+            }
+          }
+          break;
         case "Primer Design":
           // Track primer updates for notification count
           let edgePrimerCount = 0;
@@ -164,14 +192,18 @@ const ResultTab = ({ result, sequenceIdx }) => {
           break;
 
         case "Preprocessing":
+          console.log(`[ResultTab:${sequenceIdx}] Preprocessing step received:`, sseData);
           if (sseData.processedSequence) {
+            console.log(`[ResultTab:${sequenceIdx}] Updating processed sequence:`, sseData.processedSequence);
             setStepData((prevData) => ({
               ...prevData,
               Preprocessing: {
-                ...prevData.Preprocessing,
-                processedSequence: sseData.processedSequence,
+          ...prevData.Preprocessing,
+          processedSequence: sseData.processedSequence,
               },
             }));
+          } else {
+            console.warn(`[ResultTab:${sequenceIdx}] No processedSequence found in SSE data.`);
           }
           break;
 

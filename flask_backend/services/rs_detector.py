@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import List, Dict, Optional
+from typing import List, Dict
 from Bio.Seq import Seq, CodonTable
 
 from flask_backend.models import RestrictionSite, Codon
@@ -30,15 +30,12 @@ class RestrictionSiteDetector():
     def find_sites_to_mutate(
         self,
         sequence: str,
-        index: int,
-        progress_callback: Optional[callable] = None
+        send_update: callable,
         ) -> List[RestrictionSite]:
         """
         Finds both BsmBI and BsaI restriction enzyme recognition sites on both strands of a DNA sequence.
         """
-        logger.log_step("Input Conversion", "Converting input sequence to uppercase")
         seq_str = str(sequence).upper()
-        logger.log_step("Input Conversion", f"Sequence length: {len(seq_str)}")
 
         recognition_sequences = {
             'BsmBI': 'CGTCTC',
@@ -88,6 +85,15 @@ class RestrictionSiteDetector():
 
         sites_to_mutate.sort(key=lambda site: site.position)
         logger.log_step("Result", f"Total sites found: {len(sites_to_mutate)}")
+                
+        if sites_to_mutate:
+            sites_to_mutate_json = [site.model_dump(by_alias=True) for site in sites_to_mutate]
+            send_update(f"Found {len(sites_to_mutate)} restriction sites", 100, sites=sites_to_mutate_json, notification_count=len(sites_to_mutate))
+        else:
+            send_update("No restriciton sites found", 100, sites=sites_to_mutate_json, callout="No site mutations needed", notification_count=0)
+            
+        send_update(f"Found {len(sites_to_mutate)} restriction sites", 100)
+        
         return sites_to_mutate
 
     def get_codons(self, context_seq: str, recognition_start_index: int, frame: int) -> List[Codon]:

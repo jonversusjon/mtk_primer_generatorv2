@@ -4,7 +4,7 @@ from flask_backend.services.utils import GoldenGateUtils
 from flask_backend.logging import logger
 from flask_backend.models import Primer, MutationPrimerPair, MutationPrimerSet, EdgePrimerPair, MutationSet, MutationSetCollection, OverhangOption
 import logging
-from typing import List, Optional
+from typing import List
 
 RESULT_MAPPING = {
     "one":   lambda num_sites, total_coords: 1,
@@ -54,9 +54,9 @@ class PrimerDesigner():
     def design_mutation_primers(
         self,
         mutation_sets: MutationSetCollection,
-        primer_name: str = None,
-        max_results_str: str = "one",
-        progress_callback: Optional[callable] = None):
+        primer_name: str,
+        max_results_str: str,
+        send_update: callable):
         """
         Designs mutation primers for the provided mutation sets using compatibility matrices.
         Returns a list of MutationPrimerSet objects.
@@ -141,8 +141,11 @@ class PrimerDesigner():
         if not all_primers:
             if self.debug:
                 logger.log_step("Design Failure", "Failed to design primers for any mutation set", level=logging.WARNING)
+            send_update("No valid primer sets found", 100, notification_count=1, callout="ERROR: No valid primer sets found for mutations.")
             return None
 
+        send_update(f"{len(all_primers)} mutation primer sets designed successfully", 100)
+        
         return all_primers
 
 
@@ -251,7 +254,14 @@ class PrimerDesigner():
 
 
 
-    def generate_GG_edge_primers(self, idx, sequence, mtk_part_left, mtk_part_right, primer_name) -> EdgePrimerPair:
+    def generate_GG_edge_primers(
+        self,
+        idx,
+        sequence,
+        mtk_part_left,
+        mtk_part_right,
+        primer_name,
+        send_update: callable) -> EdgePrimerPair:
         logger.log_step("Generate Edge Primers",
                         f"Sequence {idx}",
                         {"length": len(sequence), "left_part": mtk_part_left, "right_part": mtk_part_right})
@@ -304,5 +314,7 @@ class PrimerDesigner():
             forward=f_primer,
             reverse=r_primer
         )
+        
+        send_update("Edge primers generated successfully", 100)
         return edge_primers
 

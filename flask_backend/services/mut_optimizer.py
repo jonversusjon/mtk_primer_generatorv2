@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List
 import numpy as np
 from itertools import product
 from tqdm import tqdm
@@ -38,14 +38,15 @@ class MutationOptimizer():
     def optimize_mutations(
         self,
         mutation_options: Dict,
-        progress_callback: Optional[callable] = None
+        send_update: callable,
         ) -> MutationSetCollection:
         logger.log_step("Start Optimization", "Beginning mutation optimization process.")
         
         logger.log_step("Generate Mutation Sets", "Creating all possible mutation combinations.")
         mutation_sets = self.generate_mutation_sets(mutation_options)
         logger.log_step("Generate Mutation Sets", f"Total mutation sets generated: {len(mutation_sets.sets)}")
-
+        send_update(f"Generated {len(mutation_sets.sets)} mutation sets", 100)
+        
         return mutation_sets
 
     def generate_mutation_sets(self, mutation_options: Dict[str, List[Mutation]]) -> MutationSetCollection:
