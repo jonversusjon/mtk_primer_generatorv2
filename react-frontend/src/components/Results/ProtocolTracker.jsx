@@ -383,7 +383,6 @@ const TabContent = ({
                 <DisplayMessage
                   key={idx}
                   message={callout.message}
-                  timestamp={callout.timestamp}
                 />
               ))}
           </div>
