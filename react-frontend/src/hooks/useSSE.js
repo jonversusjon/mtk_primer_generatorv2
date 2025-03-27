@@ -1,3 +1,4 @@
+// useSSE.js
 import { useEffect, useState, useRef } from "react";
 import { SSE_BASE_URL } from "../config/config.js";
 
@@ -7,7 +8,7 @@ const useSSE = (jobId, sequenceIdx) => {
   const reconnectTimeoutRef = useRef(null);
   const connectAttemptRef = useRef(0);
 
-  // Make sure the channel name matches exactly what's used in celery_tasks.py
+  // Build the channel URL. The channel should match the naming convention used by your backend.
   const channel = `${SSE_BASE_URL}/stream?channel=job_${jobId}_${sequenceIdx}`;
 
   useEffect(() => {
@@ -16,18 +17,17 @@ const useSSE = (jobId, sequenceIdx) => {
       return;
     }
 
-    // Clear any existing timeouts to prevent memory leaks
+    // Clear any pending reconnect attempts
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
     }
 
-    // Function to connect to SSE with exponential backoff
     const connect = () => {
       console.log(
-        `SSE Hook: Connecting to channel ${channel} (attempt ${connectAttemptRef.current})`
+        `SSE Hook: Connecting to ${channel} (attempt ${connectAttemptRef.current})`
       );
 
-      // Close existing connection if any
+      // Close any existing connection
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
       }
@@ -37,33 +37,22 @@ const useSSE = (jobId, sequenceIdx) => {
 
       eventSource.onopen = () => {
         console.log(`SSE Hook: Connection opened to ${channel}`);
-        connectAttemptRef.current = 0; // Reset attempt counter on successful connection
+        connectAttemptRef.current = 0; // Reset attempt counter
       };
 
       eventSource.onmessage = (event) => {
         try {
-          // Check the response structure
-          const eventData = JSON.parse(event.data);
-          console.log(`SSE Hook: Raw data received on ${channel}:`, eventData);
-
-          // Sometimes Flask-SSE wraps the data in a data property
-          let parsed;
-          if (typeof eventData === "object" && eventData !== null) {
-            parsed = eventData.data || eventData;
-
-            // Add timestamp if not present
-            if (!parsed.timestamp) {
-              parsed.timestamp = Date.now();
-            }
-          } else {
-            parsed = { data: eventData, timestamp: Date.now() };
+          const data = JSON.parse(event.data);
+          // Allow data to be either wrapped inside a "data" property or as a plain object
+          const parsed = (typeof data === "object" && data.data) ? data.data : data;
+          if (!parsed.timestamp) {
+            parsed.timestamp = Date.now();
           }
-
-          console.log(`SSE Hook: Processed data on ${channel}:`, parsed);
+          console.log(`SSE Hook: Received data from ${channel}:`, parsed);
           setSseEvent(parsed);
         } catch (error) {
           console.error(
-            `SSE Hook: Error parsing data on ${channel}:`,
+            `SSE Hook: Error parsing SSE data from ${channel}:`,
             error,
             event.data
           );
@@ -72,26 +61,21 @@ const useSSE = (jobId, sequenceIdx) => {
 
       eventSource.onerror = (error) => {
         console.error(`SSE Hook: Error on ${channel}:`, error);
-
-        // Close the current connection
         eventSource.close();
 
-        // Implement exponential backoff for reconnection
-        const delay = Math.min(1000 * 2 ** connectAttemptRef.current, 30000); // Max 30 second delay
+        // Exponential backoff for reconnection; max delay 30 seconds
+        const delay = Math.min(1000 * 2 ** connectAttemptRef.current, 30000);
         console.log(`SSE Hook: Reconnecting in ${delay}ms...`);
-
-        connectAttemptRef.current++; // Increment attempt counter
-
+        connectAttemptRef.current++;
         reconnectTimeoutRef.current = setTimeout(() => {
-          connect(); // Try to reconnect
+          connect();
         }, delay);
       };
     };
 
-    // Initial connection
     connect();
 
-    // Cleanup function
+    // Cleanup on unmount
     return () => {
       console.log(`SSE Hook: Cleanup - closing connection to ${channel}`);
       if (eventSourceRef.current) {

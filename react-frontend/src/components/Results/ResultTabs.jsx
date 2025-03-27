@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from "react";
 import ResultTab from "./ResultTab";
 
-const ResultTabs = () => {
-  // Load initial sequences from sessionStorage
-  const [results, setResults] = useState([]);
+const ResultTabs = ({ jobId }) => {
+  // Load sequences to domesticate from sessionStorage
+  const [sequences, setSequences] = useState([]);
 
   useEffect(() => {
     const savedFormData = sessionStorage.getItem("formData");
@@ -12,15 +12,12 @@ const ResultTabs = () => {
       try {
         const parsed = JSON.parse(savedFormData);
         if (parsed.sequencesToDomesticate?.length > 0) {
-          const initialResults = parsed.sequencesToDomesticate.map(
-            (seq, i) => ({
-              id: i,
-              sequence: seq.sequence,
-              primerName: seq.primerName || `Sequence ${i + 1}`,
-              placeholder: true,
-            })
-          );
-          setResults(initialResults);
+          // Map each sequence to an object with an id (which serves as sequenceIdx)
+          const seqs = parsed.sequencesToDomesticate.map((seq, i) => ({
+            id: i,
+            primerName: seq.primerName || `Sequence ${i + 1}`,
+          }));
+          setSequences(seqs);
         }
       } catch (error) {
         console.error("Error parsing formData from sessionStorage:", error);
@@ -30,36 +27,33 @@ const ResultTabs = () => {
 
   const [activeTab, setActiveTab] = useState(0);
 
-  // If activeTab is out of bounds, adjust it.
+  // Ensure activeTab is within bounds when sequences update.
   useEffect(() => {
-    if (activeTab >= results.length && results.length > 0) {
-      setActiveTab(results.length - 1);
+    if (activeTab >= sequences.length && sequences.length > 0) {
+      setActiveTab(sequences.length - 1);
     }
-  }, [results.length, activeTab]);
+  }, [sequences, activeTab]);
 
-  // If no results available yet, show a loading message.
-  if (results.length === 0) {
+  if (sequences.length === 0) {
     return <p className="initialization-message">Loading...</p>;
   }
 
   return (
     <div className="results-section">
       <div className="tab-buttons">
-        {results.map((result, index) => {
+        {sequences.map((seq, index) => {
           const isActive = activeTab === index;
-          const tabLabel = result.primerName?.trim() || `Sequence ${index + 1}`;
+          const tabLabel = seq.primerName?.trim() || `Sequence ${index + 1}`;
           return (
             <button
-              key={index}
+              key={seq.id}
               type="button"
               role="tab"
-              className={`tab-button results-tab-button ${
-                isActive ? "active" : ""
-              }`}
+              className={`tab-button results-tab-button ${isActive ? "active" : ""}`}
               onClick={() => setActiveTab(index)}
               aria-selected={isActive}
-              aria-controls={`tab-content-${index}`}
-              id={`tab-button-${index}`}
+              aria-controls={`tab-content-${seq.id}`}
+              id={`tab-button-${seq.id}`}
             >
               {tabLabel}
             </button>
@@ -67,15 +61,15 @@ const ResultTabs = () => {
         })}
       </div>
       <div className="tab-content">
-        {results.map((result, index) => (
+        {sequences.map((seq, index) => (
           <div
-            key={index}
+            key={seq.id}
             className={`tab-pane ${activeTab === index ? "active" : ""}`}
             role="tabpanel"
             hidden={activeTab !== index}
           >
-            {/* Each ResultTab receives its own sequence index so it subscribes to the proper SSE channel */}
-            <ResultTab result={result} sequenceIdx={index} />
+            {/* Pass jobId and sequenceIdx to each ResultTab */}
+            <ResultTab jobId={jobId} sequenceIdx={seq.id} />
           </div>
         ))}
       </div>

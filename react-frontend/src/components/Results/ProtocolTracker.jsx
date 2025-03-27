@@ -93,7 +93,7 @@ const DisplayMessage = ({ message, timestamp }) => {
   );
 };
 
-// Map of step names to resultData keys
+// Map of step names to frontend keys
 const stepToDataKeyMap = {
   Preprocessing: "Preprocessing",
   "Restriction Sites": "RestrictionSiteDetection",
@@ -467,7 +467,7 @@ const TabContent = ({
   );
 };
 
-const ProtocolTracker = ({ steps, messages, resultData, sseData }) => {
+const ProtocolTracker = ({ steps, messages, sseData }) => {
   const completedSteps = steps.filter((step) => step.status === "completed");
   const activeSteps = steps.filter((step) => step.status === "active");
   const waitingSteps = steps.filter((step) => step.status === "waiting");
@@ -598,7 +598,7 @@ const ProtocolTracker = ({ steps, messages, resultData, sseData }) => {
       {activeTab && (
         <TabContent
           stepName={activeTab}
-          stepData={resultData} // Pass the full resultData object
+          stepData={sseData} // Pass the full sseData object
           messages={messages}
           activeStep={activeSteps.find((step) => step.name === activeTab)}
           sseData={sseData} // Pass the entire sseData object
