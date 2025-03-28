@@ -1,24 +1,24 @@
-// ProtocolTracker.jsx
+// ProtocolTracker.jsx - Fixed to ensure steps are displayed as tabs
 import React, { useState, useEffect } from "react";
 import "../../styles/ProtocolTracker.css";
 import RestrictionSiteSummary from "./RestrictionSiteSummary";
 import MutationAnalysisSummary from "./MutationAnalysisSummary";
 
 // UI Helper Components
-const ProgressStep = ({ name, progress, message }) => (
+const ProgressStep = ({ name, stepProgress, message }) => (
   <div className="border rounded-lg p-4 mb-4 shadow-sm bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
     <div className="flex justify-between items-center mb-2">
       <span className="font-semibold text-gray-800 dark:text-gray-100">
         {name}
       </span>
       <span className="text-sm text-gray-500 dark:text-gray-400">
-        {progress}%
+        {stepProgress}%
       </span>
     </div>
     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
       <div
         className="bg-blue-500 dark:bg-blue-400 h-2 rounded-full transition-all duration-300"
-        style={{ width: `${progress}%` }}
+        style={{ width: `${stepProgress}%` }}
       ></div>
     </div>
     {message && (
@@ -27,28 +27,34 @@ const ProgressStep = ({ name, progress, message }) => (
   </div>
 );
 
-const WaitingStep = ({ name }) => (
-  <div className="border rounded-lg p-4 mb-4 shadow-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-    <span className="font-semibold text-gray-800 dark:text-gray-200">
-      {name}
-    </span>
-  </div>
-);
+// const WaitingStep = ({ name }) => (
+//   <div className="border rounded-lg p-4 mb-4 shadow-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+//     <span className="font-semibold text-gray-800 dark:text-gray-200">
+//       {name}
+//     </span>
+//   </div>
+// );
 
-const TabButton = ({ name, isActive, onClick, notificationCount }) => (
+// Tab Button Component - This renders the actual tab buttons
+const TabButton = ({
+  name,
+  isActive,
+  onClick,
+  notificationCount,
+  status,
+  stepProgress,
+}) => (
   <button
     className={`protocol-tab-button ${isActive ? "active" : ""}`}
     onClick={onClick}
   >
-    <div className="tab-icon-container">
-      {notificationCount === 0 && isActive ? (
-        <div className="checkmark-container">✔</div>
-      ) : notificationCount > 0 ? (
-        <span className="tab-notification">{notificationCount}</span>
-      ) : (
-        <div className="checkmark-container">✔</div>
-      )}
-    </div>
+    {notificationCount > 0 ? (
+      <span className="tab-notification">{notificationCount}</span>
+    ) : status === "completed" || stepProgress === 100 ? (
+      <div className="checkmark-container">✓</div>
+    ) : (
+      <div className="checkmark-placeholder"></div>
+    )}
     <span className="tab-label">{name}</span>
   </button>
 );
@@ -87,25 +93,19 @@ const DisplayMessage = ({ message, timestamp }) => (
 // Tab Content Component
 const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
   // Filter messages relevant to this step
-  const stepMessages = Array.from(messages)
-    .filter((m) => m.step === stepName)
-    .map((m) => m.message);
+  const stepMessages = Array.isArray(messages)
+    ? messages.filter((m) => m.step === stepName).map((m) => m.message)
+    : [];
 
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
   const [isPayloadVisible, setIsPayloadVisible] = useState(false);
-  // eslint-disable-next-line no-unused-vars
-  const [selectedMutationSetIndex, _setSelectedMutationSetIndex] = useState(0);
+  // es-lint-disable-next-line no-unused-vars
+  // const [selectedMutationSetIndex, _setSelectedMutationSetIndex] = useState(0);
+
+  const [selectedMutationSetIndex] = useState(0);
 
   // Get the SSE data for the current step
-  console.log(
-    `TabContent for ${stepName} - sseData:`,
-    sseData ? Object.keys(sseData) : "none"
-  );
-  const stepSseData = sseData ? sseData[stepName] : null;
-  console.log(
-    `TabContent for ${stepName} - stepSseData:`,
-    stepSseData ? Object.keys(stepSseData) : "none"
-  );
+  const stepSseData = sseData?.[stepName];
 
   const renderStepDetailContent = () => {
     if (!stepSseData) {
@@ -113,24 +113,6 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
       return (
         <div className="p-4 text-gray-600 dark:text-gray-400 text-center">
           Waiting for data...
-        </div>
-      );
-    }
-
-    // Check if we have any meaningful data beyond basic metadata
-    const hasData = Object.keys(stepSseData).some(
-      (key) =>
-        key !== "timestamp" &&
-        key !== "type" &&
-        key !== "step" &&
-        key !== "clientTimestamp" &&
-        stepSseData[key] != null
-    );
-
-    if (!hasData) {
-      return (
-        <div className="p-4 text-gray-600 dark:text-gray-400 text-center">
-          Processing data for this step...
         </div>
       );
     }
@@ -144,6 +126,7 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
         break;
 
       case "Mutation Analysis":
+        // First check for detailed mutation analysis
         if (
           stepSseData.mutationSets &&
           stepSseData.mutationSets.length > 0 &&
@@ -169,6 +152,7 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
           }
         }
 
+        // Fallback to basic mutations table
         if (stepSseData.mutations && stepSseData.mutations.length > 0) {
           return (
             <div className="mt-2">
@@ -364,14 +348,14 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
       default:
         return (
           <div className="p-4 text-gray-600 dark:text-gray-400 text-center">
-            No specific content for this step yet
+            Waiting for data...
           </div>
         );
     }
 
     return (
       <div className="p-4 text-gray-600 dark:text-gray-400 text-center">
-        Waiting for detailed data...
+        Processing data...
       </div>
     );
   };
@@ -382,7 +366,7 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
       {activeStep && activeStep.name === stepName && (
         <ProgressStep
           name={activeStep.name}
-          progress={activeStep.progress}
+          stepProgress={activeStep.stepProgress}
           message={activeStep.message}
         />
       )}
@@ -404,10 +388,10 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
           </div>
         )}
 
-        {/* Render specific content for this step */}
+        {/* Main content for this step */}
         {renderStepDetailContent()}
 
-        {/* Optional: Raw SSE payload toggle */}
+        {/* Raw SSE payload toggle */}
         {stepSseData && Object.keys(stepSseData).length > 0 && (
           <div className="border-t border-gray-200 mt-4 pt-4">
             <button
@@ -415,9 +399,9 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
               onClick={() => setIsPayloadVisible(!isPayloadVisible)}
               style={{
                 textDecoration: "none",
-                color: "inherit",
                 fontStyle: "italic",
                 border: "none",
+                background: "none",
               }}
             >
               {isPayloadVisible
@@ -442,9 +426,9 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
               onClick={() => setIsMessagesOpen(true)}
               style={{
                 textDecoration: "none",
-                color: "inherit",
                 fontStyle: "italic",
                 border: "none",
+                background: "none",
               }}
             >
               see all messages
@@ -467,9 +451,9 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
                 onClick={() => setIsMessagesOpen(false)}
                 style={{
                   textDecoration: "none",
-                  color: "inherit",
                   fontStyle: "italic",
                   border: "none",
+                  background: "none",
                 }}
               >
                 hide messages
@@ -484,16 +468,11 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
 
 // Main ProtocolTracker Component
 const ProtocolTracker = ({ steps, messages, sseData }) => {
-  console.log("ProtocolTracker rendering with:", {
-    steps: steps.length,
-    messages: messages?.length,
-    sseDataKeys: sseData ? Object.keys(sseData) : "none",
-  });
-
   // Filter steps by status
   const completedSteps = steps.filter((step) => step.status === "completed");
   const activeSteps = steps.filter((step) => step.status === "active");
-  const waitingSteps = steps.filter((step) => step.status === "waiting");
+  // es-lint-disable-next-line no-unused-vars
+  // const waitingSteps = steps.filter((step) => step.status === "waiting");
 
   // Flag for manual tab selection
   const [userSelectedTab, setUserSelectedTab] = useState(false);
@@ -508,11 +487,6 @@ const ProtocolTracker = ({ steps, messages, sseData }) => {
       return completedSteps[completedSteps.length - 1].name;
     return steps.length > 0 ? steps[0].name : null;
   });
-
-  // Log changes to active tab for debugging
-  useEffect(() => {
-    console.log("Active tab changed to:", activeTab);
-  }, [activeTab]);
 
   // Accumulate callouts from SSE data
   useEffect(() => {
@@ -540,7 +514,6 @@ const ProtocolTracker = ({ steps, messages, sseData }) => {
   }, [sseData]);
 
   const handleTabSelect = (tabName) => {
-    console.log("User selected tab:", tabName);
     setActiveTab(tabName);
     setUserSelectedTab(true);
   };
@@ -549,10 +522,6 @@ const ProtocolTracker = ({ steps, messages, sseData }) => {
   useEffect(() => {
     if (activeSteps.length > 0 && !userSelectedTab) {
       const mostRecentActiveStep = activeSteps[activeSteps.length - 1].name;
-      console.log(
-        "Auto-switching to most recent active step:",
-        mostRecentActiveStep
-      );
       setActiveTab(mostRecentActiveStep);
     }
   }, [activeSteps, userSelectedTab]);
@@ -576,7 +545,6 @@ const ProtocolTracker = ({ steps, messages, sseData }) => {
       );
 
       if (isStepRendered) {
-        console.log("Auto-switching to step with callout:", mostRecentStep);
         setActiveTab(mostRecentStep);
       }
     }
@@ -587,7 +555,10 @@ const ProtocolTracker = ({ steps, messages, sseData }) => {
     (step) => step.status === "completed" || step.status === "active"
   );
 
-  // If no steps are available yet, show a loading indicator
+  // Show at least 1 step, even if it's waiting
+  const displaySteps = tabsToShow.length > 0 ? tabsToShow : steps.slice(0, 1);
+
+  // If no steps are available at all, show a loading indicator
   if (steps.length === 0) {
     return (
       <div className="p-4 text-center text-gray-500">
@@ -598,57 +569,33 @@ const ProtocolTracker = ({ steps, messages, sseData }) => {
 
   return (
     <div>
-      {/* Tab Buttons Container */}
+      {/* Tab Buttons Container - This is the tab navigation bar */}
       <div className="protocol-tab-container">
-        {tabsToShow.map((step) => (
+        {displaySteps.map((step) => (
           <TabButton
             key={step.name}
             name={step.name}
             isActive={activeTab === step.name}
             onClick={() => handleTabSelect(step.name)}
             notificationCount={step.notificationCount || 0}
+            status={step.status}
+            stepProgress={step.stepProgress || 0}
           />
         ))}
       </div>
 
       {/* Only render the active tab content */}
       {activeTab && (
-        <TabContent
-          stepName={activeTab}
-          messages={messages || []}
-          activeStep={activeSteps.find((step) => step.name === activeTab)}
-          sseData={sseData || {}}
-          callouts={stepCallouts[activeTab] || []}
-        />
+        <div className="tab-content">
+          <TabContent
+            stepName={activeTab}
+            messages={messages || []}
+            activeStep={activeSteps.find((step) => step.name === activeTab)}
+            sseData={sseData || {}}
+            callouts={stepCallouts[activeTab] || []}
+          />
+        </div>
       )}
-
-      {/* Debug information */}
-      <div className="mt-4 p-2 bg-gray-100 dark:bg-gray-800 text-xs rounded">
-        <details>
-          <summary className="cursor-pointer text-blue-500 dark:text-blue-400">
-            Debug Data
-          </summary>
-          <pre className="mt-2 overflow-auto">
-            {JSON.stringify(
-              {
-                activeTab,
-                tabsToShow: tabsToShow.map((t) => t.name),
-                completedSteps: completedSteps.map((s) => s.name),
-                activeSteps: activeSteps.map((s) => s.name),
-                calloutKeys: Object.keys(stepCallouts),
-                sseDataKeys: sseData ? Object.keys(sseData) : [],
-              },
-              null,
-              2
-            )}
-          </pre>
-        </details>
-      </div>
-
-      {/* Waiting Steps */}
-      {waitingSteps.map((step) => (
-        <WaitingStep key={step.name} name={step.name} />
-      ))}
     </div>
   );
 };

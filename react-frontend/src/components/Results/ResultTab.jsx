@@ -44,8 +44,8 @@ const ResultTab = ({ jobId, sequenceIdx }) => {
     // Initialize steps with default values
     const steps = expectedSteps.map(name => ({
       name,
-      status: "waiting",
-      progress: 0,
+      status: "active",
+      stepProgress: 0,
       message: "",
       notificationCount: 0
     }));
@@ -88,13 +88,13 @@ const ResultTab = ({ jobId, sequenceIdx }) => {
           // Update step status based on event properties
           if (event.status) {
             steps[stepIndex].status = event.status;
-          } else if (event.progress > 0) {
+          } else if (event.stepProgress > 0) {
             steps[stepIndex].status = "active";
           }
           
           // Update progress if provided
-          if (event.progress !== undefined) {
-            steps[stepIndex].progress = event.progress;
+          if (event.stepProgress !== undefined) {
+            steps[stepIndex].stepProgress = event.stepProgress;
           }
           
           // Update message if provided
@@ -147,6 +147,8 @@ const ResultTab = ({ jobId, sequenceIdx }) => {
     
     // Update protocol data state
     setProtocolSteps(steps);
+    console.log("STEPS DATA FOR PROTOCOL TRACKER:", JSON.stringify(steps, null, 2));
+
     setProtocolMessages(messages);
     setProtocolSseData(sseData);
     
