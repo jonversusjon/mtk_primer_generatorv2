@@ -101,25 +101,25 @@ class ProtocolMaker():
     
         # 2 - Restriction Site Detection
         logger.log_step("Restriction Site Detection", f"Detecting restriction sites for sequence {self.request_idx+1}")
-        sites_to_mutate: List[RestrictionSite] = self.rs_analyzer.find_sites_to_mutate(
+        restriction_sites: List[RestrictionSite] = self.rs_analyzer.find_restriction_sites(
             processed_seq,
             partial(send_update, step="Restriction Sites")
         )
-        dom_result.restriction_sites = sites_to_mutate
+        dom_result.restriction_sites = restriction_sites
 
         mutation_primers = {}
-        if sites_to_mutate:
+        if restriction_sites:
             # 3 - Mutation Analysis
             logger.log_step("Mutation Analysis", f"Analyzing mutations for sequence {self.request_idx+1}")
             mutation_options = self.mutation_analyzer.get_all_mutations(
-                sites_to_mutate,
+                restriction_sites,
                 partial(send_update, step="Mutation Analysis")
             )
             
-            optimized_mutations: MutationSetCollection = None 
+            mutation_sets: MutationSetCollection = None 
             if mutation_options:
                 logger.log_step("Mutation Optimization", f"Optimizing mutations for sequence {self.request_idx+1}")
-                optimized_mutations = self.mutation_optimizer.optimize_mutations(
+                mutation_sets: MutationSetCollection = self.mutation_optimizer.optimize_mutations(
                     mutation_options,
                     partial(send_update, step="Mutation Analysis")
                 )
@@ -127,7 +127,7 @@ class ProtocolMaker():
                 # 4 - Primer Design
                 logger.log_step("Primer Design", f"Designing mutation primers for sequence {self.request_idx+1}")
                 mutation_primers = self.primer_designer.design_mutation_primers(
-                    optimized_mutations,
+                    mutation_sets,
                     self.seq_to_dom.primer_name if self.seq_to_dom.primer_name else f"Primer{self.request_idx+1}",
                     self.max_results if self.max_results else "one",
                     partial(send_update, step="Primer Design")

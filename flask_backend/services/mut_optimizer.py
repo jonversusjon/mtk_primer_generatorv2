@@ -47,7 +47,7 @@ class MutationOptimizer():
         logger.log_step("Generate Mutation Sets", f"Total mutation sets generated: {len(mutation_sets.sets)}")
                 
         send_update(message=f"Generated {len(mutation_sets.sets)} mutation sets", prog=100,
-                    site_keys=mutation_sets.sites_to_mutate,
+                    rs_keys=mutation_sets.rs_keys,
                     mutation_sets=mutation_sets)
         
         return mutation_sets
@@ -56,11 +56,11 @@ class MutationOptimizer():
         logger.validate(mutation_options and isinstance(mutation_options, dict),
                         f"Received {len(mutation_options)} mutation site(s)")
         logger.log_step("Generate Mutation Sets", "Generating all possible mutation combinations.")
-        sites_to_mutate = list(mutation_options.keys())
-        mutation_options_by_site = [mutation_options[site] for site in sites_to_mutate]
+        rs_keys = list(mutation_options.keys())
+        mutation_options_by_site = [mutation_options[site] for site in rs_keys]
 
         mutation_set_collection = MutationSetCollection(
-            sites_to_mutate=sites_to_mutate,
+            rs_keys=rs_keys,
             sets=[]
         )
         

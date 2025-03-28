@@ -433,7 +433,7 @@ class GoldenGateUtils():
         else:
             return type(obj).__name__
 
-    def summarize_bsmbi_bsai_sites(self, sites_to_mutate: List[RestrictionSite]) -> None:
+    def summarize_bsmbi_bsai_sites(self, restriction_sites: List[RestrictionSite]) -> None:
         """
         Creates a formatted summary of restriction sites.
         """
@@ -444,7 +444,7 @@ class GoldenGateUtils():
 
         # Group the sites by enzyme
         grouped_sites = defaultdict(list)
-        for site in sites_to_mutate:
+        for site in restriction_sites:
             grouped_sites[site.enzyme].append(site)
 
         table = PrettyTable()

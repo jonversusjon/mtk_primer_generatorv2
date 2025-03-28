@@ -45,7 +45,7 @@ def serialize_numpy_array(x: np.ndarray) -> dict:
     ones_count = int((x == 1).sum())
     total_count = x.size
     ones_percentage = (ones_count / total_count) * 100
-    return {"snippet": snippet, "shape": shape, "ones_percentage": ones_percentage}
+    return {"snippet": snippet, "shape": shape, "onesPercentage": ones_percentage}
 
 # Create a custom Annotated type that uses our validator and serializer.
 NumpyArray = Annotated[

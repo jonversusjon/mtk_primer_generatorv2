@@ -27,7 +27,7 @@ class RestrictionSiteDetector():
 
         self.codon_dict = codon_dict
         
-    def find_sites_to_mutate(
+    def find_restriction_sites(
         self,
         sequence: str,
         send_update: callable,
@@ -41,7 +41,7 @@ class RestrictionSiteDetector():
             'BsmBI': 'CGTCTC',
             'BsaI': 'GGTCTC'
         }
-        sites_to_mutate = []
+        restriction_sites = []
 
         # For each enzyme, search for both forward and reverse complement matches
         for enzyme, rec_seq in recognition_sequences.items():
@@ -66,7 +66,7 @@ class RestrictionSiteDetector():
                     codons = self.get_codons(context_seq, relative_index, frame)
                     context_recognition_site_indices = [i - start_context for i in range(found_index, found_index + len(pattern))]
 
-                    site_to_mutate = RestrictionSite(
+                    restriction_site = RestrictionSite(
                         position=found_index,
                         frame=frame,
                         codons=codons,
@@ -80,18 +80,18 @@ class RestrictionSiteDetector():
                         enzyme=enzyme
                     )
                     
-                    sites_to_mutate.append(site_to_mutate)
+                    restriction_sites.append(restriction_site)
                     logger.log_step("Site Added", f"Added site at position {found_index} for enzyme {enzyme}")
 
-        sites_to_mutate.sort(key=lambda site: site.position)
-        logger.log_step("Result", f"Total sites found: {len(sites_to_mutate)}")
+        restriction_sites.sort(key=lambda site: site.position)
+        logger.log_step("Result", f"Total sites found: {len(restriction_sites)}")
                 
-        if sites_to_mutate:
-            send_update(message=f"Found {len(sites_to_mutate)} restriction sites", prog=100, sites_to_mutate=sites_to_mutate, notification_count=len(sites_to_mutate))
+        if restriction_sites:
+            send_update(message=f"Found {len(restriction_sites)} restriction sites", prog=100, restriction_sites=restriction_sites, notification_count=len(restriction_sites))
         else:
-            send_update(message="No restriciton sites found", prog=100, sites_to_mutate=sites_to_mutate, callout="No site mutations needed", notification_count=0)
+            send_update(message="No restriction sites found", prog=100, restriction_sites=restriction_sites, callout="No site mutations needed", notification_count=0)
                     
-        return sites_to_mutate
+        return restriction_sites
 
     def get_codons(self, context_seq: str, recognition_start_index: int, frame: int) -> List[Codon]:
         """

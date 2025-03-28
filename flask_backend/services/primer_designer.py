@@ -66,7 +66,7 @@ class PrimerDesigner():
                         {"mutation_sets": mutation_sets, "primer_name": primer_name, "max_results": max_results_str})
         
         # Calculate number of restriction sites.
-        num_restriction_sites = len(mutation_sets.sites_to_mutate)
+        num_restriction_sites = len(mutation_sets.rs_keys)
     
         # Precompute total valid coordinates across all mutation sets.
         total_valid_coords = sum(np.argwhere(mut_set.compatibility == 1).shape[0] for mut_set in mutation_sets.sets)
@@ -74,7 +74,7 @@ class PrimerDesigner():
         max_results = RESULT_MAPPING.get(max_results_str, lambda num_sites, total_coords: 1)(num_restriction_sites, total_valid_coords)
         
         all_primers: List[MutationPrimerSet] = []
-        mut_site_keys = mutation_sets.sites_to_mutate
+        mut_rs_keys = mutation_sets.rs_keys
         
         for idx, mut_set in enumerate(mutation_sets.sets):
             comp_matrix = mut_set.compatibility
@@ -110,7 +110,7 @@ class PrimerDesigner():
                 
                 # Construct MutationPrimer objects for the current combination
                 primer_pairs: List[MutationPrimerPair] = self._construct_mutation_primer_set(
-                    mut_site_keys=mut_site_keys,
+                    mut_rs_keys=mut_rs_keys,
                     mutation_set=mut_set,
                     selected_coords=coords,
                     primer_name=primer_name
@@ -151,7 +151,7 @@ class PrimerDesigner():
 
     def _construct_mutation_primer_set(
         self,
-        mut_site_keys: List[str],
+        mut_rs_keys: List[str],
         mutation_set: MutationSet,
         selected_coords: list,
         primer_name: str = None,
@@ -228,7 +228,7 @@ class PrimerDesigner():
 
             # For MutationPrimerPair, we need site and position.
             # If mut_obj does not have these, use fallbacks.
-            site_val = mut_site_keys[i]
+            site_val = mut_rs_keys[i]
             position_val = mutation.first_mut_idx
 
             # Construct the MutationPrimerPair using the Mutation object as mutation_info.

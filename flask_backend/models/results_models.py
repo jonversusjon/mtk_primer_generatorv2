@@ -10,7 +10,7 @@ class MutationSet(FrontendNumpyFriendly):
 
 
 class MutationSetCollection(FrontendFriendly):
-    sites_to_mutate: List[str]
+    rs_keys: List[str]
     sets: List[MutationSet]
     
 
@@ -52,11 +52,11 @@ class SsePayload(FrontendFriendly):
     message: str
     step_progress: int
     notification_count: int = 0
-    site_key: Optional[str] = None
-    site_keys: Optional[List[str]] = None
+    rs_key: Optional[str] = None
+    rs_keys: Optional[List[str]] = None
     mutation_count: Optional[int] = None
-    sites_to_mutate: Optional[List[dict]] = None
-    mutation_sets: Optional[List[dict]] = None
+    mutation_options: Optional[List[dict]] = None
+    mutation_sets: Optional[MutationSetCollection] = None
     callout: Optional[str] = None
     processed_sequence: Optional[str] = None
     timestamp: Optional[int] = None
