@@ -266,3 +266,35 @@ tbody tr:nth-child(odd) {
   color: var(--text-dark);
   margin: 4px 0 0 12px;
 }
+
+/* Add this to your global CSS or create a tabs.css file and import it */
+
+/* Ensure tab content is visible */
+.tab-pane:not([style*="display: none"]) {
+  display: block !important;
+}
+
+/* Stronger tab content visibility rules */
+.results-section .tab-content > div[role="tabpanel"] {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Ensure color contrast in dark mode */
+.sequence-results * {
+  color: inherit !important;
+}
+
+/* Optional debug helper class */
+.debug-visible {
+  border: 3px dashed red !important;
+  background-color: rgba(255, 255, 0, 0.2) !important;
+  color: black !important;
+}
+
+/* Remove any potentially problematic Tailwind classes */
+@layer utilities {
+  .tab-pane {
+    display: block;
+  }
+}

@@ -4,10 +4,7 @@ import "../../styles/ProtocolTracker.css";
 import RestrictionSiteSummary from "./RestrictionSiteSummary";
 import MutationAnalysisSummary from "./MutationAnalysisSummary";
 
-// --------------------
 // UI Helper Components
-// --------------------
-
 const ProgressStep = ({ name, progress, message }) => (
   <div className="border rounded-lg p-4 mb-4 shadow-sm bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
     <div className="flex justify-between items-center mb-2">
@@ -87,36 +84,65 @@ const DisplayMessage = ({ message, timestamp }) => (
   </div>
 );
 
-// --------------------
 // Tab Content Component
-// --------------------
-
 const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
-  // Filter messages relevant to this step.
+  // Filter messages relevant to this step
   const stepMessages = Array.from(messages)
     .filter((m) => m.step === stepName)
     .map((m) => m.message);
+
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
   const [isPayloadVisible, setIsPayloadVisible] = useState(false);
   // eslint-disable-next-line no-unused-vars
   const [selectedMutationSetIndex, _setSelectedMutationSetIndex] = useState(0);
 
-  // Get the SSE data for the current step directly.
-  console.log("SSE data:", sseData);
+  // Get the SSE data for the current step
+  console.log(
+    `TabContent for ${stepName} - sseData:`,
+    sseData ? Object.keys(sseData) : "none"
+  );
   const stepSseData = sseData ? sseData[stepName] : null;
-  console.log(`SSE data for step ${stepName}:`, stepSseData);
+  console.log(
+    `TabContent for ${stepName} - stepSseData:`,
+    stepSseData ? Object.keys(stepSseData) : "none"
+  );
+
   const renderStepDetailContent = () => {
     if (!stepSseData) {
-      console.warn(`No SSE data found for step: ${stepName}`);
-      return null;
+      console.debug(`No SSE data found for step: ${stepName}`);
+      return (
+        <div className="p-4 text-gray-600 dark:text-gray-400 text-center">
+          Waiting for data...
+        </div>
+      );
     }
-    // Render content based on the step.
+
+    // Check if we have any meaningful data beyond basic metadata
+    const hasData = Object.keys(stepSseData).some(
+      (key) =>
+        key !== "timestamp" &&
+        key !== "type" &&
+        key !== "step" &&
+        key !== "clientTimestamp" &&
+        stepSseData[key] != null
+    );
+
+    if (!hasData) {
+      return (
+        <div className="p-4 text-gray-600 dark:text-gray-400 text-center">
+          Processing data for this step...
+        </div>
+      );
+    }
+
+    // Render content based on the step
     switch (stepName) {
       case "Restriction Sites":
         if (stepSseData.sites && stepSseData.sites.length > 0) {
           return <RestrictionSiteSummary sites={stepSseData.sites} />;
         }
         break;
+
       case "Mutation Analysis":
         if (
           stepSseData.mutationSets &&
@@ -142,6 +168,7 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
             );
           }
         }
+
         if (stepSseData.mutations && stepSseData.mutations.length > 0) {
           return (
             <div className="mt-2">
@@ -184,6 +211,7 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
           );
         }
         break;
+
       case "Primer Design":
         if (
           (stepSseData.edgePrimers &&
@@ -272,6 +300,7 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
           );
         }
         break;
+
       case "PCR Reaction Grouping":
         if (stepSseData.pcrReactions && stepSseData.pcrReactions.length > 0) {
           return (
@@ -331,10 +360,20 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
           );
         }
         break;
+
       default:
-        return null;
+        return (
+          <div className="p-4 text-gray-600 dark:text-gray-400 text-center">
+            No specific content for this step yet
+          </div>
+        );
     }
-    return null;
+
+    return (
+      <div className="p-4 text-gray-600 dark:text-gray-400 text-center">
+        Waiting for detailed data...
+      </div>
+    );
   };
 
   return (
@@ -350,7 +389,7 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
 
       <div className="p-4">
         {/* Display callouts if any */}
-        {callouts.length > 0 && (
+        {callouts && callouts.length > 0 && (
           <div className="space-y-2">
             {callouts
               .slice()
@@ -364,7 +403,11 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
               ))}
           </div>
         )}
+
+        {/* Render specific content for this step */}
         {renderStepDetailContent()}
+
+        {/* Optional: Raw SSE payload toggle */}
         {stepSseData && Object.keys(stepSseData).length > 0 && (
           <div className="border-t border-gray-200 mt-4 pt-4">
             <button
@@ -439,17 +482,22 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
   );
 };
 
-// --------------------
 // Main ProtocolTracker Component
-// --------------------
-
 const ProtocolTracker = ({ steps, messages, sseData }) => {
+  console.log("ProtocolTracker rendering with:", {
+    steps: steps.length,
+    messages: messages?.length,
+    sseDataKeys: sseData ? Object.keys(sseData) : "none",
+  });
+
+  // Filter steps by status
   const completedSteps = steps.filter((step) => step.status === "completed");
   const activeSteps = steps.filter((step) => step.status === "active");
   const waitingSteps = steps.filter((step) => step.status === "waiting");
 
   // Flag for manual tab selection
   const [userSelectedTab, setUserSelectedTab] = useState(false);
+
   // Accumulated callouts per step
   const [stepCallouts, setStepCallouts] = useState({});
 
@@ -461,13 +509,15 @@ const ProtocolTracker = ({ steps, messages, sseData }) => {
     return steps.length > 0 ? steps[0].name : null;
   });
 
+  // Log changes to active tab for debugging
   useEffect(() => {
-    console.log("ProtocolTracker - sseData updated:", sseData);
-  }, [sseData]);
+    console.log("Active tab changed to:", activeTab);
+  }, [activeTab]);
 
   // Accumulate callouts from SSE data
   useEffect(() => {
     if (!sseData) return;
+
     Object.entries(sseData)
       .filter(([_, data]) => data?.callout)
       .forEach(([stepName, stepData]) => {
@@ -490,27 +540,27 @@ const ProtocolTracker = ({ steps, messages, sseData }) => {
   }, [sseData]);
 
   const handleTabSelect = (tabName) => {
+    console.log("User selected tab:", tabName);
     setActiveTab(tabName);
     setUserSelectedTab(true);
   };
 
-  // Auto-switch tab if a new active step is detected and the user hasn’t manually selected a tab.
+  // Auto-switch tab if a new active step is detected and the user hasn't manually selected a tab
   useEffect(() => {
-    if (activeSteps.length > 0) {
+    if (activeSteps.length > 0 && !userSelectedTab) {
       const mostRecentActiveStep = activeSteps[activeSteps.length - 1].name;
-      if (
-        userSelectedTab &&
-        !completedSteps.some((step) => step.name === mostRecentActiveStep)
-      ) {
-        setUserSelectedTab(false);
-        setActiveTab(mostRecentActiveStep);
-      }
+      console.log(
+        "Auto-switching to most recent active step:",
+        mostRecentActiveStep
+      );
+      setActiveTab(mostRecentActiveStep);
     }
-  }, [activeSteps, completedSteps, userSelectedTab]);
+  }, [activeSteps, userSelectedTab]);
 
-  // Auto-switch based on callouts if the user hasn’t manually selected a tab.
+  // Auto-switch based on callouts if the user hasn't manually selected a tab
   useEffect(() => {
     if (userSelectedTab || !sseData) return;
+
     const stepsWithCallouts = Object.entries(sseData)
       .filter(([_, data]) => data?.callout)
       .map(([stepName, data]) => ({
@@ -518,24 +568,37 @@ const ProtocolTracker = ({ steps, messages, sseData }) => {
         timestamp: data.timestamp || Date.now(),
       }))
       .sort((a, b) => b.timestamp - a.timestamp);
+
     if (stepsWithCallouts.length > 0) {
       const mostRecentStep = stepsWithCallouts[0].stepName;
       const isStepRendered = [...completedSteps, ...activeSteps].some(
         (step) => step.name === mostRecentStep
       );
+
       if (isStepRendered) {
+        console.log("Auto-switching to step with callout:", mostRecentStep);
         setActiveTab(mostRecentStep);
       }
     }
   }, [sseData, completedSteps, activeSteps, userSelectedTab]);
 
-  // Only show tabs that are either completed or active.
+  // Only show tabs that are either completed or active
   const tabsToShow = steps.filter(
     (step) => step.status === "completed" || step.status === "active"
   );
 
+  // If no steps are available yet, show a loading indicator
+  if (steps.length === 0) {
+    return (
+      <div className="p-4 text-center text-gray-500">
+        Loading protocol steps...
+      </div>
+    );
+  }
+
   return (
     <div>
+      {/* Tab Buttons Container */}
       <div className="protocol-tab-container">
         {tabsToShow.map((step) => (
           <TabButton
@@ -548,27 +611,41 @@ const ProtocolTracker = ({ steps, messages, sseData }) => {
         ))}
       </div>
 
+      {/* Only render the active tab content */}
       {activeTab && (
         <TabContent
           stepName={activeTab}
-          messages={messages}
+          messages={messages || []}
           activeStep={activeSteps.find((step) => step.name === activeTab)}
-          sseData={sseData}
+          sseData={sseData || {}}
           callouts={stepCallouts[activeTab] || []}
         />
       )}
 
+      {/* Debug information */}
       <div className="mt-4 p-2 bg-gray-100 dark:bg-gray-800 text-xs rounded">
         <details>
           <summary className="cursor-pointer text-blue-500 dark:text-blue-400">
-            Debug Callout Data
+            Debug Data
           </summary>
           <pre className="mt-2 overflow-auto">
-            {JSON.stringify({ activeTab, allCallouts: stepCallouts }, null, 2)}
+            {JSON.stringify(
+              {
+                activeTab,
+                tabsToShow: tabsToShow.map((t) => t.name),
+                completedSteps: completedSteps.map((s) => s.name),
+                activeSteps: activeSteps.map((s) => s.name),
+                calloutKeys: Object.keys(stepCallouts),
+                sseDataKeys: sseData ? Object.keys(sseData) : [],
+              },
+              null,
+              2
+            )}
           </pre>
         </details>
       </div>
 
+      {/* Waiting Steps */}
       {waitingSteps.map((step) => (
         <WaitingStep key={step.name} name={step.name} />
       ))}

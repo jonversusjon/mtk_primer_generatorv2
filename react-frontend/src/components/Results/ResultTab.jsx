@@ -1,127 +1,255 @@
+// Results/ResultTab.jsx
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import useSSE from "../../hooks/useSSE";
-import ProtocolTracker from "./ProtocolTracker";
+import ProtocolTracker from "../../components/Results/ProtocolTracker";
 
 const ResultTab = ({ jobId, sequenceIdx }) => {
-  // This state holds SSE data for each step keyed by step name.
-  const [sseDataByStep, setSseDataByStep] = useState({});
-
-  // Local model for protocol steps – these drive progress and notifications.
-  const [protocolSteps, setProtocolSteps] = useState([
-    { name: "Preprocessing", status: "waiting", progress: 0, message: "", notificationCount: 0 },
-    { name: "Restriction Sites", status: "waiting", progress: 0, message: "", notificationCount: 0 },
-    { name: "Mutation Analysis", status: "waiting", progress: 0, message: "", notificationCount: 0 },
-    { name: "Primer Design", status: "waiting", progress: 0, message: "", notificationCount: 0 },
-    { name: "PCR Reaction Grouping", status: "waiting", progress: 0, message: "", notificationCount: 0 },
-  ]);
-
-  // A Set to deduplicate SSE events.
-  const processedEvents = useRef(new Set());
-  // A Set to collect messages for callouts.
-  const [messagesSet, setMessagesSet] = useState(new Set());
-
-  // Subscribe to SSE using our custom hook.
-  const sseResult = useSSE(jobId, sequenceIdx);
-
-  const processSseData = useCallback(
-    (sseData) => {
-      if (!sseData) return;
-
-      // If this is a final result event (detected by presence of "result" property),
-      // log it and ignore it (do not update state).
-      if (sseData.result !== undefined) {
-        console.log(`[ResultTab:${sequenceIdx}] Final result received:`, sseData);
-        return;
-      }
-
-      // Ensure the event has a "step" property.
-      if (!sseData.step) return;
-
-      // Only process events for the correct sequence.
-      if (sseData.sequenceIdx !== sequenceIdx) {
-        console.log(`[ResultTab:${sequenceIdx}] Ignoring event for sequenceIdx ${sseData.sequenceIdx}`);
-        return;
-      }
-
-      // Generate a unique event id to deduplicate.
-      const eventId = `${sseData.sequenceIdx}-${sseData.step}-${sseData.message}-${sseData.stepProgress}`;
-      if (processedEvents.current.has(eventId)) return;
-      processedEvents.current.add(eventId);
-
-      // Update the SSE data for the step.
-      setSseDataByStep((prev) => ({
-        ...prev,
-        [sseData.step]: sseData,
-      }));
-
-      // Update protocol steps if a notification count is provided.
-      if (sseData.notification_count > 0) {
-        setProtocolSteps((prevSteps) =>
-          prevSteps.map((step) =>
-            step.name === sseData.step
-              ? { ...step, notificationCount: sseData.notification_count }
-              : step
-          )
-        );
-      }
-
-      // Update progress and status for the step.
-      setProtocolSteps((prevSteps) => {
-        const stepIndex = prevSteps.findIndex((s) => s.name === sseData.step);
-        if (stepIndex < 0) return prevSteps;
-        const newSteps = [...prevSteps];
-
-        // Mark all previous steps as completed.
-        for (let i = 0; i < stepIndex; i++) {
-          if (newSteps[i].status !== "completed") {
-            newSteps[i] = { ...newSteps[i], status: "completed", progress: 100 };
-          }
-        }
-
-        const stepProgress = sseData.stepProgress ?? newSteps[stepIndex].progress;
-        const stepMessage = sseData.message ?? newSteps[stepIndex].message;
-
-        if (stepProgress >= 100) {
-          newSteps[stepIndex] = { ...newSteps[stepIndex], status: "completed", progress: 100, message: stepMessage };
-          if (stepIndex < newSteps.length - 1) {
-            newSteps[stepIndex + 1] = { ...newSteps[stepIndex + 1], status: "active" };
-          }
-        } else {
-          newSteps[stepIndex] = { ...newSteps[stepIndex], status: "active", progress: stepProgress, message: stepMessage };
-        }
-        return newSteps;
-      });
-
-      // Record the message in the callouts log.
-      if (sseData.message) {
-        setMessagesSet((prev) => {
-          const newSet = new Set(prev);
-          newSet.add({ step: sseData.step, message: sseData.message });
-          return newSet;
-        });
-      }
-    },
-    [sequenceIdx]
-  );
-
-  useEffect(() => {
-    if (sseResult) {
-      if (sseResult.data) {
-        console.log(`[ResultTab:${sequenceIdx}] Received SSE result (data):`, sseResult.data);
-        processSseData(sseResult.data);
-      } else {
-        console.log(`[ResultTab:${sequenceIdx}] Received SSE result (raw):`, sseResult);
-        processSseData(sseResult);
-      }
+  // --- State and Refs ---
+  const [rawSseEvents, setRawSseEvents] = useState(() => {
+    const savedEvents = sessionStorage.getItem(`sseEvents_${jobId}_${sequenceIdx}`);
+    try {
+      console.log(`[ResultTab:${sequenceIdx}] Initial load from sessionStorage: ${savedEvents ? savedEvents.length + ' chars' : 'null'}`);
+      return savedEvents ? JSON.parse(savedEvents) : [];
+    } catch (e) {
+      console.error(`[ResultTab:${sequenceIdx}] Failed to parse saved SSE events:`, e);
+      return [];
     }
-  }, [sseResult, processSseData, sequenceIdx]);
+  });
+  
+  // Protocol Tracker State
+  const [protocolSteps, setProtocolSteps] = useState([]);
+  const [protocolMessages, setProtocolMessages] = useState([]);
+  const [protocolSseData, setProtocolSseData] = useState({});
+  
+  const processedEventIds = useRef(new Set(rawSseEvents.map(event => `seq${sequenceIdx}-${JSON.stringify({...event, _idTimestamp: event.clientTimestamp})}`)));
+  const streamClosed = useRef(false);
+  const hasReceivedData = useRef(rawSseEvents.length > 0);
+  const isMounted = useRef(false);
 
-  // Convert messagesSet to an array.
-  const messages = Array.from(messagesSet);
+  // --- Process SSE data into Protocol Tracker format ---
+  useEffect(() => {
+    console.log(`[ResultTab:${sequenceIdx}] Processing ${rawSseEvents.length} events for protocol data`);
+    if (rawSseEvents.length > 0) {
+      console.log("Sample event structure:", rawSseEvents[0]);
+    }
+    
+    // Define expected protocol steps
+    const expectedSteps = [
+      "Restriction Sites", 
+      "Mutation Analysis", 
+      "Primer Design", 
+      "PCR Reaction Grouping"
+    ];
+    
+    // Initialize steps with default values
+    const steps = expectedSteps.map(name => ({
+      name,
+      status: "waiting",
+      progress: 0,
+      message: "",
+      notificationCount: 0
+    }));
+    
+    const messages = [];
+    const sseData = {};
+    
+    // Initialize empty data structure for each step
+    expectedSteps.forEach(step => {
+      sseData[step] = { timestamp: Date.now() };
+    });
+    
+    // Process each event to update steps and sseData
+    rawSseEvents.forEach(event => {
+      // Try to determine which step this event belongs to
+      let stepName = null;
+      
+      // Check for explicit step property
+      if (event.step) {
+        stepName = event.step;
+      }
+      // Or infer from type and content
+      else if (event.type) {
+        if (event.type.includes('restriction') || event.sites) {
+          stepName = "Restriction Sites";
+        } else if (event.type.includes('mutation') || event.mutations) {
+          stepName = "Mutation Analysis";
+        } else if (event.type.includes('primer') || event.primers || event.edgePrimers || event.mutPrimers) {
+          stepName = "Primer Design";
+        } else if (event.type.includes('pcr') || event.reactions || event.pcrReactions) {
+          stepName = "PCR Reaction Grouping";
+        }
+      }
+      
+      // If we identified a step, update its status and data
+      if (stepName) {
+        // Find the step in our array
+        const stepIndex = steps.findIndex(s => s.name === stepName);
+        if (stepIndex >= 0) {
+          // Update step status based on event properties
+          if (event.status) {
+            steps[stepIndex].status = event.status;
+          } else if (event.progress > 0) {
+            steps[stepIndex].status = "active";
+          }
+          
+          // Update progress if provided
+          if (event.progress !== undefined) {
+            steps[stepIndex].progress = event.progress;
+          }
+          
+          // Update message if provided
+          if (event.message) {
+            steps[stepIndex].message = event.message;
+            messages.push({
+              step: stepName,
+              message: event.message,
+              timestamp: event.timestamp || event.clientTimestamp
+            });
+          }
+          
+          // Update notification count if there's a callout
+          if (event.callout) {
+            steps[stepIndex].notificationCount = (steps[stepIndex].notificationCount || 0) + 1;
+          }
+        }
+        
+        // Update the sseData for this step
+        const stepData = sseData[stepName] || {};
+        
+        // Merge all properties from the event
+        sseData[stepName] = {
+          ...stepData,
+          ...event,  // Copy all event properties directly
+          timestamp: event.timestamp || event.clientTimestamp || Date.now()
+        };
+        
+        // Handle specific data structures we know are used by ProtocolTracker
+        if (event.sites) {
+          sseData[stepName].sites = event.sites;
+        }
+        if (event.mutations) {
+          sseData[stepName].mutations = event.mutations;
+        }
+        if (event.edgePrimers) {
+          sseData[stepName].edgePrimers = event.edgePrimers;
+        }
+        if (event.mutPrimers) {
+          sseData[stepName].mutPrimers = event.mutPrimers;
+        }
+        if (event.reactions || event.pcrReactions) {
+          sseData[stepName].pcrReactions = event.reactions || event.pcrReactions;
+        }
+        if (event.callout) {
+          sseData[stepName].callout = event.callout;
+        }
+      }
+    });
+    
+    // Update protocol data state
+    setProtocolSteps(steps);
+    setProtocolMessages(messages);
+    setProtocolSseData(sseData);
+    
+    console.log(`[ResultTab:${sequenceIdx}] Protocol data processed:`, 
+      { steps: steps.length, messages: messages.length, sseDataKeys: Object.keys(sseData) });
+      
+  }, [rawSseEvents, sequenceIdx]);
 
+  // --- Callback for useSSE ---
+  const processSseEvent = useCallback((eventData) => {
+    console.log(`[ResultTab:${sequenceIdx}] processSseEvent ENTERED. Data received:`, eventData);
+
+    if (!eventData || typeof eventData !== 'object') {
+        console.warn(`[ResultTab:${sequenceIdx}] processSseEvent: EXITING - Invalid eventData type or null.`);
+        return;
+    }
+    if (!hasReceivedData.current) {
+        hasReceivedData.current = true;
+        console.log(`[ResultTab:${sequenceIdx}] processSseEvent: Set hasReceivedData = true.`);
+    }
+    if (eventData.sequenceIdx !== undefined && eventData.sequenceIdx !== sequenceIdx) {
+      console.warn(`[ResultTab:${sequenceIdx}] processSseEvent: Skipping event due to sequenceIdx mismatch. Event idx: ${eventData.sequenceIdx}`);
+      return;
+    }
+    const eventIdSource = { ...eventData };
+    const consistentTimestamp = eventData.timestamp || Date.now();
+    eventIdSource._idTimestamp = consistentTimestamp;
+    const eventId = `seq${sequenceIdx}-${JSON.stringify(eventIdSource)}`;
+    if (processedEventIds.current.has(eventId)) {
+      return;
+    }
+    processedEventIds.current.add(eventId);
+    const eventToStore = {
+        ...eventData,
+        clientTimestamp: consistentTimestamp
+    };
+    setRawSseEvents((prevEvents) => {
+        if (!isMounted.current) {
+             console.warn(`[ResultTab:${sequenceIdx}] processSseEvent: Attempted state update after unmount. Skipping.`);
+             return prevEvents;
+        }
+        console.log(`[ResultTab:${sequenceIdx}] processSseEvent: Updating state with event timestamp: ${eventToStore.clientTimestamp}`);
+        const updatedEvents = [...prevEvents, eventToStore];
+        updatedEvents.sort((a, b) => Number(a.clientTimestamp) - Number(b.clientTimestamp));
+        try {
+          sessionStorage.setItem(`sseEvents_${jobId}_${sequenceIdx}`, JSON.stringify(updatedEvents));
+        } catch (e) {
+          console.error(`[ResultTab:${sequenceIdx}] Failed to save SSE events to sessionStorage:`, e);
+        }
+        return updatedEvents;
+    });
+  }, [sequenceIdx, jobId]);
+
+  // --- Hook Usage ---
+  useSSE(jobId, sequenceIdx, processSseEvent);
+
+  // --- Mount/Unmount Effect ---
+  useEffect(() => {
+    isMounted.current = true;
+    console.log(`[ResultTab:${sequenceIdx}] Component Did Mount. Initial state length: ${rawSseEvents.length}`);
+    return () => {
+      isMounted.current = false;
+      console.log(`[ResultTab:${sequenceIdx}] Component Will Unmount.`);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sequenceIdx]);
+
+  // --- Rendering ---
   return (
     <div className="sequence-results p-4">
-      <ProtocolTracker steps={protocolSteps} messages={messages} sseData={sseDataByStep} />
+      <h3 className="text-lg font-semibold mb-4 dark:text-gray-200">
+        Sequence {sequenceIdx + 1} Results
+      </h3>
+
+      {/* Status Messages */}
+      {rawSseEvents.length === 0 && !streamClosed.current && !hasReceivedData.current && (
+        <p className="text-gray-500 dark:text-gray-400 mb-4">
+          Connecting to event stream...
+        </p>
+      )}
+      
+      {/* Events Received Counter - useful during development */}
+      <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Events received: <span className="font-semibold">{rawSseEvents.length}</span>
+          {rawSseEvents.length > 0 && (
+            <span className="text-xs ml-2">
+              (latest: {new Date(rawSseEvents[rawSseEvents.length-1]?.clientTimestamp || Date.now()).toLocaleTimeString()})
+            </span>
+          )}
+        </p>
+      </div>
+      
+      {/* Protocol Tracker Component */}
+      {protocolSteps.length > 0 && (
+        <div className="border rounded-lg border-gray-200 dark:border-gray-700 overflow-hidden">
+          <ProtocolTracker 
+            steps={protocolSteps}
+            messages={protocolMessages}
+            sseData={protocolSseData}
+          />
+        </div>
+      )}
     </div>
   );
 };

@@ -61,10 +61,11 @@ def publish_sse(
 @shared_task(ignore_result=False)
 def process_protocol_sequence(req_dict: dict, index: int):
     req = ProtocolRequest.model_validate(req_dict)
-    seq = req.sequences_to_domesticate[index]
+    seq = req.sequences_to_domesticate[index] 
 
     progress_callback = partial(publish_sse, job_id=req.job_id, sequence_idx=index)
-
+    if(index == 1):
+        logger.log_step("SSE Publish", f"Setting up task for channel 1 job_{req.job_id}_{index}: {json.dumps({'jobId': req.job_id, 'sequenceIdx': index, 'step': 'start', 'message': 'Starting protocol generation'})}")
     # # Log all variables sent to ProtocolMaker
     # logger.log_step("ProtocolMaker Input", f"Request Index: {index}")
     # logger.log_step("ProtocolMaker Input", f"Sequence to Domesticate: {seq}")
