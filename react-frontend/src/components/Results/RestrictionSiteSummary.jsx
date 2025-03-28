@@ -1,7 +1,7 @@
 import React from "react";
 
-function RestrictionSiteSummary({ sites }) {
-  if (!sites || sites.length === 0) return null;
+function RestrictionSiteSummary({ restrictionSites }) {
+  if (!restrictionSites || restrictionSites.length === 0) return null;
 
   return (
     <div className="restriction-sites-summary section-container">
@@ -17,7 +17,7 @@ function RestrictionSiteSummary({ sites }) {
             </tr>
           </thead>
           <tbody>
-            {sites.map((site, index) => (
+            {restrictionSites.map((site, index) => (
               <tr key={index}>
                 <td>{site.enzyme}</td>
                 <td>{site.recognitionSeq}</td>

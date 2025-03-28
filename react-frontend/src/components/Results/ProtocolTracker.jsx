@@ -10,7 +10,7 @@ const ProgressStep = ({ name, stepProgress, message }) => {
   if (stepProgress === 100) {
     return null;
   }
-  
+
   return (
     <div className="border rounded-lg p-4 mb-4 shadow-sm bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
       <div className="flex justify-between items-center mb-2">
@@ -28,7 +28,9 @@ const ProgressStep = ({ name, stepProgress, message }) => {
         ></div>
       </div>
       {message && (
-        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{message}</p>
+        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+          {message}
+        </p>
       )}
     </div>
   );
@@ -127,8 +129,15 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
     // Render content based on the step
     switch (stepName) {
       case "Restriction Sites":
-        if (stepSseData.sitesToMutate && stepSseData.sitesToMutate.length > 0) {
-          return <RestrictionSiteSummary sites={stepSseData.sitesToMutate} />;
+        if (
+          stepSseData.restrictionSites &&
+          stepSseData.restrictionSites.length > 0
+        ) {
+          return (
+            <RestrictionSiteSummary
+              restrictionSites={stepSseData.restrictionSites}
+            />
+          );
         }
         break;
 

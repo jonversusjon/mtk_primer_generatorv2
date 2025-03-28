@@ -57,6 +57,7 @@ const ResultTab = ({ jobId, sequenceIdx }) => {
 
     // Define expected protocol steps
     const expectedSteps = [
+      "Preprocessing",
       "Restriction Sites",
       "Mutation Analysis",
       "Primer Design",
