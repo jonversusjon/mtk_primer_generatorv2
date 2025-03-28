@@ -467,7 +467,7 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
 };
 
 // Main ProtocolTracker Component
-const ProtocolTracker = ({ steps, messages, sseData }) => {
+const ProtocolTracker = ({ steps, messages, callouts, sseData }) => {
   // Filter steps by status
   const completedSteps = steps.filter((step) => step.status === "completed");
   const activeSteps = steps.filter((step) => step.status === "active");

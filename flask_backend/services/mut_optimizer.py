@@ -45,12 +45,10 @@ class MutationOptimizer():
         logger.log_step("Generate Mutation Sets", "Creating all possible mutation combinations.")
         mutation_sets = self.generate_mutation_sets(mutation_options)
         logger.log_step("Generate Mutation Sets", f"Total mutation sets generated: {len(mutation_sets.sets)}")
-        
-        mutation_sets_json = [mutation_set.model_dump(by_alias=True) for mutation_set in mutation_sets.sets]
-        
+                
         send_update(message=f"Generated {len(mutation_sets.sets)} mutation sets", prog=100,
-                    sites_to_mutate=mutation_sets.sites_to_mutate,
-                    mutation_sets=mutation_sets_json)
+                    site_keys=mutation_sets.sites_to_mutate,
+                    mutation_sets=mutation_sets)
         
         return mutation_sets
 

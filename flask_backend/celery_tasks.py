@@ -1,12 +1,46 @@
 # celery_tasks.py
 import json
 from functools import partial
-from typing import Optional
+from typing import Optional, Any
 from celery import shared_task, group
 from flask_sse import sse
 from flask_backend.services import GoldenGateUtils, ProtocolMaker
-from flask_backend.models import ProtocolRequest, DomesticationResult
+from flask_backend.models import ProtocolRequest, DomesticationResult, FrontendFriendly
 from flask_backend.logging import logger
+
+from pydantic import BaseModel
+
+# Import your existing to_camel function
+from flask_backend.models.base_models import to_camel
+
+def process_payload_values(value: Any) -> Any:
+    """
+    Recursively process values to:
+    1. Convert Pydantic models to dictionaries using model_dump(by_alias=True)
+    2. Convert snake_case keys to camelCase in regular dictionaries
+    """
+    # If it's a Pydantic model, use model_dump with by_alias=True
+    if isinstance(value, (BaseModel, FrontendFriendly)):
+        return value.model_dump(by_alias=True)
+    
+    # If it's a list, process each item
+    elif isinstance(value, list):
+        return [process_payload_values(item) for item in value]
+    
+    # If it's a dictionary, process keys and values
+    elif isinstance(value, dict):
+        result = {}
+        for k, v in value.items():
+            # Convert keys to camelCase if they're snake_case
+            camel_key = to_camel(k) if isinstance(k, str) and '_' in k else k
+            # Process values recursively
+            processed_value = process_payload_values(v)
+            result[camel_key] = processed_value
+        return result
+    
+    # Return other types as is
+    else:
+        return value
 
 def publish_sse(
     job_id: str,
@@ -18,38 +52,35 @@ def publish_sse(
     """
     Publish updates via Flask-SSE to a Redis channel.
     
-    Parameters:
-        step (str): Current step name.
-        message (str): Human-readable message.
-        job_id (str): Unique identifier for the job.
-        sequence_idx (int): Index of the current sequence.
-        prog (Optional[float]): Progress percentage for the current step (0-100).
-                                       If None, no progress bar is shown for this step.
-        **kwargs: Arbitrary additional data to include in the payload.
+    Handles a mix of Pydantic models and primitive types, ensuring all keys are camelCase.
     """
     channel = f"job_{job_id}_{sequence_idx}"
+    
+    # Process kwargs to handle Pydantic models and convert snake_case to camelCase
+    processed_kwargs = process_payload_values(kwargs)
+    
+    # Create the base payload
     payload = {
         "jobId": job_id,
         "sequenceIdx": sequence_idx,
         "step": step,
         "message": message,
-        **kwargs
+        **processed_kwargs  # Use the processed kwargs
     }
+    
+    # Add progress if provided
     if prog is not None:
         payload["stepProgress"] = prog
 
     logger.log_step("SSE Publish", f"Publishing to channel {channel}: {json.dumps(payload, default=str)}")
+    
     try:
-        # Attempt to serialize keyword arguments
-        json.dumps(kwargs)
+        # Verify the payload is serializable
+        json.dumps(payload, default=str)
     except TypeError as e:
         # Log the error and the problematic data
         print(f"Serialization Error: {e}")
-        print(f"Problematic data: {kwargs}")
-        # Decide how to handle: maybe send only serializable parts,
-        # or use a custom serializer like the one in utils.py
-        # For now, maybe just send message and progress
-        # Or raise the error to halt execution
+        print(f"Problematic payload: {payload}")
         raise e
     
     sse.publish(

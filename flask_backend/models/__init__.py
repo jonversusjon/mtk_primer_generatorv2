@@ -26,6 +26,7 @@ from .results_models import (
     EdgePrimerPair,
     DomesticationResult,
     MTKDomesticationProtocol,
+    SsePayload,
 )
 
 # Define what gets imported when using `from models import *`
@@ -60,5 +61,6 @@ __all__ = [
     "EdgePrimerPair",
     "DomesticationResult",
     "MTKDomesticationProtocol",
+    "SsePayload",
 
 ]

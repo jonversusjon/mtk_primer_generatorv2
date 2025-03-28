@@ -2,7 +2,6 @@ from typing import List, Dict, Optional, Any
 
 from flask_backend.models import Mutation, Primer, RestrictionSite, MutationPrimerSet, NumpyArray, FrontendFriendly, FrontendNumpyFriendly
 
-
 ### Results ###
 class MutationSet(FrontendNumpyFriendly):
     mutations: List[Mutation]
@@ -45,7 +44,24 @@ class DomesticationResult(FrontendFriendly):
 class MTKDomesticationProtocol(FrontendFriendly):
     result_data: Dict[int, DomesticationResult]
 
-    
-
+class SsePayload(FrontendFriendly):
+    """Model for SSE step updates"""
+    job_id: str
+    sequence_idx: int
+    step: str
+    message: str
+    step_progress: int
+    notification_count: int = 0
+    site_key: Optional[str] = None
+    site_keys: Optional[List[str]] = None
+    mutation_count: Optional[int] = None
+    sites_to_mutate: Optional[List[dict]] = None
+    mutation_sets: Optional[List[dict]] = None
+    callout: Optional[str] = None
+    processed_sequence: Optional[str] = None
+    timestamp: Optional[int] = None
+    job_id: Optional[str] = None
+    sequence_idx: Optional[int] = None
+    callout: Optional[str] = None
 
     

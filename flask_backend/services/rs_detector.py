@@ -87,10 +87,9 @@ class RestrictionSiteDetector():
         logger.log_step("Result", f"Total sites found: {len(sites_to_mutate)}")
                 
         if sites_to_mutate:
-            sites_to_mutate_json = [site.model_dump(by_alias=True) for site in sites_to_mutate]
-            send_update(message=f"Found {len(sites_to_mutate)} restriction sites", prog=100, sites=sites_to_mutate_json, notification_count=len(sites_to_mutate))
+            send_update(message=f"Found {len(sites_to_mutate)} restriction sites", prog=100, sites_to_mutate=sites_to_mutate, notification_count=len(sites_to_mutate))
         else:
-            send_update(message="No restriciton sites found", prog=100, sites=sites_to_mutate_json, callout="No site mutations needed", notification_count=0)
+            send_update(message="No restriciton sites found", prog=100, sites_to_mutate=sites_to_mutate, callout="No site mutations needed", notification_count=0)
                     
         return sites_to_mutate
 
