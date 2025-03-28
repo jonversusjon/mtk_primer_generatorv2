@@ -99,6 +99,7 @@ tab-check-icon {
   color: white;
   border-radius: 9px;
   line-height: 1;
+  margin-right: 6px;
 }
 
 /* Dark mode support */
@@ -163,5 +164,6 @@ tab-check-icon {
     height: 16px;
     font-size: 0.7rem;
     margin-left: 6px;
+    margin-right: 4px;
   }
 }

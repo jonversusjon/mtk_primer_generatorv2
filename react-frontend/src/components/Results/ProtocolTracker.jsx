@@ -5,27 +5,34 @@ import RestrictionSiteSummary from "./RestrictionSiteSummary";
 import MutationAnalysisSummary from "./MutationAnalysisSummary";
 
 // UI Helper Components
-const ProgressStep = ({ name, stepProgress, message }) => (
-  <div className="border rounded-lg p-4 mb-4 shadow-sm bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-    <div className="flex justify-between items-center mb-2">
-      <span className="font-semibold text-gray-800 dark:text-gray-100">
-        {name}
-      </span>
-      <span className="text-sm text-gray-500 dark:text-gray-400">
-        {stepProgress}%
-      </span>
+const ProgressStep = ({ name, stepProgress, message }) => {
+  // If progress is 100%, don't render anything
+  if (stepProgress === 100) {
+    return null;
+  }
+  
+  return (
+    <div className="border rounded-lg p-4 mb-4 shadow-sm bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+      <div className="flex justify-between items-center mb-2">
+        <span className="font-semibold text-gray-800 dark:text-gray-100">
+          {name}
+        </span>
+        <span className="text-sm text-gray-500 dark:text-gray-400">
+          {stepProgress}%
+        </span>
+      </div>
+      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
+        <div
+          className="bg-blue-500 dark:bg-blue-400 h-2 rounded-full transition-all duration-300"
+          style={{ width: `${stepProgress}%` }}
+        ></div>
+      </div>
+      {message && (
+        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{message}</p>
+      )}
     </div>
-    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
-      <div
-        className="bg-blue-500 dark:bg-blue-400 h-2 rounded-full transition-all duration-300"
-        style={{ width: `${stepProgress}%` }}
-      ></div>
-    </div>
-    {message && (
-      <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{message}</p>
-    )}
-  </div>
-);
+  );
+};
 
 // const WaitingStep = ({ name }) => (
 //   <div className="border rounded-lg p-4 mb-4 shadow-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
@@ -120,8 +127,8 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
     // Render content based on the step
     switch (stepName) {
       case "Restriction Sites":
-        if (stepSseData.sites && stepSseData.sites.length > 0) {
-          return <RestrictionSiteSummary sites={stepSseData.sites} />;
+        if (stepSseData.sitesToMutate && stepSseData.sitesToMutate.length > 0) {
+          return <RestrictionSiteSummary sites={stepSseData.sitesToMutate} />;
         }
         break;
 
