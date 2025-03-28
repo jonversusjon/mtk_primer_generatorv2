@@ -5,7 +5,7 @@ dev_config = {
     "templateSequence": TEST_TEMPLATE_SEQ,
     "species": "",
     "kozak": "",
-    "maxMutationsPerSite": 1,
+    "maxMutationsPerSite": "one",
     "verbose_mode": True,
     "sequencesToDomesticate": [
         {
@@ -21,7 +21,7 @@ dev_config_2 = {
     "templateSequence": TEST_TEMPLATE_SEQ,
     "species": "",
     "kozak": "",
-    "maxMutationsPerSite": 1,
+    "maxMutationsPerSite": "one",
     "verbose_mode": True,
     "sequencesToDomesticate": [
         {

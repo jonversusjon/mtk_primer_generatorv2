@@ -47,17 +47,6 @@
   color: var(--foreground-color);
 }
 
-/* Form elements, inputs, selects, textareas, buttons */
-.dark-mode select,
-.dark-mode input,
-.dark-mode textarea,
-.dark-mode button {
-  background-color: rgba(255, 255, 255, 0.05);
-  /* Slightly lighter overlay on space-cadet */
-  color: var(--foreground-color);
-  border: 1px solid var(--border-color);
-}
-
 .dark-mode #primer-form input,
 .dark-mode #primer-form textarea,
 .dark-mode #primer-form select {

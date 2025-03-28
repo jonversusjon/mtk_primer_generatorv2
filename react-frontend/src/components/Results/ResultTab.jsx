@@ -300,11 +300,7 @@ const ResultTab = ({ jobId, sequenceIdx }) => {
 
   // --- Rendering ---
   return (
-    <div className="sequence-results p-4">
-      <h3 className="text-lg font-semibold mb-4 dark:text-gray-200">
-        Sequence {sequenceIdx + 1} Results
-      </h3>
-
+    <div className="sequence-results">
       {/* Status Messages */}
       {rawSseEvents.length === 0 &&
         !streamClosed.current &&
@@ -313,24 +309,6 @@ const ResultTab = ({ jobId, sequenceIdx }) => {
             Connecting to event stream...
           </p>
         )}
-
-      {/* Events Received Counter - useful during development */}
-      <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Events received:{" "}
-          <span className="font-semibold">{rawSseEvents.length}</span>
-          {rawSseEvents.length > 0 && (
-            <span className="text-xs ml-2">
-              (latest:{" "}
-              {new Date(
-                rawSseEvents[rawSseEvents.length - 1]?.clientTimestamp ||
-                  Date.now()
-              ).toLocaleTimeString()}
-              )
-            </span>
-          )}
-        </p>
-      </div>
 
       {/* Protocol Tracker Component */}
       {protocolSteps.length > 0 && (

@@ -7,7 +7,7 @@
   margin-bottom: 16px;
   padding: 0;
   overflow-x: auto;
-  border-bottom: 1px solid #eaeaea;
+  border-bottom: none
 }
 
 .tab-content {
@@ -104,7 +104,7 @@ tab-check-icon {
 
 /* Dark mode support */
 .dark-mode .protocol-tab-container {
-  border-bottom-color: #333;
+  border-bottom: none;
 }
 
 .dark-mode .protocol-tab-button {

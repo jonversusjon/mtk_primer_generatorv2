@@ -19,10 +19,12 @@ function App() {
 
   return (
     <Router>
-      <div className={`app ${darkMode ? "dark-mode" : ""}`}>
+      <div
+        className={`flex flex-col min-h-screen ${darkMode ? "dark-mode" : ""}`}
+      >
         <AppHeader darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
         <Banner />
-        <div className="app-container">
+        <div className="app-container flex-1">
           <Routes>
             {/* 
               1) The Form Page ("/"): handles the form, calls API, 

@@ -57,13 +57,17 @@ const ResultTabs = ({ jobId }) => {
   // Display a loading message or placeholder if sequences haven't loaded yet
   if (sequences.length === 0) {
     // Added check for jobId as well, perhaps loading is dependent on it too
-    return <p className="p-4 text-gray-500 dark:text-gray-400">Loading sequence data{jobId ? ` for Job ${jobId}` : ''}...</p>;
+    return (
+      <p className="p-4 text-gray-500 dark:text-gray-400">
+        Loading sequence data{jobId ? ` for Job ${jobId}` : ""}...
+      </p>
+    );
   }
 
   return (
-    <div className="results-section w-full max-w-4xl mx-auto"> 
+    <div className="results-section w-full max-w-4xl mx-auto">
       {/* Tab Buttons Container */}
-      <div className="flex border-b border-gray-300 dark:border-gray-700 mb-4 overflow-x-auto">
+      <div className="flex border-gray-300 dark:border-gray-700 mb-4 overflow-x-auto">
         {sequences.map((seq, index) => {
           const isActive = activeTab === index;
           return (
@@ -71,11 +75,13 @@ const ResultTabs = ({ jobId }) => {
               key={seq.id}
               type="button"
               role="tab"
-              className={`py-2 px-4 text-sm font-medium text-center border-b-2 whitespace-nowrap ${
-                isActive
-                  ? "border-blue-500 text-blue-600 dark:text-blue-400 dark:border-blue-400"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600"
-              }`}
+              className={`py-2 px-4 text-lg font-medium text-center whitespace-nowrap 
+                border-b-2 bg-transparent
+                ${
+                  isActive
+                    ? "border-blue-500 text-blue-600 dark:text-blue-400 dark:border-blue-400"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600"
+                }`}
               onClick={() => {
                 console.log("Setting activeTab to:", index);
                 setActiveTab(index);
@@ -100,10 +106,8 @@ const ResultTabs = ({ jobId }) => {
             aria-labelledby={`tab-button-${seq.id}`}
             id={`tab-content-${seq.id}`}
             className="tab-pane"
-            style={{ 
-              display: activeTab === index ? 'block' : 'none',
-              // Optional debugging border to verify visibility
-              border: activeTab === index ? '2px solid blue' : 'none'
+            style={{
+              display: activeTab === index ? "block" : "none",
             }}
           >
             <ResultTab jobId={jobId} sequenceIdx={seq.id} />

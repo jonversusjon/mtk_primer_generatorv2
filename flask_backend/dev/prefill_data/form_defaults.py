@@ -3,7 +3,7 @@ form_defaults = {
     "templateSequence": "",
     "species": "",
     "kozak": "",
-    "maxMutationsPerSite": 1,
+    "maxMutationsPerSite": "one",
     "verbose_mode": True,
     "sequencesToDomesticate": [
         {

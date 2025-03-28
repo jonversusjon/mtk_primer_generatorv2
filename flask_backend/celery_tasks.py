@@ -101,7 +101,7 @@ def process_protocol_sequence(req_dict: dict, index: int):
     # logger.log_step("ProtocolMaker Input", f"Request Index: {index}")
     # logger.log_step("ProtocolMaker Input", f"Sequence to Domesticate: {seq}")
     # logger.log_step("ProtocolMaker Input", f"Codon Usage Dict: {GoldenGateUtils().get_codon_usage_dict(req.species)}")
-    # logger.log_step("ProtocolMaker Input", f"Max Mutations: {req.max_mut_per_site}")
+    logger.log_step("ProtocolMaker Input", f"Max Mutations: {req.max_mut_per_site}")
     # logger.log_step("ProtocolMaker Input", f"Template Sequence: {req.template_sequence}")
     # logger.log_step("ProtocolMaker Input", f"Kozak: {req.kozak}")
     # logger.log_step("ProtocolMaker Input", f"Max Results: {req.max_results}")

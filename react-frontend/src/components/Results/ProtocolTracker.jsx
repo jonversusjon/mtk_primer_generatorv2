@@ -128,6 +128,14 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
 
     // Render content based on the step
     switch (stepName) {
+      case "Preprocessing":
+        if (stepSseData.callout) {
+          return (
+            <div></div>
+          );
+        }
+        break;
+      
       case "Restriction Sites":
         if (
           stepSseData.restrictionSites &&
@@ -138,9 +146,17 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
               restrictionSites={stepSseData.restrictionSites}
             />
           );
+        } else {
+          // Show "No restriction sites found" message when SSE data exists but no restriction sites
+          return (
+            <div className="p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md">
+              <p className="text-gray-600 dark:text-gray-300 text-center">
+                No restriction sites found.
+              </p>
+            </div>
+          );
         }
-        break;
-
+        
       case "Mutation Analysis":
         // First check for detailed mutation analysis
         if (
@@ -167,7 +183,6 @@ const TabContent = ({ stepName, messages, activeStep, sseData, callouts }) => {
             );
           }
         }
-
         // Fallback to basic mutations table
         if (stepSseData.mutations && stepSseData.mutations.length > 0) {
           return (

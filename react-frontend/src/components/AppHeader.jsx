@@ -1,3 +1,4 @@
+// AppHeader.jsx
 import React from "react";
 import "../styles/global/theme.css";
 import "../styles/AppHeader.css";
